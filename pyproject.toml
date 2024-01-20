@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "raw-plot"
+dynamic = ["version"]
+description = "Plotting tools to analyze and characterize cameras and their raw images"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Rafael González", email = "rafael08@ucm.es"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    'Topic :: Scientific/Engineering :: Atmospheric Science',
+]
+dependencies = [
+    "exifread",
+    "rawpy",
+    "matplotlib",
+    "PyQt5",
+    "scikit-learn"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=6",
+]
+
+[project.urls]
+Homepage = "https://github.com/guaix-ucm/rawplot"
+Repository = "https://github.com/guaix-ucm/rawplot.git"
+
+[project.scripts]
+rawplot-hv = "rawplot.hv:main"
+rawplot-image = "rawplot.image:main"
+rawplot-snr = "rawplot.snr:main"
+rawplot-linearity = "rawplot.linearity:main"
+rawplot-plan = "rawplot.plan:main"
+
+[tool.setuptools]
+#script-files = ["scripts/photo.sh",]
+
+# pyproject.toml
+[tool.setuptools_scm]
+write_to = "src/rawplot/_version.py"
+
+[tool.setuptools.packages.find]
+# scanning for namespace packages is true by default in pyproject.toml, so
+# you do NOT need to include the following line.
+namespaces = true
+where = ["src"]
