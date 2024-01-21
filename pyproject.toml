@@ -32,9 +32,15 @@ dependencies = [
     "scikit-learn"
 ]
 
+
+# To run with pip install -e .[dev] or pip install -e .[test]
 [project.optional-dependencies]
 test = [
     "pytest>=6",
+]
+dev = [
+   "pytest>=6",
+   "tox",
 ]
 
 [project.urls]
