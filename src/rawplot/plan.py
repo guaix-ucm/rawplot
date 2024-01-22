@@ -43,19 +43,15 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def plot_histo(axes, color_plane, title, decimate, average, median, stddev):
-    axes.set_title(fr'channel {title}: $median={median}, \mu={average},\;\sigma={stddev}$')
-    data = color_plane.reshape(-1)[::decimate]
-    bins=list(range(data.min(), data.max()+1))
-    axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
-    axes.set_xlabel('Pixel value [DN]')
-    axes.set_ylabel('Pixel count')
+def plot_plan(fig, axes, title, subtitle, num_seq, exptime):
+    fig.suptitle(f"{title}\n{len(exptime)} points\n{subtitle}")   
+    axes.plot(num_seq, exptime,  marker='o', linewidth=1, label="data")
+    axes.set_xlabel('Image sequence number')
+    axes.set_ylabel('Exposure time [s]')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-    axes.axvline(x=average, linestyle='--', color='r', label="mean")
-    axes.axvline(x=median, linestyle='--', color='k', label="median")
-    axes.legend()
+
 
 def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colormap, edgecolor):
     axes.set_title(fr'{title}: $median={median}, \mu={average},\;\sigma={stddev}$')
@@ -147,14 +143,23 @@ def combistops_plan(ti, tf, max_dn, ppl):
 def plan(args):
     if args.command == 'linear':
         T = linear_plan(args.t_initial, args.t_final, args.num_images, endpoint=True)
+        subtitle = ""
     elif args.command == 'stops':
         T = stops_plan(args.t_initial, args.t_final, args.max_dn, args.points_per_level, args.reverse)
+        levels = int(round(math.log2(args.max_dn),0))
+        shots = args.points_per_level
+        subtitle = f"{levels} levels, {shots} shots per level"
     elif args.command == 'log':
         T = log_plan(args.t_initial, args.t_final, args.num_images, args.reverse, endpoint=True)
+        subtitle = ""
     elif args.command == 'combilog':
         T = combilog_plan(args.t_initial, args.t_final, args.num_images)
+        subtitle = ""
     elif args.command == 'combistops':
         T = combistops_plan(args.t_initial, args.t_final, args.max_dn, args.points_per_level)
+        levels = int(round(math.log2(args.max_dn),0))
+        shots = args.points_per_level
+        subtitle = f"{levels} levels, {shots} shots per level"
     else:
         raise ValueError(f"Missing command!. Type {os.path.basename(sys.argv[0])} -h for help")
     log.info("final plan contains %d exposures", len(T))
@@ -162,14 +167,9 @@ def plan(args):
     if args.csv_file:
         export_to_csv(args.csv_file, T)
     num_seq = range(1, len(T)+1)
+    title = f"{args.command.title()} exposure plan"
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 9), layout='tight')
-    fig.suptitle(f"{args.command} Exposure plan")   
-    axes.plot(num_seq, T,  marker='o', linewidth=1, label="data")
-    axes.set_xlabel('Image sequence number')
-    axes.set_ylabel('Exposure time [s]')
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.minorticks_on()
+    plot_plan(fig, axes, title, subtitle, num_seq, T)
     plt.show()
 
 # ===================================
