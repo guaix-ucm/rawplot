@@ -162,7 +162,7 @@ def linearity(args):
     fig.suptitle(f"Linearity plot\n"
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n"
             f"Color Plane Size: {metadata['rows']} rows x {metadata['cols']} cols\n" 
-            f"Section: {metadata['roi']}, {metadata['roi'].height()} rows x {metadata['roi'].width()} cols")
+            f"ROI Section: {metadata['roi']}, {metadata['roi'].height()} rows x {metadata['roi'].width()} cols")
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
         for col in range(0,display_cols):

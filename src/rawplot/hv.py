@@ -102,7 +102,7 @@ def hv(args):
     fig.suptitle(f"Image: {image.name()}\n"
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n"
             f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" 
-            f"Section: {roi} {roi.height()} rows x {roi.width()} cols")
+            f"ROI Section: {roi} {roi.height()} rows x {roi.width()} cols")
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
         for col in range(0,display_cols):
