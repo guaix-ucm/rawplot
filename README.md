@@ -24,6 +24,8 @@ The available commands list can be found in the `bin` virtual environment sub-fo
  ls .venv/bin/raw-*
  ```
 
+## Common options
+
 All utilities share these command line options,mainly used for debugging purposes:
 
 * `⁻h, --help` shows program's options and exit
