@@ -95,10 +95,18 @@ def image(args):
 
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    fig.suptitle(f"Image: {image.name()}\n"
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n"
-            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" 
-            f"Section: {roi} {roi.height()} rows x {roi.width()} cols (decimated {dcm})")
+    if args.histogram:
+         title = f"Image: {image.name()}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
+            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols (decimated {dcm})\n" \
+            f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
+    else:
+        title = f"Image: {image.name()}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
+            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" \
+            f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
+
+    fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
         for col in range(0,display_cols):

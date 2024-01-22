@@ -97,7 +97,7 @@ rawplot-plan combistops -ti 1/1000 -tf 6 -m 4095
 This utility displays a single image or histogram. useful to determine exposure levels and region of interest.
 
 ```bash
-rawplot-image --image -i images/20240117/linearity/flath_g1_001_3500000_a.jpg
+rawplot-image --image -i images/20240117/linearity/flath_g1_001_3500000_a.jpg -wi 1/20 -he 1/16
 ```
 
 ![Raspberry Pi HQ camera flat image](doc/images/flat_image.png)
