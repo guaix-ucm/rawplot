@@ -26,7 +26,7 @@ The available commands list can be found in the `bin` virtual environment sub-fo
 
 ## Common options
 
-All utilities share these command line options,mainly used for debugging purposes:
+All utilities share these command line options, mainly used for debugging purposes:
 
 * `⁻h, --help` shows program's options and exit
 * `--version` show program's version numbe and exit.
