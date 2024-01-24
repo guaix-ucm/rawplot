@@ -186,8 +186,8 @@ def add_args(parser):
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser.add_argument('-c','--channels', default=['R', 'G1', 'G2','B'], nargs='+',
-                    choices=['R', 'G1', 'G2', 'G', 'B'],
+    parser.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
 

@@ -72,17 +72,17 @@ def bias_create(args):
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
     metadata = imageset_metadata(file_list[0], args.x0, args.y0, args.width, args.height, channels)
     img0 = RawImage(file_list[0])
+    h, w =  img0.shape()
+    h, w = h//2, w//2
     roi = img0.roi(args.x0, args.y0, args.width, args.height)
     # ROI from the fist image
     images = [RawImage(path) for path in file_list]
-    log.info("Begin loading %d images into RAM with %s channels, %s (rows, cols) each", len(images), ",".join(channels), img0.shape())
+    log.info("Begin loading %d images into RAM with %s channels, %d x %d each", len(images), ",".join(channels), w, h)
     sections = [image.debayered(roi, channels).astype(float, copy=False) for image in images]
     log.info("Loaded %d images into RAM", len(sections))
     stack4d = np.stack(sections)
-    log.info("Stack4d shape is %s", stack4d.shape)
     log.info("Calculating Stack average")
     master_aver = np.mean(stack4d, axis=0)
-    log.info("Master average shape is %s", master_aver.shape)
     filename = f"{args.output_prefix}_aver_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
     path = os.path.join(output_dir, filename)
     log.info("Saving master bias in %s", path)
@@ -91,7 +91,6 @@ def bias_create(args):
     hdu.writeto(filename, overwrite=True)
     if args.stdev_map:
         stdev_map = np.std(stack4d, axis=0)
-        log.info("Master Std Dev map shape is %s", stdev_map.shape)
         filename = f"{args.output_prefix}_stdev_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
         path = os.path.join(output_dir, filename)
         log.info("Saving stdev map in %s", path)
@@ -100,7 +99,6 @@ def bias_create(args):
         hdu.writeto(filename, overwrite=True)
     if args.max_map:
         max_map = np.max(stack4d, axis=0)
-        log.info("Master Max Map map shape is %s", max_map.shape)
         filename = f"{args.output_prefix}_max_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
         path = os.path.join(output_dir, filename)
         log.info("Saving max map in %s", path)
@@ -140,8 +138,8 @@ def add_args(parser):
     parser_create.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_create.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser_create.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_create.add_argument('-c','--channels', default=['R', 'G1', 'G2','B'], nargs='+',
-                    choices=['R', 'G1', 'G2', 'G', 'B'],
+    parser_create.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
 
 # ================
