@@ -64,6 +64,8 @@ def fill_header(header, metadata, img):
 
 def bias_create(args):
     channels = valid_channels(args.channels)
+    if args.output_dir is None:
+        output_dir = os.getcwd()
     log.info("Working with %d channels: %s", len(channels), channels)
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
     metadata = imageset_metadata(file_list[0], args.x0, args.y0, args.width, args.height, channels)
@@ -71,7 +73,7 @@ def bias_create(args):
     roi = img0.roi(args.x0, args.y0, args.width, args.height)
     # ROI from the fist image
     images = [RawImage(path) for path in file_list]
-    log.info("Begin loading %d images into RAM", len(images))
+    log.info("Begin loading %d images into RAM with %s channels, %s (rows, cols) each", len(images), ",".join(channels), img0.shape())
     sections = [image.debayered(roi, channels).astype(float, copy=False) for image in images]
     log.info("Loaded %d images into RAM", len(sections))
     stack4d = np.stack(sections)
@@ -80,7 +82,8 @@ def bias_create(args):
     master_aver = np.mean(stack4d, axis=0)
     log.info("Master average shape is %s", master_aver.shape)
     filename = f"{args.output_prefix}_aver_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
-    log.info("Saving master bias in %s", filename)
+    path = os.path.join(output_dir, filename)
+    log.info("Saving master bias in %s", path)
     hdu = fits.PrimaryHDU(master_aver)
     fill_header(hdu.header, metadata, img0)
     hdu.writeto(filename, overwrite=True)
@@ -88,7 +91,8 @@ def bias_create(args):
         stdev_map = np.std(stack4d, axis=0)
         log.info("Master Std Dev map shape is %s", stdev_map.shape)
         filename = f"{args.output_prefix}_stdev_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
-        log.info("Saving stddev map in %s", filename)
+        path = os.path.join(output_dir, filename)
+        log.info("Saving stdev map in %s", path)
         hdu = fits.PrimaryHDU(master_aver)
         fill_header(hdu.header, metadata, img0)
         hdu.writeto(filename, overwrite=True)
@@ -96,7 +100,8 @@ def bias_create(args):
         max_map = np.max(stack4d, axis=0)
         log.info("Master Max Map map shape is %s", max_map.shape)
         filename = f"{args.output_prefix}_max_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
-        log.info("Saving max map in %s", filename)
+        path = os.path.join(output_dir, filename)
+        log.info("Saving max map in %s", path)
         hdu = fits.PrimaryHDU(master_aver)
         fill_header(hdu.header, metadata, img0)
         hdu.writeto(filename, overwrite=True)
@@ -123,9 +128,10 @@ def add_args(parser):
 
     parser_create = subparser.add_parser('create', help='Create a 3D FITS cube master bias')
    
-    parser_create.add_argument('-d', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser_create.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_create.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
-    parser_create.add_argument('-o', '--output-prefix', type=str, required=True, help='Output file prefix, file stored in te current working dir.')
+    parser_create.add_argument('-p', '--output-prefix', type=str, required=True, help='Output file prefix')
+    parser_create.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
     parser_create.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
     parser_create.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')
     parser_create.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
