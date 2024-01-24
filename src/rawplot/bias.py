@@ -56,6 +56,8 @@ def fill_header(header, metadata, img):
     header['SECTION'] = (str(metadata['roi']), 'NumPy format')
     header['EXPTINE'] = (float(img.exposure()), '[s]')
     header['BAYER'] = (img.cfa_pattern(), 'Color Filter Array Pattern')
+    header['MAKER'] = (metadata['maker'], 'Camera Manufacturer')
+    header['SENSOR'] = (metadata['camera'], 'Sensor')
 
 
 
