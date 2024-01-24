@@ -11,6 +11,7 @@
 # -------------------
 
 import os
+import sys
 import glob
 import math
 import logging
@@ -58,7 +59,7 @@ def fill_header(header, metadata, img):
     header['BAYER'] = (img.cfa_pattern(), 'Color Filter Array Pattern')
     header['MAKER'] = (metadata['maker'], 'Camera Manufacturer')
     header['SENSOR'] = (metadata['camera'], 'Sensor')
-
+    header['comment'] = f'Created with {os.path.basename(sys.argv[0])}'
 
 
 def bias_create(args):
