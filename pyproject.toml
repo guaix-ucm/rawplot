@@ -30,7 +30,8 @@ dependencies = [
     "matplotlib",
     "PyQt5",
     "scikit-learn",
-    "astropy"
+    "astropy",
+    "lica@git+https://github.com/guaix-ucm/lica",
 ]
 
 

@@ -24,14 +24,15 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from lica.cli import execute
+from lica.validators import vfloat
+from lica.misc import write_csv
+
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.cli import execute
-from .util.validators import vfloat
-from .util.misc import write_csv
 
 # -----------------------
 # Module global variables

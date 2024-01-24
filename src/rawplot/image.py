@@ -22,15 +22,16 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from lica.cli import execute
+from lica.validators import vfile, vfloat01, valid_channels
+from lica.rawimage import RawImage, SimulatedDarkImage
+from lica.mpl import plot_layout, plot_cmap, plot_edge_color, axes_reshape
+
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.cli import execute
-from .util.validators import vfile, vfloat01, valid_channels
-from .util.rawimage import RawImage, SimulatedDarkImage
-from .util.mpl import plot_layout, plot_cmap, plot_edge_color, axes_reshape
 
 # -----------------------
 # Module global variables

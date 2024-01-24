@@ -23,16 +23,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
+from lica.cli import execute
+from lica.validators import vdir, vfloat01, valid_channels
+from lica.rawimage import RawImage, imageset_metadata
+from lica.mpl import plot_layout,  axes_reshape
+from lica.misc import file_paths
+
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.cli import execute
-from .util.validators import vdir, vfloat01, valid_channels
-from .util.rawimage import RawImage, imageset_metadata
-from .util.mpl import plot_layout,  axes_reshape
-from .util.misc import file_paths
+
 # ----------------
 # Module constants
 # ----------------

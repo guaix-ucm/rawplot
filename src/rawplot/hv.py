@@ -21,15 +21,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
+from lica.validators import vfile, vfloat01, valid_channels
+from lica.cli import execute
+from lica.rawimage import RawImage, SimulatedDarkImage
+from lica.mpl import plot_layout, axes_reshape
+
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.validators import vfile, vfloat01, valid_channels
-from .util.cli import execute
-from .util.rawimage import RawImage, SimulatedDarkImage
-from .util.mpl import plot_layout, axes_reshape
 
 # -----------------------
 # Module global variables
