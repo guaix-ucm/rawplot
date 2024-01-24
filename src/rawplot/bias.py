@@ -66,8 +66,10 @@ def bias_create(args):
     stack4d = np.stack(sections)
     log.info("Stack4d shape is %s", stack4d.shape)
     log.info("Calculating Stack average")
-    #aver = np.mean(stack4d, axis=(0,1))
-    #log.info("Average shape is %s", aver.shape)
+    master_aver = np.mean(stack4d, axis=(0,1))
+    log.info("Master average shape is %s", master_aver.shape)
+    master_std = np.std(stack4d, axis=(0,1))
+    log.info("Master Std shape is %s", master_std.shape)
 
 
 
