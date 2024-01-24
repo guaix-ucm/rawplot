@@ -51,14 +51,21 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
+def fill_header(header, metadata, img):
+    header['CHANNELS'] = (" ".join(metadata['channels']), 'Actual channels being used')
+    header['SECTION'] = (str(metadata['roi']), 'NumPy format')
+    header['EXPTINE'] = (float(img.exposure()), '[s]')
+    header['BAYER'] = (img.cfa_pattern(), 'Color Filter Array Pattern')
+
+
 
 def bias_create(args):
     channels = valid_channels(args.channels)
     log.info("Working with %d channels: %s", len(channels), channels)
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
     metadata = imageset_metadata(file_list[0], args.x0, args.y0, args.width, args.height, channels)
-    _img = RawImage(file_list[0])
-    roi = _img.roi(args.x0, args.y0, args.width, args.height)
+    img0 = RawImage(file_list[0])
+    roi = img0.roi(args.x0, args.y0, args.width, args.height)
     # ROI from the fist image
     images = [RawImage(path) for path in file_list]
     log.info("Begin loading %d images into RAM", len(images))
@@ -71,22 +78,25 @@ def bias_create(args):
     log.info("Master average shape is %s", master_aver.shape)
     filename = f"{args.output_prefix}_aver_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
     log.info("Saving master bias in %s", filename)
-    hdu_new = fits.PrimaryHDU(master_aver)
-    hdu_new.writeto(filename)
+    hdu = fits.PrimaryHDU(master_aver)
+    fill_header(hdu.header, metadata, img0)
+    hdu.writeto(filename, overwrite=True)
     if args.stdev_map:
         stdev_map = np.std(stack4d, axis=0)
         log.info("Master Std Dev map shape is %s", stdev_map.shape)
         filename = f"{args.output_prefix}_stdev_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
         log.info("Saving stddev map in %s", filename)
-        hdu_new = fits.PrimaryHDU(master_aver)
-        hdu_new.writeto(filename)
+        hdu = fits.PrimaryHDU(master_aver)
+        fill_header(hdu.header, metadata, img0)
+        hdu.writeto(filename, overwrite=True)
     if args.max_map:
         max_map = np.max(stack4d, axis=0)
         log.info("Master Max Map map shape is %s", max_map.shape)
         filename = f"{args.output_prefix}_max_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
         log.info("Saving max map in %s", filename)
-        hdu_new = fits.PrimaryHDU(master_aver)
-        hdu_new.writeto(filename)
+        hdu = fits.PrimaryHDU(master_aver)
+        fill_header(hdu.header, metadata, img0)
+        hdu.writeto(filename, overwrite=True)
 
 
    

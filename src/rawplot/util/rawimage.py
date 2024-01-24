@@ -181,7 +181,7 @@ class RawImage:
         self._biases = img_desc.black_level_per_channel
         self._white_levels = img_desc.camera_white_level_per_channel
 
-    def _img(self, img):
+    def _img(self):
         '''Gather as much rawpy image access as possible for efficiency'''
         with rawpy.imread(self._path) as img:
             self._read_img_metadata(img)
