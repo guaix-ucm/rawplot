@@ -24,6 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from sklearn.linear_model import  TheilSenRegressor, LinearRegression
+from astropy.io import fits
 
 # ------------------------
 # Own modules and packages
@@ -66,15 +67,29 @@ def bias_create(args):
     stack4d = np.stack(sections)
     log.info("Stack4d shape is %s", stack4d.shape)
     log.info("Calculating Stack average")
-    master_aver = np.mean(stack4d, axis=(0,1))
+    master_aver = np.mean(stack4d, axis=0)
     log.info("Master average shape is %s", master_aver.shape)
-    master_std = np.std(stack4d, axis=(0,1))
-    log.info("Master Std shape is %s", master_std.shape)
+    filename = f"{args.output_prefix}_aver_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
+    log.info("Saving master bias in %s", filename)
+    hdu_new = fits.PrimaryHDU(master_aver)
+    hdu_new.writeto(filename)
+    if args.stdev_map:
+        stdev_map = np.std(stack4d, axis=0)
+        log.info("Master Std Dev map shape is %s", stdev_map.shape)
+        filename = f"{args.output_prefix}_stdev_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
+        log.info("Saving stddev map in %s", filename)
+        hdu_new = fits.PrimaryHDU(master_aver)
+        hdu_new.writeto(filename)
+    if args.max_map:
+        max_map = np.max(stack4d, axis=0)
+        log.info("Master Max Map map shape is %s", max_map.shape)
+        filename = f"{args.output_prefix}_max_x{roi.x1:04d}_y{roi.y1:04d}_{metadata['cols']:04d}x{metadata['rows']:04d}_{''.join(channels)}.fit"
+        log.info("Saving max map in %s", filename)
+        hdu_new = fits.PrimaryHDU(master_aver)
+        hdu_new.writeto(filename)
 
 
-
-    
-
+   
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
@@ -97,6 +112,9 @@ def add_args(parser):
    
     parser_create.add_argument('-d', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_create.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
+    parser_create.add_argument('-o', '--output-prefix', type=str, required=True, help='Output file prefix, file stored in te current working dir.')
+    parser_create.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
+    parser_create.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')
     parser_create.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_create.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_create.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')

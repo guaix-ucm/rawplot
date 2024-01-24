@@ -29,7 +29,8 @@ dependencies = [
     "rawpy",
     "matplotlib",
     "PyQt5",
-    "scikit-learn"
+    "scikit-learn",
+    "astropy"
 ]
 
 

@@ -164,5 +164,8 @@ cython_debug/
 *.txt
 *.csv
 *.jpg
+*.fit
+*.fits
+*.fts
 src/rawplot/_version.py
 images/*
