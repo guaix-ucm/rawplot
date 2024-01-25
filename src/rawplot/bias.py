@@ -122,100 +122,6 @@ def bias_create(args):
         hdu.writeto(path, overwrite=True)
 
 
-def bias_display(args):
-    channels = valid_channels(args.channels)
-    log.info("Loading %s channels in this order", " ".join(channels))
-    image = FITSImage(args.input_file)
-    roi = image.roi(args.x0, args.y0, args.width, args.height)
-    stack = image.load_cube(channels=channels)
-    section = image.load_cube(roi, channels)
-    log.info("Stack shape is %s, dtype is %s", stack.shape, stack.dtype)
-    aver = np.mean(section,  axis=(1,2))
-    mdn = np.median(section,  axis=(1,2))
-    std = np.std(section, axis=(1,2))
-    metadata = image.metadata()
-    log.info("Average is %s", aver)
-    log.info("StdDev is %s", std)
-    display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    title = f"Image: {image.name()}\n" \
-        f"{metadata['maker']} {metadata['camera']}, Exposure: {metadata['exposure']} [s]\n" \
-        f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" \
-        f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            cmap = plot_cmap(channels)
-            edge_color = plot_edge_color(channels)
-            plot_image(fig, axes[row][col], stack[i], roi, channels[i], aver[i], mdn[i], std[i], cmap[i], edge_color[i])
-    plt.show()
-
-
-def bias_histogram(args):
-    channels = valid_channels(args.channels)
-    log.info("Loading %s channels in this order", " ".join(channels))
-    decimate = args.every
-    dcm = fractions.Fraction(1, decimate)
-    image = FITSImage(args.input_file)
-    roi = image.roi(args.x0, args.y0, args.width, args.height)
-    stack = image.load_cube(channels=channels)
-    section = image.load_cube(roi, channels)
-    log.info("Stack shape is %s, dtype is %s", stack.shape, stack.dtype)
-    aver = np.mean(section,  axis=(1,2))
-    mdn = np.median(section,  axis=(1,2))
-    std = np.std(section, axis=(1,2))
-    metadata = image.metadata()
-    log.info("Average is %s", aver)
-    log.info("StdDev is %s", std)
-    display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    title = f"Image: {image.name()}\n" \
-        f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-        f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols (decimated {dcm})\n" \
-        f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
-    
-
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            if args.histogram:
-                plot_histo(axes[row][col], stack[i], channels[i], decimate, aver[i], mdn[i], std[i])
-    plt.show()
-
-
-
-
-
-
-
-    title = f"Image: {image.name()}\n" \
-        f"{metadata['maker']} {metadata['camera']}, Exposure: {metadata['exposure']} [s]\n" \
-        f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" \
-        f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            cmap = plot_cmap(channels)
-            edge_color = plot_edge_color(channels)
-            plot_image(fig, axes[row][col], stack[i], roi, channels[i], aver[i], mdn[i], std[i], cmap[i], edge_color[i])
-    plt.show()
-
-   
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
@@ -224,9 +130,6 @@ def bias(args):
     command =  args.command
     if  command == 'create':
         bias_create(args)
-    elif command == 'pixels':
-        bias_display(args)
-
 
 
 # ===================================
@@ -238,8 +141,6 @@ def add_args(parser):
     subparser = parser.add_subparsers(dest='command')
 
     parser_create = subparser.add_parser('create', help='Create a 3D FITS cube master bias')
-    parser_pixels = subparser.add_parser('pixels', help='Display images from a 3D FITS cube master bias')
-    parser_histo  = subparser.add_parser('histo', help='Display histogram from a 3D FITS cube master bias')
    
     parser_create.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_create.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
@@ -253,26 +154,6 @@ def add_args(parser):
     parser_create.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
 
 
-    parser_pixels.add_argument('-i', '--input-file', type=vfile, required=True, help='Input FITS file')
-    parser_pixels.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_pixels.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_pixels.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_pixels.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_pixels.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
-                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
-                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-
-    parser_histo.add_argument('-i', '--input-file', type=vfile, required=True, help='Input FITS file')
-    parser_histo.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_histo.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
-                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
-                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser.add_argument('--every', type=int, metavar='<N>', default=10, help='Decimation factor for histogram plot')
-   
-
 # ================
 # MAIN ENTRY POINT
 # ================
@@ -282,5 +163,5 @@ def main():
         add_args_func=add_args, 
         name=__name__, 
         version=__version__,
-        description="Master bias creation and analysis"
+        description="Master bias creation"
         )
