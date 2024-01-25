@@ -65,7 +65,7 @@ def fit_estimator(estimator, exptime, signal, channel):
 def compute_signal_noise(path, x0, y0, width, height, channels):
     image = RawImage(path)
     roi = image.roi(x0, y0, width, height)
-    section = image.debayered(roi, channels).astype(float, copy=False) - np.array(image.black_levels(channels)).reshape(len(channels), 1, 1)
+    section = image.debayered(roi, channels).astype(np.float32, copy=False) - np.array(image.black_levels(channels)).reshape(len(channels), 1, 1)
     exptime = float(image.exif()['exposure'])
     exptime = np.array([exptime for ch in channels])
     signal = np.mean(section, axis=(1,2))
