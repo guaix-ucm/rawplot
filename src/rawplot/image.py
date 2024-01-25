@@ -19,19 +19,19 @@ import fractions
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat01, valid_channels
-from lica.rawimage import RawImage, SimulatedDarkImage
-from lica.mpl import plot_layout, plot_cmap, plot_edge_color, axes_reshape
+from lica.raw.exif import RawImage, SimulatedDarkImage
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
+from .util.mpl.plot import plot_layout, plot_cmap, plot_edge_color, plot_image, plot_histo, axes_reshape
 
 # -----------------------
 # Module global variables
@@ -42,33 +42,6 @@ log = logging.getLogger(__name__)
 # ------------------
 # Auxiliary fnctions
 # ------------------
-
-def plot_histo(axes, color_plane, title, decimate, average, median, stddev):
-    axes.set_title(fr'channel {title}: $median={median}, \mu={average},\;\sigma={stddev}$')
-    data = color_plane.reshape(-1)[::decimate]
-    bins=list(range(data.min(), data.max()+1))
-    axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
-    axes.set_xlabel('Pixel value [DN]')
-    axes.set_ylabel('Pixel count')
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.axvline(x=average, linestyle='--', color='r', label="mean")
-    axes.axvline(x=median, linestyle='--', color='k', label="median")
-    axes.legend()
-
-
-def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colormap, edgecolor):
-    axes.set_title(fr'{title}: $median={median}, \mu={average},\;\sigma={stddev}$')
-    im = axes.imshow(color_plane, cmap=colormap)
-    # Create a Rectangle patch
-    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
-                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
-    axes.add_patch(rect)
-    divider = make_axes_locatable(axes)
-    cax = divider.append_axes('right', size='5%', pad=0.10)
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
 
 
 # -----------------------
@@ -87,9 +60,9 @@ def image(args):
     stack = image.debayered(channels=channels)
     section = image.debayered(roi, channels)
     log.info("Stack shape is %s, dtype is %s", stack.shape, stack.dtype)
-    aver = np.ndarray.round( np.mean(section,  axis=(1,2)), 1)
-    mdn = np.ndarray.round( np.median(section,  axis=(1,2)), 1)
-    std = np.ndarray.round( np.std(section, axis=(1,2)), 2)
+    aver = np.mean(section,  axis=(1,2))
+    mdn = np.median(section,  axis=(1,2))
+    std = np.std(section, axis=(1,2))
     metadata = image.exif()
     log.info("average shape is %s", aver.shape)
     log.info("stddev shape is %s", std.shape)
