@@ -74,7 +74,10 @@ def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colo
 def plot_histo(axes, color_plane, title, decimate, average, median, stddev):
     axes.set_title(fr'channel {title}: $median={median:.2f}, \mu={average:.2f},\;\sigma={stddev:.2f}$')
     data = color_plane.reshape(-1)[::decimate]
-    bins=list(range(data.min(), data.max()+1))
+    if data.dtype  in (np.uint16, np.uint32,):
+        bins=list(range(data.min(), data.max()+1))
+    else:
+        bins='auto'
     axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
     axes.set_xlabel('Pixel value [DN]')
     axes.set_ylabel('Pixel count')

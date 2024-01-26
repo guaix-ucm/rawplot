@@ -55,29 +55,29 @@ def image_common(args):
     if args.sim_dark is not None:
         image = SimulatedDarkImage(args.input_file, n_roi, channels, dk_current=args.sim_dark)
     else:
-        factory =  factory = ImageLoaderFactory()
+        factory =  ImageLoaderFactory()
         image = factory.image_from(args.input_file, n_roi=None, channels=channels)
-   
     stack = image.load()
-    section = factory.image_from(args.input_file, n_roi=n_roi, channels=channels)
-    roi = section.roi()
-    log.info("Stack shape is %s, dtype is %s", stack.shape, stack.dtype)
+    image_section = factory.image_from(args.input_file, n_roi=n_roi, channels=channels)
+    section = image_section.load()
+    roi = image_section.roi()
     aver = np.mean(section,  axis=(1,2))
     mdn = np.median(section,  axis=(1,2))
     std = np.std(section, axis=(1,2))
     metadata = image.metadata()
-    log.info("average shape is %s", aver.shape)
-    log.info("stddev shape is %s", std.shape)
-    return  roi, channels, stack, aver, mdn, std, metadata
+    log.info("section %s average is %s", roi, aver)
+    log.info("section %s stddev is %s", roi, std)
+    log.info("section %s median is %s", roi, mdn)
+    return  roi, channels, metadata, stack, aver, mdn, std
 
 
 def image_histo(args):
-    roi, channels, stack, aver, mdn, std, metadata = image_common(args)
+    roi, channels, metadata, stack, aver, mdn, std= image_common(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
     title = f"Image: {metadata['name']}\n" \
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols (decimated {dcm})\n" \
+            f"Color Plane Size: {metadata['height']} rows x {metadata['width']} cols (decimated {dcm})\n" \
             f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
@@ -94,10 +94,10 @@ def image_histo(args):
 
 
 def image_pixels(args):
-    decimate, dcm, roi, channels, stack, aver, mdn, std, metadata = image_common(args)
+    roi, channels, metadata, stack, aver, mdn, std = image_common(args)
     title = f"Image: {metadata['name']}\n" \
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" \
+            f"Color Plane Size: {metadata['height']} rows x {metadata['width']} cols\n" \
             f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
@@ -120,7 +120,7 @@ def image(args):
     if  command == 'pixels':
         image_pixels(args)
     else:
-        image_hosto(args)
+        image_histo(args)
 
 
 # ===================================
@@ -134,17 +134,6 @@ def add_args(parser):
     parser_pixels = subparser.add_parser('pixels', help='Display image pixels')
     parser_histo  = subparser.add_parser('histo', help='Display image histogram')
 
-    parser_histo.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
-    parser_histo.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_histo.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
-                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
-                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser_histo.add_argument('--every', type=int, metavar='<N>', default=10, help='Decimation factor for histogram plot')
-    parser_histo.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
-
     parser_pixels.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
     parser_pixels.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_pixels.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
@@ -154,6 +143,19 @@ def add_args(parser):
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
+
+    parser_histo.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
+    parser_histo.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
+    parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser_histo.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
+                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot')
+    parser_histo.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
+
+   
 
 
 # ================
