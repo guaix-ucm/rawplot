@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 from lica.cli import execute
-from lica.validators import vdir, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat01, valid_channels
 from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
@@ -34,6 +34,7 @@ from lica.misc import file_paths
 
 from .._version import __version__
 from ..util.mpl.plot import plot_layout, axes_reshape
+from .chart1 import ptc_chart1
 
 # ----------------
 # Module constants
@@ -53,6 +54,7 @@ DATA = [
     ["Chart 7", "shot noise vs. signal",                    "log rms $e^{-}$ vs. log $e^{-}$"],
     ["Chart 8", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
 ]
+
 
 # -----------------------
 # Module global variables
@@ -91,15 +93,33 @@ def ptc_charts(args):
 
 def ptc(args):
     command =  args.command
-    if  command == 'charts':
-        ptc_charts(args)
-
+    function = CHARTS_TABLE[command]
+    function(args)
 
 
 def add_args(parser):
     subparser = parser.add_subparsers(dest='command')
-    parser_charts = subparser.add_parser('charts', help='Display avaliable PTC charts in matplotlib')
+    parser_charts = subparser.add_parser('charts', help='Plot avaliable PTC charts in matplotlib')
 
+    parser_chart1 = subparser.add_parser('chart1', help='Plot read, shot, FPN (total noise) vs. signal')
+    parser_chart1.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser_chart1.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
+    parser_chart1.add_argument('-b', '--master-bias', type=vfile, default=None, help='Master Bias (3D FITS cube)')
+    parser_chart1.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_chart1.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_chart1.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
+    parser_chart1.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser_chart1.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
+                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_chart1.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+
+
+
+CHARTS_TABLE = {
+    'charts': ptc_charts,
+    'chart1': ptc_chart1,
+}
 
 # ================
 # MAIN ENTRY POINT
