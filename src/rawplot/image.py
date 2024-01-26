@@ -20,8 +20,6 @@ import fractions
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-
 from lica.cli import execute
 from lica.validators import vfile, vfloat01, valid_channels
 from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
@@ -51,7 +49,9 @@ log = logging.getLogger(__name__)
 
 def image_common(args):   
     channels = valid_channels(args.channels)
+    log.info("Working with %d channels: %s", len(channels), channels)
     n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
+    log.info("Normalized ROI is %s", n_roi)
     if args.sim_dark is not None:
         image = SimulatedDarkImage(args.input_file, n_roi, channels, dk_current=args.sim_dark)
     else:
@@ -77,8 +77,8 @@ def image_histo(args):
     dcm = fractions.Fraction(1, decimate)
     title = f"Image: {metadata['name']}\n" \
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {metadata['height']} rows x {metadata['width']} cols (decimated {dcm})\n" \
-            f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows (decimated {dcm})\n" \
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
     fig.suptitle(title)
@@ -97,8 +97,8 @@ def image_pixels(args):
     roi, channels, metadata, stack, aver, mdn, std = image_common(args)
     title = f"Image: {metadata['name']}\n" \
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {metadata['height']} rows x {metadata['width']} cols\n" \
-            f"Stats Section: {roi} {roi.height()} rows x {roi.width()} cols"
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
     fig.suptitle(title)

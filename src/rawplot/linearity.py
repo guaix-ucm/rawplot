@@ -25,10 +25,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
+
 from lica.cli import execute
 from lica.validators import vdir, vfloat01, valid_channels
-from lica.rawimage import RawImage, imageset_metadata
-from lica.mpl import plot_layout, axes_reshape, plot_linear_equation
+from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
 from lica.misc import file_paths
 
 # ------------------------
@@ -36,7 +36,7 @@ from lica.misc import file_paths
 # ------------------------
 
 from ._version import __version__
-
+from .util.mpl.plot import plot_layout, axes_reshape, plot_linear_equation
 # ----------------
 # Module constants
 # ----------------
@@ -62,11 +62,10 @@ def fit_estimator(estimator, exptime, signal, channel):
 
 # For single image in all channels at once
 # retuns 1D arrays, one row for each color channel
-def compute_signal_noise(path, x0, y0, width, height, channels):
-    image = RawImage(path)
-    roi = image.roi(x0, y0, width, height)
-    section = image.debayered(roi, channels).astype(np.float32, copy=False) - np.array(image.black_levels(channels)).reshape(len(channels), 1, 1)
-    exptime = float(image.exif()['exposure'])
+def compute_signal_noise(image):
+    channels = image.channels()
+    section = image.load().astype(np.float32, copy=False) - np.array(image.black_levels()).reshape(len(channels), 1, 1)
+    exptime = image.exposure()
     exptime = np.array([exptime for ch in channels])
     signal = np.mean(section, axis=(1,2))
     noise = np.std(section, axis=(1,2))
@@ -75,12 +74,14 @@ def compute_signal_noise(path, x0, y0, width, height, channels):
 
 # For an image list
 # returns 2D arrays [channel, datapoints ifor each channel]
-def compute_signal_noise_for(file_list, x0, y0, width, height, channels):
+def compute_signal_noise_for(file_list, n_roi, channels):
     signal_list = list()
     noise_list = list()
     exp_list =list()
+    factory =  ImageLoaderFactory()
     for path in file_list:
-        exptime, signal, noise = compute_signal_noise(path, x0, y0, width, height, channels)
+        image = factory.image_from(path, n_roi, channels) 
+        exptime, signal, noise = compute_signal_noise(image)
         signal_list.append(signal)
         noise_list.append(noise)
         exp_list.append(exptime)
@@ -152,18 +153,23 @@ def plot_linearity(axes, exptime, signal, good_exptime, good_signal, sat_exptime
 def linearity(args):
     channels = valid_channels(args.channels)
     log.info("Working with %d channels: %s", len(channels), channels)
+    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
+    log.info("Normalized ROI is %s", n_roi)
     # Take the A files only by decimating by a  user specified 'every' factor
-    file_list = sorted(file_paths(args.input_dir, args.flat_filter))[::args.every]
-    metadata = imageset_metadata(file_list[0], args.x0, args.y0, args.width, args.height, channels)
-    exptime, signal, noise = compute_signal_noise_for(file_list, args.x0, args.y0, args.width, args.height, channels)
+    file_list = sorted(file_paths(args.input_dir, args.image_filter))[::args.every]
+    factory =  ImageLoaderFactory()
+    image0 = factory.image_from(file_list[0], n_roi, channels)
+    roi = image0.roi()
+    metadata = image0.metadata()      
+    exptime, signal, noise = compute_signal_noise_for(file_list, n_roi,  channels)
     log.info("estimated signal & noise for %d points", exptime.shape[1])
     good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, 0.5)
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
     fig.suptitle(f"Linearity plot\n"
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n"
-            f"Color Plane Size: {metadata['rows']} rows x {metadata['cols']} cols\n" 
-            f"ROI Section: {metadata['roi']}, {metadata['roi'].height()} rows x {metadata['roi'].width()} cols")
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n"
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows")
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
         for col in range(0,display_cols):
@@ -180,8 +186,8 @@ def linearity(args):
 # ===================================
 
 def add_args(parser):
-    parser.add_argument('-d', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
-    parser.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
+    parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
     parser.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')

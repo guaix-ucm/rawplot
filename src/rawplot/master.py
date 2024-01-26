@@ -89,7 +89,7 @@ def master(args):
     log.info("Normalized ROI is %s", n_roi)
     if args.output_dir is None:
         output_dir = os.getcwd()
-    file_list = sorted(file_paths(args.input_dir, args.flat_filter))
+    file_list = sorted(file_paths(args.input_dir, args.image_filter))
     factory = ImageLoaderFactory()
     # get common metadata from the first image in the list
     image0 = factory.image_from(file_list[0], n_roi, channels)
@@ -138,7 +138,7 @@ def master(args):
 
 def add_args(parser):
     parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
-    parser.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
+    parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e flat*, dark*)')
     parser.add_argument('-p', '--output-prefix', type=str, required=True, help='Output file prefix')
     parser.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
     parser.add_argument('-t', '--image-type',  choices=['BIAS', 'DARK', 'FLAT', 'OBJECT'], default='BIAS', help='Image type. (default: %(default)s)')
