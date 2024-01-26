@@ -62,22 +62,29 @@ def fill_header(header, metadata, img, comment=None):
     header['CAMERA'] = (metadata['camera'], 'Sensor')
     header['ISO'] = (metadata['iso'], 'Sensor')
     header['DATE-OBS'] = (metadata['datetime'], 'When taken')
+    header['IMAGETYP'] = (metadata['imagetyp'], 'Image type')
     if comment:
-         header['comment'] = comment
-    header['comment'] = f'Created with {os.path.basename(sys.argv[0])}'
+         header['COMMENT'] = comment
+    header['COMMENT'] = f'Created with {os.path.basename(sys.argv[0])}'
 
 
 def output_path(output_dir, prefix, metadata, roi, tag):
-    width = metadata['width'] // 2
-    height = metadata['height'] // 2
+    width = metadata['width']
+    height = metadata['height']
     channels = metadata['channels'].replace(' ', '_')
     filename = f"{prefix}_{tag}_x{roi.x0:04d}_y{roi.y0:04d}_{width:04d}x{height:04d}_{channels}.fit"
     return os.path.join(output_dir, filename)
 
 
-def bias_create(args):
+# -----------------------
+# AUXILIARY MAIN FUNCTION
+# -----------------------
+
+
+def master(args):
     channels = CHANNELS
-    n_roi = NormRoi()
+    n_roi = NormRoi(0,0,1,1)
+    log.info("Normalized ROI is %s", n_roi)
     if args.output_dir is None:
         output_dir = os.getcwd()
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
@@ -87,6 +94,7 @@ def bias_create(args):
     roi = image0.roi()
     h, w = image0.shape()
     metadata = image0.metadata()
+    metadata['imagetyp'] = args.image_type
    
     images = [factory.image_from(path, n_roi, channels) for path in file_list]
     log.info("Begin loading %d images into RAM with %s channels, %d x %d each", len(images), ",".join(channels), w, h)
@@ -122,42 +130,27 @@ def bias_create(args):
         hdu.writeto(path, overwrite=True)
 
 
-# -----------------------
-# AUXILIARY MAIN FUNCTION
-# -----------------------
-
-def bias(args):
-    command =  args.command
-    if  command == 'create':
-        bias_create(args)
-
-
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
 # ===================================
 
 def add_args(parser):
-
-    subparser = parser.add_subparsers(dest='command')
-
-    parser_create = subparser.add_parser('create', help='Create a 3D FITS cube master bias')
-   
-    parser_create.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
-    parser_create.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
-    parser_create.add_argument('-p', '--output-prefix', type=str, required=True, help='Output file prefix')
-    parser_create.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
-    parser_create.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
-    parser_create.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')
-
-
+    parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser.add_argument('-f', '--flat-filter', type=str, required=True, help='Flat Images filter, glob-style')
+    parser.add_argument('-p', '--output-prefix', type=str, required=True, help='Output file prefix')
+    parser.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
+    parser.add_argument('-t', '--image-type',  choices=['BIAS', 'DARK', 'FLAT', 'OBJECT'], default='BIAS', help='Image type. (default: %(default)s)')
+    parser.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
+    parser.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')
+ 
 # ================
 # MAIN ENTRY POINT
 # ================
 
 def main():
-    execute(main_func=bias, 
+    execute(main_func=master, 
         add_args_func=add_args, 
         name=__name__, 
         version=__version__,
-        description="Master bias creation"
-        )
+        description="Create a averaged master 3D FITS cube from a list of not-debayered color images"
+    )

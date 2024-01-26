@@ -55,7 +55,7 @@ rawplot-image = "rawplot.image:main"
 rawplot-snr = "rawplot.snr:main"
 rawplot-linearity = "rawplot.linearity:main"
 rawplot-plan = "rawplot.plan:main"
-rawplot-bias = "rawplot.bias:main"
+rawplot-master = "rawplot.master:main"
 
 [tool.setuptools]
 #script-files = ["scripts/photo.sh",]
