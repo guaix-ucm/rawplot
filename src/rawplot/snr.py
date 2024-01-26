@@ -34,6 +34,7 @@ from lica.misc import file_paths
 
 from ._version import __version__
 from .util.mpl.plot import plot_layout, axes_reshape
+from .util.common import preliminary_tasks
 
 # ----------------
 # Module constants
@@ -130,17 +131,9 @@ def measure_readout_noise(image_a, image_b):
 # -----------------------
 
 def snr(args):
-    channels = valid_channels(args.channels)
-    log.info("Working with %d channels: %s", len(channels), channels)
-    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
-    log.info("Normalized ROI is %s", n_roi)
+    file_list, roi, n_roi, channels, metadata = preliminary_tasks(args)
     use_stops = args.stops
-    full_scale = args.full_scale
-    file_list = sorted(file_paths(args.input_dir, args.image_filter))[::args.every]
-    factory =  ImageLoaderFactory()
-    image0 = factory.image_from(file_list[0], n_roi, channels)
-    roi = image0.roi()
-    metadata = image0.metadata()      
+    full_scale = args.full_scale    
     signals, snrs = measure_snr_for(file_list, n_roi, channels)
     if(args.bias_filter):
         isos, noises = measure_readout_noise_for(file_list, n_roi, channels)

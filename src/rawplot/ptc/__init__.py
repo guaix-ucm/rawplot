@@ -41,6 +41,19 @@ from ..util.mpl.plot import plot_layout, axes_reshape
 
 SQRT_2 = math.sqrt(2)
 
+COLUMN_LABELS = ["Chart", "Plot", "Units"]
+
+DATA = [
+    ["Chart 1", "read, shot, FPN (total noise) vs. signal", "log rms DN vs. log DN"],
+    ["Chart 2", "read, shot noise vs. signal",               "log rms DN vs. log DN"],
+    ["Chart 3", "shot noise vs. signal",                    "log rms DN vs. log DN"],
+    ["Chart 4", "FPN vs. signal",                           "log rms DN vs. log DN"],
+    ["Chart 5", "read, shot, FPN (total noise) vs. signal", "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Chart 6", "ead, shot noise vs. signal",               "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Chart 7", "shot noise vs. signal",                    "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Chart 8", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
+]
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -54,16 +67,22 @@ log = logging.getLogger(__name__)
 def ptc_charts(args):
     log.info("Displaying PTC charts")
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6), layout='tight')
-    t = fig.suptitle("Avaliable Photon Transfer Charts")
-    t.set_url('https://www.google.com/')
-    data = [[1, 2, 3], [5, 6, 7], [8, 9, 10]]
-    column_labels = ["Column 1", "Column 2", "Column 3"]
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 3), layout='tight')
+    fig.suptitle("Available Photon Transfer Charts")
     ax.axis("tight")
     ax.axis("off")
     ax.set_url('https://www.google.com/')
-    kk = ax.table(cellText=data, colLabels=column_labels, loc="center")
-    kk.set_url('https://www.google.com/')
+    table = ax.table(
+        cellText=DATA, 
+        colLabels=COLUMN_LABELS, 
+        colWidths=(1/6, 3/6, 2/6),
+        colLoc="center",
+        loc="center",
+        cellLoc="left",
+    )
+    table.auto_set_font_size(False)
+    #table.set_fontsize(11)
+    table.set_url('https://www.google.com/')
     plt.show()
 
 # ===================================
