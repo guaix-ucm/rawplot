@@ -54,7 +54,7 @@ log = logging.getLogger(__name__)
 # ------------------
 
 
-def fill_header(header, metadata, img, comment=None):
+def fill_header(header, metadata, img, history=None):
     header['CHANNELS'] = (metadata['channels'], 'Channel stored order')
     header['SECTION'] = (metadata['roi'], 'NumPy format')
     header['EXPTIME'] = (float(img.exposure()), '[s]')
@@ -63,16 +63,17 @@ def fill_header(header, metadata, img, comment=None):
     header['ISO'] = (metadata['iso'], 'Sensor')
     header['DATE-OBS'] = (metadata['datetime'], 'When taken')
     header['IMAGETYP'] = (metadata['imagetyp'], 'Image type')
-    if comment:
-         header['COMMENT'] = comment
     header['COMMENT'] = f'Created with {os.path.basename(sys.argv[0])}'
+    if history:
+         header['HISTORY'] = history
 
 
 def output_path(output_dir, prefix, metadata, roi, tag):
     width = metadata['width']
     height = metadata['height']
     channels = metadata['channels'].replace(' ', '_')
-    filename = f"{prefix}_{tag}_x{roi.x0:04d}_y{roi.y0:04d}_{width:04d}x{height:04d}_{channels}.fit"
+    imagetyp = metadata['imagetyp'].lower()
+    filename = f"{prefix}_{imagetyp}_{tag}.fit"
     return os.path.join(output_dir, filename)
 
 
@@ -84,6 +85,7 @@ def output_path(output_dir, prefix, metadata, roi, tag):
 def master(args):
     channels = CHANNELS
     n_roi = NormRoi(0,0,1,1)
+    image_type = args.image_type
     log.info("Normalized ROI is %s", n_roi)
     if args.output_dir is None:
         output_dir = os.getcwd()
@@ -94,7 +96,7 @@ def master(args):
     roi = image0.roi()
     h, w = image0.shape()
     metadata = image0.metadata()
-    metadata['imagetyp'] = args.image_type
+    metadata['imagetyp'] = image_type
    
     images = [factory.image_from(path, n_roi, channels) for path in file_list]
     log.info("Begin loading %d images into RAM with %s channels, %d x %d each", len(images), ",".join(channels), w, h)
@@ -103,30 +105,30 @@ def master(args):
     stack4d = np.stack(sections)
 
     # Average bias
-    log.info("Calculating Stack average")
+    log.info("Calculating master %s average", image_type)
     master_aver = np.mean(stack4d, axis=0)
     path = output_path(output_dir, args.output_prefix, metadata, roi, 'aver')
-    log.info("Saving master bias in %s", path)
+    log.info("Saving master %s file in %s", image_type, path)
     hdu = fits.PrimaryHDU(master_aver)
-    fill_header(hdu.header, metadata, image0, comment=f'Master bias from {len(images)} images stack')
+    fill_header(hdu.header, metadata, image0, history=f' Created master {image_type} from {len(images)} images')
     hdu.writeto(path, overwrite=True)
     # Standard deviation Pixel map
     if args.stdev_map:
-        log.info("Calculating stddev map")
+        log.info("Calculating master %s stddev map", image_type)
         stdev_map = np.std(stack4d, axis=0)
         path = output_path(output_dir, args.output_prefix, metadata, roi, 'stdev')
         log.info("Saving stdev map in %s", path)
         hdu = fits.PrimaryHDU(stdev_map)
-        fill_header(hdu.header, metadata, image0, comment=f'Standard dev. bias pixel map from {len(images)} images stack')
+        fill_header(hdu.header, metadata, image0, history=f'Created std. dev. {image_type} pixel map from {len(images)} images')
         hdu.writeto(path, overwrite=True)
     # Maximun puxel map
     if args.max_map:
-        log.info("Calculating max pixel map")
+        log.info("Calculating master %s max pixel map", image_type)
         max_map = np.max(stack4d, axis=0)
         path = output_path(output_dir, args.output_prefix, metadata, roi, 'max')
         log.info("Saving max map in %s", path)
         hdu = fits.PrimaryHDU(max_map)
-        fill_header(hdu.header, metadata, image0, comment=f'Maximum pixel map from {len(images)} images stack')
+        fill_header(hdu.header, metadata, image0, history=f'Created max. {image_type} pixel map from {len(images)} images')
         hdu.writeto(path, overwrite=True)
 
 
