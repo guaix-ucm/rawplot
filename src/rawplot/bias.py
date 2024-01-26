@@ -77,9 +77,9 @@ def output_path(output_dir, prefix, metadata, roi, tag):
 
 def bias_create(args):
     channels = CHANNELS
+    n_roi = NormRoi()
     if args.output_dir is None:
         output_dir = os.getcwd()
-    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
     factory = ImageLoaderFactory()
     # get common metadata from the first image in the list
@@ -148,10 +148,6 @@ def add_args(parser):
     parser_create.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
     parser_create.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
     parser_create.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')
-    parser_create.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_create.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_create.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_create.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
 
 
 # ================
