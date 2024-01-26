@@ -28,7 +28,7 @@ from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 from lica.cli import execute
 from lica.validators import vdir, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
+from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
 # ------------------------

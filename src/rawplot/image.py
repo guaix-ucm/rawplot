@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
+from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
 # ------------------------
