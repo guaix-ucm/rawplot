@@ -82,15 +82,15 @@ def bias_create(args):
     n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
     file_list = sorted(file_paths(args.input_dir, args.flat_filter))
     factory = ImageLoaderFactory()
-    loader0 = factory.image_from(file_list[0], n_roi, channels)
-    roi = loader0.roi()
-    metadata = loader0.metadata()
-    h, w = loader0.shape()
-
-    # ROI from the fist image
-    loaders = [factory.image_from(path, n_roi, channels) for path in file_list]
-    log.info("Begin loading %d images into RAM with %s channels, %d x %d each", len(loaders), ",".join(channels), w, h)
-    sections = [loader.load().astype(np.float32, copy=False) for loader in loaders]
+    # get common metadata from the first image in the list
+    image0 = factory.image_from(file_list[0], n_roi, channels)
+    roi = image0.roi()
+    h, w = image0.shape()
+    metadata = image0.metadata()
+   
+    images = [factory.image_from(path, n_roi, channels) for path in file_list]
+    log.info("Begin loading %d images into RAM with %s channels, %d x %d each", len(images), ",".join(channels), w, h)
+    sections = [image.load().astype(np.float32, copy=False) for image in images]
     log.info("Loaded %d images into RAM", len(sections))
     stack4d = np.stack(sections)
 
@@ -100,7 +100,7 @@ def bias_create(args):
     path = output_path(output_dir, args.output_prefix, metadata, roi, 'aver')
     log.info("Saving master bias in %s", path)
     hdu = fits.PrimaryHDU(master_aver)
-    fill_header(hdu.header, metadata, loader0, comment=f'Master bias from {len(loaders)} images stack')
+    fill_header(hdu.header, metadata, image0, comment=f'Master bias from {len(images)} images stack')
     hdu.writeto(path, overwrite=True)
     # Standard deviation Pixel map
     if args.stdev_map:
@@ -109,7 +109,7 @@ def bias_create(args):
         path = output_path(output_dir, args.output_prefix, metadata, roi, 'stdev')
         log.info("Saving stdev map in %s", path)
         hdu = fits.PrimaryHDU(stdev_map)
-        fill_header(hdu.header, metadata, loader0, comment=f'Standard dev. bias pixel map from {len(loaders)} images stack')
+        fill_header(hdu.header, metadata, image0, comment=f'Standard dev. bias pixel map from {len(images)} images stack')
         hdu.writeto(path, overwrite=True)
     # Maximun puxel map
     if args.max_map:
@@ -118,7 +118,7 @@ def bias_create(args):
         path = output_path(output_dir, args.output_prefix, metadata, roi, 'max')
         log.info("Saving max map in %s", path)
         hdu = fits.PrimaryHDU(max_map)
-        fill_header(hdu.header, metadata, loader0, comment=f'Maximum pixel map from {len(loaders)} images stack')
+        fill_header(hdu.header, metadata, image0, comment=f'Maximum pixel map from {len(images)} images stack')
         hdu.writeto(path, overwrite=True)
 
 

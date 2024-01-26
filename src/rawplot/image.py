@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NRect, CHANNELS
+from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
 from lica.misc import file_paths
 
 # ------------------------
@@ -51,7 +51,7 @@ log = logging.getLogger(__name__)
 
 def image_common(args):   
     channels = valid_channels(args.channels)
-    n_roi = NRect(args.x0, args.y0, args.width, args.height)
+    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
     if args.sim_dark is not None:
         image = SimulatedDarkImage(args.input_file, n_roi, channels, dk_current=args.sim_dark)
     else:
