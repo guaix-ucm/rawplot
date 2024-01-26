@@ -57,6 +57,7 @@ def image_common(args):
     else:
         factory =  ImageLoaderFactory()
         image = factory.image_from(args.input_file, n_roi=None, channels=channels)
+    metadata = image.metadata()
     stack = image.load()
     image_section = factory.image_from(args.input_file, n_roi=n_roi, channels=channels)
     section = image_section.load()
@@ -64,7 +65,6 @@ def image_common(args):
     aver = np.mean(section,  axis=(1,2))
     mdn = np.median(section,  axis=(1,2))
     std = np.std(section, axis=(1,2))
-    metadata = image.metadata()
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
@@ -149,8 +149,8 @@ def add_args(parser):
     parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_histo.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
-                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
+    parser_histo.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
+                    choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot')
     parser_histo.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')

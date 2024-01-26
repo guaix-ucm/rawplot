@@ -21,16 +21,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-from lica.validators import vfile, vfloat01, valid_channels
 from lica.cli import execute
-from lica.rawimage import RawImage, SimulatedDarkImage
-from lica.mpl import plot_layout, axes_reshape
+from lica.validators import vfile, vfloat01, valid_channels
+from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi, CHANNELS
+from lica.misc import file_paths
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
+from .util.mpl.plot import plot_layout, axes_reshape
 
 # -----------------------
 # Module global variables
@@ -63,13 +64,19 @@ def plot_hv(axes, xh, xv, H, V, title):
 
 def hv(args):
     channels = valid_channels(args.channels)
+    log.info("Working with %d channels: %s", len(channels), channels)
+    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
+    log.info("Normalized ROI is %s", n_roi)
     if args.sim_dark is not None:
-        image = SimulatedDarkImage(args.input_file, dk_current=args.sim_dark)
+        image = SimulatedDarkImage(args.input_file, n_roi, channels, dk_current=args.sim_dark)
     else:
-        image = RawImage(args.input_file)
-    roi = image.roi(args.x0, args.y0, args.width, args.height)
-    stack = image.debayered(roi, channels)
-    log.info("Stack shape is %s", stack.shape)
+        factory =  ImageLoaderFactory()
+        image = factory.image_from(args.input_file, n_roi=None, channels=channels)
+    metadata = image.metadata()
+    stack = image.load()
+    image_section = factory.image_from(args.input_file, n_roi=n_roi, channels=channels)
+    section = image_section.load()
+    roi = image_section.roi()
     Z, ROWS, COLS = stack.shape
     # Taking the mean from the image itself is more effective removing the DC component
     # than using the black levels
@@ -96,14 +103,13 @@ def hv(args):
     log.info("V shape is %s", V.shape)
     log.info("xv shape is %s", xv.shape)
     log.info("xh shape is %s", xh.shape)
-
+    title = f"Image: {metadata['name']}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    metadata = image.exif()
-    fig.suptitle(f"Image: {image.name()}\n"
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n"
-            f"Color Plane Size: {image.shape()[0]} rows x {image.shape()[1]} cols\n" 
-            f"ROI Section: {roi} {roi.height()} rows x {roi.width()} cols")
+    fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
         for col in range(0,display_cols):
@@ -125,7 +131,7 @@ def add_args(parser):
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser.add_argument('-c','--channels', choices=['R', 'Gr', 'Gb', 'G', 'B'], default=['R','G1','G2','B'], nargs='+', 
+    parser.add_argument('-c','--channels', choices=('R', 'Gr', 'Gb', 'G', 'B'), default=('R','Gr','Gb','B'), nargs='+', 
                     help='color plane(s) to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('-s', '--start', type=int, default=0, help='(Optional) Index to trim power spectrum DC component (recommended value between 2..4')
     parser.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
