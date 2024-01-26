@@ -79,11 +79,27 @@ def measure_total_noise_for(file_list, n_roi, channels, bias):
         log.info("From %s, signal %s, noise is %s", image.name(), dict(zip(channels, signal.tolist())), dict(zip(channels, noise.tolist())))
         signal_list.append(signal)
         total_noise_list.append(noise)
+    signals = np.stack(signal_list, axis=-1)
+    noises = np.stack(total_noise_list, axis=-1)
+    return signals, noises
+
+
+def measure_shot_plus_rdnoise_for(file_list, n_roi, channels, bias):
+    signal_list = list()
+    total_noise_list = list()
+    factory =  ImageLoaderFactory()
+    for path in file_list:
+        image = factory.image_from(path, n_roi, channels)
+        pixels = image.load().astype(float, copy=False) - bias
+        signal = np.mean(pixels, axis=(1,2))
+        noise = np.std(pixels, axis=(1,2))
+        log.info("From %s, signal %s, noise is %s", image.name(), dict(zip(channels, signal.tolist())), dict(zip(channels, noise.tolist())))
+        signal_list.append(signal)
+        total_noise_list.append(noise)
     signals = np.array(signal_list).transpose()
     noises = np.array(total_noise_list).transpose()
     log.info("TOTAL noises SHAPE is %s", noises.shape)
     return signals, noises
-
 
 # -----------------------
 # AUXILIARY MAIN FUNCTION
