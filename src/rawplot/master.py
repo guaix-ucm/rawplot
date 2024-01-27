@@ -29,7 +29,7 @@ from astropy.io import fits
 
 from lica.cli import execute
 from lica.validators import vdir, vfile, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, NormRoi, CHANNELS
+from lica.raw.loader import ImageLoaderFactory, NormRoi, CHANNELS
 from lica.misc import file_paths
 
 # ------------------------

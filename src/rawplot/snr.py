@@ -25,7 +25,7 @@ from matplotlib import ticker
 
 from lica.cli import execute
 from lica.validators import vdir, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
 # ------------------------
@@ -34,7 +34,7 @@ from lica.misc import file_paths
 
 from ._version import __version__
 from .util.mpl.plot import plot_layout, axes_reshape
-from .util.common import preliminary_tasks
+from .util.common import common_list_info
 
 # ----------------
 # Module constants
@@ -131,7 +131,7 @@ def measure_readout_noise(image_a, image_b):
 # -----------------------
 
 def snr(args):
-    file_list, roi, n_roi, channels, metadata = preliminary_tasks(args)
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
     use_stops = args.stops
     full_scale = args.full_scale    
     signals, snrs = measure_snr_for(file_list, n_roi, channels)

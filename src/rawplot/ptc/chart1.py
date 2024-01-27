@@ -25,7 +25,7 @@ from matplotlib import ticker
 
 from lica.cli import execute
 from lica.validators import vdir, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
 # ------------------------
@@ -34,7 +34,8 @@ from lica.misc import file_paths
 
 from .._version import __version__
 from ..util.mpl.plot import plot_layout, axes_reshape
-from ..util.common import preliminary_tasks
+from ..util.common import common_list_info, bias_from
+from ..util.analyzer.image import ImageAnalyzer, ImagePairAnalyzer
 
 # ----------------
 # Module constants
@@ -69,71 +70,53 @@ def plot_noise_vs_signal(axes, signal, channel, ylabel, units, **kwargs):
     axes.legend()
 
 
-def measure_signal_for(file_list, n_roi, channels, bias):
-    file_pairs = list(zip(file_list, file_list[1:]))[::2]
+def signal_and_total_noise_from(file_list, n_roi, channels, bias):
+    file_list = file_list[::2]
     signal_list = list()
-    factory =  ImageLoaderFactory()
-    for path_a, path_b in file_pairs:
-        image_a = factory.image_from(path_a, n_roi, channels)
-        image_b = factory.image_from(path_b, n_roi, channels)
-        pixels_a = image_a.load().astype(float, copy=False) - bias
-        pixels_b = image_b.load().astype(float, copy=False) - bias
-        signal = np.mean(pixels_a + pixels_b, axis=(1,2)) / 2
-        log.info("Average signal for image pair (%s, %s) = %s", image_a.name(), image_b.name(), signal)
-        signal_list.append(signal)
-    return np.stack(signal_list, axis=-1)
-
-def measure_total_noise_for(file_list, n_roi, channels, bias):
-    file_list = file_list[::2] # get first image of the pair
     noise_list = list()
-    factory =  ImageLoaderFactory()
     for path in file_list:
-        image = factory.image_from(path, n_roi, channels)
-        pixels = image.load().astype(float, copy=False) - bias
-        noise_var = np.var(pixels, axis=(1,2))
-        log.info("\u03C3\u00b2(total) for %s = %s", image.name(), noise_var)
+        analyzer = ImageAnalyzer(path, n_roi, channels, bias)
+        analyzer.run()
+        signal_list.append(analyzer.mean())
+        noise_var = analyzer.variance()
         noise_list.append(noise_var)
-    return np.stack(noise_list, axis=-1)
+        log.info("\u03C3\u00b2(total) for image %s = %s", analyzer.name(), noise_var)
+    return np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
 
-def measure_shot_plus_rdnoise_for(file_list, n_roi, channels, bias):
+def read_and_shot_noise_from(file_list, n_roi, channels, bias):
     file_pairs = list(zip(file_list, file_list[1:]))[::2]
     noise_list = list()
-    factory =  ImageLoaderFactory()
     for path_a, path_b in file_pairs:
-        image_a = factory.image_from(path_a, n_roi, channels)
-        image_b = factory.image_from(path_b, n_roi, channels)
-        pixels_a = image_a.load().astype(float, copy=False) - bias
-        pixels_b = image_b.load().astype(float, copy=False) - bias
-        noise_var = np.var(pixels_a - pixels_b, axis=(1,2)) / 2
-        log.info("\u03C3\u00b2(sh+rd) for image pair (%s, %s) = %s", image_a.name(), image_b.name(), noise_var)
+        analyzer = ImagePairAnalyzer(path_a, path_b, n_roi, channels, bias)
+        analyzer.run()
+        noise_var = analyzer.variance()
         noise_list.append(noise_var)
-    return np.stack(noise_list, axis=-1)
+        log.info("\u03C3\u00b2(sh+rd) for image pair %s = %s", analyzer.names(), noise_var)
+    return  np.stack(noise_list, axis=-1)
 
-def measure_fpn_noise(total_noise_var, shrd_noise_var):
-    diff = total_noise_var - shrd_noise_var
-    log.info("\u03C3\u00b2(fpn) shape is %s". diff.shape)
-    return diff
 
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
-def ptc_chart1(args):
-    file_list, roi, n_roi, channels, metadata = preliminary_tasks(args)
-    bias = ImageLoaderFactory().image_from(args.master_bias, n_roi, channels).load()
-    signal = measure_signal_for(file_list, n_roi, channels, bias)
-    total_noise_var = measure_total_noise_for(file_list, n_roi, channels, bias)
-    shrd_noise_var = measure_shot_plus_rdnoise_for(file_list, n_roi, channels, bias)
-    
-    fpn_var = total_noise_var - shrd_noise_var
-    rdnoise_var = np.full_like(signal, args.rd_noise**2)
-    shot_var = shrd_noise_var - rdnoise_var
 
+def ptc_chart1(args):
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    bias = bias_from(args)
+    signal, total_noise_var = signal_and_total_noise_from(file_list, n_roi, channels, bias)
+    shrd_noise_var = read_and_shot_noise_from(file_list, n_roi, channels, bias)
+    fpn_var = total_noise_var - shrd_noise_var
+    if args.bias_file is not None:
+        analyzer = ImageAnalyzer(args.bias_file, n_roi, channels)
+        analyzer.run()
+        rdnoise_var = np.full_like(signal, analyzer.mean().reshape(len(channels),-1))
+    else:
+        rdnoise_var = np.full_like(signal, args.rd_noise**2)
+    shot_var = shrd_noise_var - rdnoise_var
     total_noise = np.sqrt(total_noise_var)
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
     rd_noise = np.sqrt(rdnoise_var)
-
 
     log.info("TOTAL noises SHAPE is %s", total_noise.shape)
     display_rows, display_cols = plot_layout(channels)

@@ -25,7 +25,7 @@ from matplotlib import ticker
 
 from lica.cli import execute
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
-from lica.raw import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.misc import file_paths
 
 # ------------------------
@@ -104,16 +104,18 @@ def add_args(parser):
     parser_chart1 = subparser.add_parser('chart1', help='Plot read, shot, FPN (total noise) vs. signal')
     parser_chart1.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_chart1.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
-    parser_chart1.add_argument('-b', '--master-bias', type=vfile, default=None, help='Master Bias (3D FITS cube)')
     parser_chart1.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_chart1.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_chart1.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser_chart1.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser_chart1.add_argument('-r','--rd-noise', type=vfloat, metavar='<N>', default=1.0, help='Readout noise [DN] (default: %(default)s)')
+    parser_chart1.add_argument('-rd','--rd-noise', type=vfloat, metavar='<\u03C3>', default=1.0, help='Readout noise [DN] (default: %(default)s)')
     parser_chart1.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_chart1.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    group0 = parser_chart1.add_mutually_exclusive_group(required=False)
+    group0.add_argument('-bl', '--bias-level',  type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
+    group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
 
 
 
