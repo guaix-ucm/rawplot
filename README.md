@@ -160,7 +160,7 @@ At Signal level 19 DN approx. the shot noise equals the readout noise. At signal
 shot noise equals the Fixed Pattern Noise (FPN) (3 DN approx.)
 
 ```bash
-rawplot-ptc --console chart1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.25
+rawplot-ptc --console chart1 --read-noise 1.25 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr 
 ```
 
 ![Raspberry Pi HQ Camera PTC Chart plot](doc/images/ptc_noise_chart1.png)
