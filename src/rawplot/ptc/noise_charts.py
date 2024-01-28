@@ -23,10 +23,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
-from lica.cli import execute
-from lica.validators import vdir, vfloat01, valid_channels
+
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
-from lica.misc import file_paths
+from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
+
 
 # ------------------------
 # Own modules and packages
@@ -35,7 +35,7 @@ from lica.misc import file_paths
 from .._version import __version__
 from ..util.mpl.plot import plot_layout, axes_reshape
 from ..util.common import common_list_info, bias_from
-from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
+
 from .common import plot_noise_vs_signal, signal_and_total_noise_from, read_and_shot_noise_from
 
 # ----------------

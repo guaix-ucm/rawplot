@@ -25,8 +25,8 @@ import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
-from lica.validators import vfloat
 from lica.misc import write_csv
+from lica.validators import vfloat
 
 # ------------------------
 # Own modules and packages
