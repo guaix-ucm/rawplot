@@ -69,7 +69,6 @@ log = logging.getLogger(__name__)
 
 def ptc_charts(args):
     log.info("Displaying PTC charts")
-
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 3), layout='tight')
     fig.suptitle("Available Photon Transfer Charts")
     ax.axis("tight")
@@ -85,7 +84,6 @@ def ptc_charts(args):
     )
     table.auto_set_font_size(False)
     #table.set_fontsize(11)
-    table.set_url('https://www.google.com/')
     plt.show()
 
 # ===================================

@@ -20,9 +20,6 @@ import logging
 # ---------------------
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import ticker
-
 
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
@@ -33,8 +30,8 @@ from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
 # ------------------------
 
 from .._version import __version__
-from ..util.mpl.plot import mpl_main_loop
-from ..util.common import common_list_info, bias_from, make_title_from
+from ..util.mpl.plot import mpl_main_plot_loop
+from ..util.common import common_list_info, bias_from, make_plot_title_from
 
 # ----------------
 # Module constants
@@ -119,8 +116,8 @@ def noise_chart1(args):
     shot_noise = np.sqrt(shot_noise)
     fpn_noise = np.sqrt(fpn_var)
     read_noise = np.sqrt(read_noise_var) # Now, read_noise is a numpy array
-    title = make_title_from("Total Noise Sources vs. Signal",metadata, roi)
-    mpl_main_loop(
+    title = make_plot_title_from("Total Noise Sources vs. Signal",metadata, roi)
+    mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         channels = channels,
@@ -148,8 +145,8 @@ def noise_chart2(args):
         read_noise = read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
-    title = make_title_from("Shot + Readout Noise vs. Signal", metadata, roi)
-    mpl_main_loop(
+    title = make_plot_title_from("Shot + Readout Noise vs. Signal", metadata, roi)
+    mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         channels = channels,
@@ -174,8 +171,8 @@ def noise_chart3(args):
         read_noise = read_noise
     )
     shot_noise = np.sqrt(shot_var)
-    title = make_title_from("Shot Noise vs. Signal", metadata, roi)
-    mpl_main_loop(
+    title = make_plot_title_from("Shot Noise vs. Signal", metadata, roi)
+    mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         channels = channels,
@@ -200,8 +197,8 @@ def noise_chart4(args):
         read_noise = read_noise
     )
     fpn_noise = np.sqrt(fpn_var)
-    title = make_title_from("Shot Noise vs. Signal", metadata, roi)
-    mpl_main_loop(
+    title = make_plot_title_from("Shot Noise vs. Signal", metadata, roi)
+    mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         channels = channels,

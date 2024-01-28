@@ -10,28 +10,20 @@
 # System wide imports
 # -------------------
 
-import logging
-
 # ---------------------
 # Thrid-party libraries
 # ---------------------
 
-import numpy as np
-
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory, NormRoi
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
-from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
-
 # -----------------------
 # Module global variables
 # -----------------------
 
-log = logging.getLogger(__name__)
 
 
 def ptc_parser_arguments_dn(parser):
@@ -49,29 +41,3 @@ def ptc_parser_arguments_dn(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
-
-
-def signal_and_total_noise_from(file_list, n_roi, channels, bias):
-    file_list = file_list[::2]
-    signal_list = list()
-    noise_list = list()
-    for path in file_list:
-        analyzer = ImageStatistics(path, n_roi, channels, bias)
-        analyzer.run()
-        signal_list.append(analyzer.mean())
-        noise_var = analyzer.variance()
-        noise_list.append(noise_var)
-        log.info("\u03C3\u00b2(total) for image %s = %s", analyzer.name(), noise_var)
-    return np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
-
-
-def read_and_shot_noise_from(file_list, n_roi, channels, bias):
-    file_pairs = list(zip(file_list, file_list[1:]))[::2]
-    noise_list = list()
-    for path_a, path_b in file_pairs:
-        analyzer = ImagePairStatistics(path_a, path_b, n_roi, channels, bias)
-        analyzer.run()
-        noise_var = analyzer.variance()
-        noise_list.append(noise_var)
-        log.info("\u03C3\u00b2(sh+rd) for image pair %s = %s", analyzer.names(), noise_var)
-    return  np.stack(noise_list, axis=-1)

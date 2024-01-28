@@ -19,10 +19,12 @@ import fractions
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi, FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
@@ -30,8 +32,8 @@ from lica.raw.analyzer.image import ImageStatistics
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import plot_layout, plot_cmap, plot_edge_color, plot_image, plot_histo, axes_reshape
-from .util.common import common_info, bias_from
+from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, plot_layout, plot_cmap, plot_edge_color, axes_reshape
+from .util.common import common_info, bias_from, make_plot_title_from
 
 # -----------------------
 # Module global variables
@@ -42,6 +44,60 @@ log = logging.getLogger(__name__)
 # ------------------
 # Auxiliary fnctions
 # ------------------
+
+
+def plot_histo(axes, i, channel, xlabel, ylabel, x, *args, **kwargs):
+    title_list = list()
+    title_list.append( f"{channel}:")
+    decimate = 10
+    for key, val in kwargs.items():
+        if key == 'median':
+            title_list.append(f'median={val[i]:.2f}')
+            axes.axvline(x=val[i], linestyle='--', color='k', label="median")
+        elif key == 'mean':
+            title_list.append(fr'$\mu={val[i]:.2f}$')
+            axes.axvline(x=val[i], linestyle='--', color='r', label="mean")
+        elif key == 'stddev':
+             title_list.append(fr'$\sigma={val[i]:.2f}$')
+        elif key == 'decimate':
+            decimate = val
+    title = " ".join(title_list)
+    axes.set_title(title)
+    data = x.reshape(-1)[::decimate]
+    if data.dtype  in (np.uint16, np.uint32,):
+        bins=list(range(data.min(), data.max()+1))
+    else:
+        bins='auto'
+    axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
+    axes.set_xlabel(xlabel)
+    axes.set_ylabel(ylabel)
+    axes.grid(True,  which='major', color='silver', linestyle='solid')
+    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+  
+
+
+def plot_image(axes, i, channel, roi, colormap, edgecolor, pixels, *args, **kwargs):
+    title_list = list()
+    title_list.append( f"{channel}:")
+    for key, val in kwargs.items():
+        if key == 'median':
+            title_list.append(f'median={val[i]:.2f}')
+        elif key == 'mean':
+            title_list.append(fr'$\mu={val[i]:.2f}$')
+        elif key == 'stddev':
+             title_list.append(fr'$\sigma={val[i]:.2f}$')
+    title = " ".join(title_list)
+    axes.set_title(title)
+    im = axes.imshow(pixels, cmap=colormap)
+    # Create a Rectangle patch
+    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
+                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
+    axes.add_patch(rect)
+    divider = make_axes_locatable(axes)
+    cax = divider.append_axes('right', size='5%', pad=0.10)
+    axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
 
 
 # -----------------------
@@ -60,52 +116,48 @@ def image_histo(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     pixels = analyzer.pixels()
-    title = f"Image: {metadata['name']}\n" \
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows (decimated {dcm})\n" \
-            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
-    display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            plot_histo(axes[row][col], pixels[i], channels[i], decimate, aver[i], mdn[i], std[i])
-    plt.show()
+    title = make_plot_title_from(f"(Decimated {dcm}", metadata, roi)
+    mpl_main_plot_loop(
+        title    = title,
+        figsize  = (12, 9),
+        channels = channels,
+        plot_func = plot_histo,
+        xlabel = "Pixel value [DN]",
+        ylabel = "Pixel Count",
+        x     = pixels,
+        # Extra arguments
+        decimate = decimate,
+        mean = aver,
+        median = mdn,
+        stddev = std,
+    )
+
 
 
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     bias = bias_from(args)
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels).load()
     analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
-    pixels = analyzer.pixels()
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
-    title = f"Image: {metadata['name']}\n" \
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
-            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
-    display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            cmap = plot_cmap(channels)
-            edge_color = plot_edge_color(channels)
-            plot_image(fig, axes[row][col], pixels[i], roi, channels[i], aver[i], mdn[i], std[i], cmap[i], edge_color[i])
-    plt.show()
+    title = make_plot_title_from("", metadata, roi)
+    mpl_main_image_loop(
+        title    = title,
+        figsize  = (12, 9),
+        channels = channels,
+        roi = roi,
+        plot_func = plot_image,
+        pixels    = pixels,
+        # Extra arguments
+        mean = aver,
+        median = mdn,
+        stddev = std
+    )
+
 
 def image(args):
     command =  args.command
@@ -170,4 +222,4 @@ def main():
         name=__name__, 
         version=__version__,
         description="Display RAW image or histogram in channels"
-        )
+    )

@@ -44,7 +44,8 @@ def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabe
         rotation_mode='anchor',
         rotation=angle,
         transform_rotates_text=True,
-        ha='left', va='top')
+        ha='left', va='top'
+    )
 
 def plot_cmap(channels):
     '''Plot color map of channels to display'''
@@ -59,35 +60,6 @@ def plot_layout(channels):
     # returns (nrows, ncols)
     return LAYOUT[len(channels)]
 
-def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colormap, edgecolor):
-    axes.set_title(fr'{title}: $median={median:.2f}, \mu={average:.2f},\;\sigma={stddev:.2f}$')
-    im = axes.imshow(color_plane, cmap=colormap)
-    # Create a Rectangle patch
-    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
-                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
-    axes.add_patch(rect)
-    divider = make_axes_locatable(axes)
-    cax = divider.append_axes('right', size='5%', pad=0.10)
-    fig.colorbar(im, cax=cax, orientation='vertical')
-
-
-def plot_histo(axes, color_plane, title, decimate, average, median, stddev):
-    axes.set_title(fr'channel {title}: $median={median:.2f}, \mu={average:.2f},\;\sigma={stddev:.2f}$')
-    data = color_plane.reshape(-1)[::decimate]
-    if data.dtype  in (np.uint16, np.uint32,):
-        bins=list(range(data.min(), data.max()+1))
-    else:
-        bins='auto'
-    axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
-    axes.set_xlabel('Pixel value [DN]')
-    axes.set_ylabel('Pixel count')
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.axvline(x=average, linestyle='--', color='r', label="mean")
-    axes.axvline(x=median, linestyle='--', color='k', label="median")
-    axes.legend()
-  
 def axes_reshape(axes, channels):
     '''Reshape Axes to be 2D arrays for 1x1 and 1x2 layout situations'''
     if len(channels) == 1:
@@ -96,9 +68,23 @@ def axes_reshape(axes, channels):
         return axes.reshape(1,2)
     return axes
 
+def mpl_main_image_loop(title, figsize, channels, roi, plot_func, pixels, *args, **kwargs):
+    display_rows, display_cols = plot_layout(channels)
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
+    fig.suptitle(title)
+    axes = axes_reshape(axes, channels)
+    for row in range(0,display_rows):
+        for col in range(0,display_cols):
+            i = 2*row+col
+            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
+                axes[row][col].set_axis_off()
+                break
+            cmap = plot_cmap(channels)
+            edge_color = plot_edge_color(channels)
+            plot_func(axes[row][col], i, channels[i], roi, cmap[i], edge_color[i], pixels[i], *args, **kwargs)
+    plt.show()
 
-
-def mpl_main_loop(title, figsize, channels, plot_func, xlabel, ylabel, x, *args, **kwargs):
+def mpl_main_plot_loop(title, figsize, channels, plot_func, xlabel, ylabel, x, *args, **kwargs):
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
     fig.suptitle(title)
