@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from lica.cli import execute
 from lica.validators import vfile, vfloat, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.analyzer.image import ImageStatistics
 from lica.misc import file_paths
 
 # ------------------------
@@ -31,7 +32,7 @@ from lica.misc import file_paths
 
 from ._version import __version__
 from .util.mpl.plot import plot_layout, plot_cmap, plot_edge_color, plot_image, plot_histo, axes_reshape
-from .util.analyzer.image import ImageAnalyzer
+
 from .util.common import common_info, bias_from
 # -----------------------
 # Module global variables
@@ -53,7 +54,7 @@ def image_histo(args):
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
     bias = bias_from(args)
-    analyzer = ImageAnalyzer(file_path, n_roi, channels, bias=bias, use_median=True)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias, use_median=True)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -81,7 +82,7 @@ def image_histo(args):
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     bias = bias_from(args)
-    analyzer = ImageAnalyzer(file_path, n_roi, channels, bias=bias, use_median=True)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias, use_median=True)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     pixels = analyzer.pixels()
