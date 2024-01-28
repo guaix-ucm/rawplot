@@ -133,7 +133,42 @@ rawplot-hv -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --start 3
 ```
 ![Raspberry Pi HQ HV Spectrogram](doc/images/hv.png)
 
+## Photon Transfer Charts (PTC)
+
+An (ongoing) series of PTC charts, based on the classic (Photon Transfer)[https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_] book have been included so far:
+
+|  CHART   |                Description               | Units                   |
+| :------: | :--------------------------------------- | :---------------------- |
+| Chart 1  | read, shot, FPN & total noise vs. signal | log2 rms DN vs. log2 DN |
+| Chart 2  | read + shot noise vs. signal             | log2 rms DN vs. log2 DN |
+| Chart 3  | shot noise vs. signal                    | log2 rms DN vs. log2 DN |
+| Chart 4  | FPN vs. signal                           | log2 rms DN vs. log2 DN |
+
+
+From the same dataset we used to determine the camera linearity, we generate PTC Chart #1, this time with a bigger ROI.
+For this technique to work, we require to have images taken in pairs at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
+
+
+```bash
+rawplot-ptc --console chart1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr
+```
+
+If not specified in the command line, the read noise line is at 0 DN (not shown) so that we estimate its value from the total noise plot.
+
+After plot analysis, it can be experimentally determined that the read noise is about 1.25 DN
+At Signal level 19 DN approx. the shot noise equals the readout noise. At signal level 268 DN approx. the
+shot noise equals the Fixed Pattern Noise (FPN) (3 DN approx.)
+
+```bash
+rawplot-ptc --console chart1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.25
+```
+
+![Raspberry Pi HQ Camera PTC Chart plot](doc/images/ptc_noise_chart1.png)
+
+
 ## Signal to Noise Ratio plot
+
+(likely to be removed if expanding the PTC commands)
 
 This plot is also based on the blog posts [Determining Sensor IQ Metrics: RN, FWC, PRNU, DR, gain – 1](https://www.strollswithmydog.com/determining-sensor-iq-metrics-rn-fwc-prnu-gain/) and [Determining Sensor IQ Metrics: RN, FWC, PRNU, DR, gain – 2](https://www.strollswithmydog.com/determining-sensor-iq-metrics-rn-fwc-prnu-dr-gain-2/)
 

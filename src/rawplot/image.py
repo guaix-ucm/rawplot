@@ -47,27 +47,20 @@ log = logging.getLogger(__name__)
 
 
 def plot_histo(axes, i, channel, xlabel, ylabel, x, *args, **kwargs):
-    title_list = list()
-    title_list.append( f"{channel}:")
-    decimate = 10
-    for key, val in kwargs.items():
-        if key == 'median':
-            title_list.append(f'median={val[i]:.2f}')
-            axes.axvline(x=val[i], linestyle='--', color='k', label="median")
-        elif key == 'mean':
-            title_list.append(fr'$\mu={val[i]:.2f}$')
-            axes.axvline(x=val[i], linestyle='--', color='r', label="mean")
-        elif key == 'stddev':
-             title_list.append(fr'$\sigma={val[i]:.2f}$')
-        elif key == 'decimate':
-            decimate = val
-    title = " ".join(title_list)
+    median = kwargs['median'][i]
+    mean = kwargs['mean'][i]
+    stddev = kwargs['stddev'][i]
+    decimate = kwargs.get('decimate', 10)
+    ylog = kwargs.get('ylog', False)
+    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
     data = x.reshape(-1)[::decimate]
     if data.dtype  in (np.uint16, np.uint32,):
         bins=list(range(data.min(), data.max()+1))
     else:
         bins='auto'
+    if ylog:
+        axes.set_yscale('log', base=10)
     axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
     axes.set_xlabel(xlabel)
     axes.set_ylabel(ylabel)
@@ -79,16 +72,10 @@ def plot_histo(axes, i, channel, xlabel, ylabel, x, *args, **kwargs):
 
 
 def plot_image(axes, i, channel, roi, colormap, edgecolor, pixels, *args, **kwargs):
-    title_list = list()
-    title_list.append( f"{channel}:")
-    for key, val in kwargs.items():
-        if key == 'median':
-            title_list.append(f'median={val[i]:.2f}')
-        elif key == 'mean':
-            title_list.append(fr'$\mu={val[i]:.2f}$')
-        elif key == 'stddev':
-             title_list.append(fr'$\sigma={val[i]:.2f}$')
-    title = " ".join(title_list)
+    median = kwargs['median'][i]
+    mean = kwargs['mean'][i]
+    stddev = kwargs['stddev'][i]
+    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=colormap)
     # Create a Rectangle patch
@@ -130,8 +117,8 @@ def image_histo(args):
         mean = aver,
         median = mdn,
         stddev = std,
+        ylog = args.y_log
     )
-
 
 
 def image_pixels(args):
@@ -210,6 +197,7 @@ def add_args(parser):
     group0 = parser_histo.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level',  type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
     parser_histo.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
 
 # ================

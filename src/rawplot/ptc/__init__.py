@@ -51,7 +51,7 @@ DATA = [
     ["Chart 3", "shot noise vs. signal",                    "log rms DN vs. log DN"],
     ["Chart 4", "FPN vs. signal",                           "log rms DN vs. log DN"],
     ["Chart 5", "read, shot, FPN (total noise) vs. signal", "log rms $e^{-}$ vs. log $e^{-}$"],
-    ["Chart 6", "ead, shot noise vs. signal",               "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Chart 6", "read, shot noise vs. signal",              "log rms $e^{-}$ vs. log $e^{-}$"],
     ["Chart 7", "shot noise vs. signal",                    "log rms $e^{-}$ vs. log $e^{-}$"],
     ["Chart 8", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
 ]

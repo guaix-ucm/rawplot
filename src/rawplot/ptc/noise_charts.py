@@ -113,7 +113,7 @@ def noise_chart1(args):
         read_noise = read_noise
     )
     total_noise = np.sqrt(total_var)
-    shot_noise = np.sqrt(shot_noise)
+    shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
     read_noise = np.sqrt(read_noise_var) # Now, read_noise is a numpy array
     title = make_plot_title_from("Total Noise Sources vs. Signal",metadata, roi)

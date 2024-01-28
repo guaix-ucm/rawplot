@@ -22,15 +22,12 @@ import functools
 # ---------------------
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 from astropy.io import fits
 
 from lica.cli import execute
 from lica.misc import file_paths
 from lica.validators import vdir, vfile, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory, NormRoi, CHANNELS
+from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI, CHANNELS
 
 
 # ------------------------
@@ -38,7 +35,6 @@ from lica.raw.loader import ImageLoaderFactory, NormRoi, CHANNELS
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import plot_layout, plot_cmap, plot_edge_color,  plot_image, plot_histo, axes_reshape
 
 # ----------------
 # Module constants
@@ -85,7 +81,7 @@ def output_path(output_dir, prefix, metadata, roi, tag):
 
 def master(args):
     channels = CHANNELS
-    n_roi = NormRoi(0,0,1,1)
+    n_roi = FULL_FRAME_NROI
     image_type = args.image_type
     log.info("Normalized ROI is %s", n_roi)
     if args.output_dir is None:

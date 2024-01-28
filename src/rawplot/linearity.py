@@ -28,15 +28,18 @@ from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import plot_layout, axes_reshape, plot_linear_equation
+from .util.mpl.plot import mpl_main_plot_loop
+from .util.common import common_list_info, bias_from, make_plot_title_from
+
 # ----------------
 # Module constants
 # ----------------
@@ -59,40 +62,8 @@ def fit_estimator(estimator, exptime, signal, channel):
     predicted = estimator.predict(T)
     return score, estimator.coef_[0], estimator.intercept_
 
-
-# For single image in all channels at once
-# retuns 1D arrays, one row for each color channel
-def compute_signal_noise(image):
-    channels = image.channels()
-    section = image.load().astype(np.float32, copy=False) - np.array(image.black_levels()).reshape(len(channels), 1, 1)
-    exptime = image.exposure()
-    exptime = np.array([exptime for ch in channels])
-    signal = np.mean(section, axis=(1,2))
-    noise = np.std(section, axis=(1,2))
-    log.info("Image: %s signal: %s, exptime: %s", image.name(), signal, exptime)
-    return exptime, signal, noise
-
-# For an image list
-# returns 2D arrays [channel, datapoints ifor each channel]
-def compute_signal_noise_for(file_list, n_roi, channels):
-    signal_list = list()
-    noise_list = list()
-    exp_list =list()
-    factory =  ImageLoaderFactory()
-    for path in file_list:
-        image = factory.image_from(path, n_roi, channels) 
-        exptime, signal, noise = compute_signal_noise(image)
-        signal_list.append(signal)
-        noise_list.append(noise)
-        exp_list.append(exptime)
-    noise = np.array(noise_list).transpose()
-    signal = np.array(signal_list).transpose()
-    exptime = np.array(exp_list).transpose()
-    return exptime, signal, noise
-
-
 # The saturation analysis is made on the assupotion that the measured noise
-# should be dominated by shot noise, whose sdtdev = sqrt(signal)
+# should be dominated by shot noise (ignoring FPN here ...mmm),
 # So we compute the threshold noise / sqrt(signal)
 # and discard values below a certain threshold (0.5 seems a reasonable compromise)
 def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
@@ -130,7 +101,46 @@ def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
     return good_exptime_list, good_signal_list, sat_exptime_list, sat_signal_list
 
 
-def plot_linearity(axes, exptime, signal, good_exptime, good_signal, sat_exptime, sat_signal, channel):
+def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, every=2):
+    file_list = file_list[::every]
+    signal_list = list()
+    noise_list = list()
+    exptime_list = list()
+    for path in file_list:
+        analyzer = ImageStatistics(path, n_roi, channels, bias)
+        analyzer.run()
+        signal = analyzer.mean()
+        signal_list.append(signal)
+        exptime = np.full_like(signal, analyzer.loader().exposure())
+        exptime_list.append(exptime)
+        noise = analyzer.std()
+        noise_list.append(noise)
+        log.info("\u03C3\u00b2(total) for image %s = %s", analyzer.name(), noise)
+    return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
+
+
+def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabel='y'):
+    angle = math.atan(slope)*(180/math.pi)
+    x0 = np.min(xdata); x1 = np.max(xdata)
+    y0 = np.min(ydata); y1 = np.max(ydata)
+    x = x0 + 0.35*(x1-x0)
+    y = y0 + 0.45*(y1-y0)
+    text = f"${ylabel} = {slope:.2f}{xlabel}{intercept:+.2f}$"
+    axes.text(x, y, text,
+        rotation_mode='anchor',
+        rotation=angle,
+        transform_rotates_text=True,
+        ha='left', va='top'
+    )
+
+
+def plot_linearity(axes, i, channel, xlabel, ylabel, x,  **kargs):
+    exptime = x[i]
+    signal = kargs['signal'][i]
+    good_exptime = kargs['good_exptime'][i]
+    good_signal = kargs['good_signal'][i]
+    sat_exptime = kargs['sat_exptime'][i]
+    sat_signal = kargs['sat_signal'][i]
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channel)
     fit_signal = estimator.predict(exptime.reshape(-1,1)) # For the whole range
@@ -139,8 +149,8 @@ def plot_linearity(axes, exptime, signal, good_exptime, good_signal, sat_exptime
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.plot(exptime, fit_signal, label=text)
     plot_linear_equation(axes, exptime, fit_signal, slope, intercept, xlabel='t', ylabel='S(t)')
-    axes.set_xlabel('Exposure time [s]')
-    axes.set_ylabel('Mean Signal [DN]')
+    axes.set_xlabel(xlabel)
+    axes.set_ylabel(ylabel)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -150,36 +160,30 @@ def plot_linearity(axes, exptime, signal, good_exptime, good_signal, sat_exptime
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
-def linearity(args):
-    channels = valid_channels(args.channels)
-    log.info("Working with %d channels: %s", len(channels), channels)
-    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
-    log.info("Normalized ROI is %s", n_roi)
-    # Take the A files only by decimating by a  user specified 'every' factor
-    file_list = sorted(file_paths(args.input_dir, args.image_filter))[::args.every]
-    factory =  ImageLoaderFactory()
-    image0 = factory.image_from(file_list[0], n_roi, channels)
-    roi = image0.roi()
-    metadata = image0.metadata()      
-    exptime, signal, noise = compute_signal_noise_for(file_list, n_roi,  channels)
-    log.info("estimated signal & noise for %d points", exptime.shape[1])
-    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, 0.5)
-    display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
-    fig.suptitle(f"Linearity plot\n"
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n"
-            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n"
-            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows")
-    axes = axes_reshape(axes, channels)
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = 2*row+col
-            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            plot_linearity(axes[row][col], exptime[i], signal[i], good_exptime[i], good_signal[i], sat_exptime[i], sat_signal[i], channels[i])
-    plt.show()
 
+def linearity(args):
+    log.info(" === LINEARITY PLOT === ")
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    bias = bias_from(args)
+    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias)
+    log.info("estimated signal & noise for %s points", exptime.shape)
+    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, 0.5)
+    title = make_plot_title_from("Linearity plot",metadata, roi)
+    mpl_main_plot_loop(
+        title    = title,
+        figsize  = (12, 9),
+        channels = channels,
+        plot_func = plot_linearity,
+        xlabel = "Exposure time [S]",
+        ylabel = "Signal [DN]",
+        x     = exptime,
+        # Optional arguments tpo be handled by the plotting function
+        signal = signal,
+        good_exptime = good_exptime,
+        good_signal  = good_signal,
+        sat_exptime  = sat_exptime,
+        sat_signal   = sat_signal
+    )
 
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
@@ -196,6 +200,10 @@ def add_args(parser):
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    group0 = parser.add_mutually_exclusive_group(required=False)
+    group0.add_argument('-bl', '--bias-level', type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
+    group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
+
 
 # ================
 # MAIN ENTRY POINT
@@ -207,4 +215,4 @@ def main():
         name=__name__, 
         version=__version__,
         description="Plot sensor exposure linearity per channel"
-        )
+    )
