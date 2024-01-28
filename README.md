@@ -112,7 +112,7 @@ rawplot-image --console histo -i images/20240117/linearity/flath_g1_001_3500000_
 Plots a linearity graph from a set of flat-field images. Also, tries to detect the sensor saturation point and fit a linear graph.
 
 ```bash
-rawplot-linearity -d images/20240117/linearity/ -f flat* -wi 1/20 -he 1/16 --every 2
+rawplot-linearity --console -i images/20240117/linearity/ -f flat* -wi 1/20 -he 1/16 --every 2
 ```
 
 The example shows a linearity plot measured in a small subset of the image center. Since our flat field captures were taken in A, B pairs, we pick every two images on the *sorted* image list. Our directory also contains dark images so we specify a `flat*` glob filter.
