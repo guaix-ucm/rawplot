@@ -31,7 +31,6 @@ from lica.misc import file_paths
 from lica.validators import vdir, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 
-
 # ------------------------
 # Own modules and packages
 # ------------------------

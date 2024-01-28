@@ -17,6 +17,7 @@ import numpy as np
 # Matplotlib related imports
 # --------------------------
 
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -56,8 +57,7 @@ def plot_edge_color(channels):
 def plot_layout(channels):
     '''Plot layout dimensions  as a fuction of channels to display'''
     # returns (nrows, ncols)
-    l = len(channels)
-    return LAYOUT[l]
+    return LAYOUT[len(channels)]
 
 def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colormap, edgecolor):
     axes.set_title(fr'{title}: $median={median:.2f}, \mu={average:.2f},\;\sigma={stddev:.2f}$')
@@ -95,3 +95,19 @@ def axes_reshape(axes, channels):
     if len(channels) == 2:
         return axes.reshape(1,2)
     return axes
+
+
+
+def mpl_main_loop(title, figsize, channels, plot_func, xlabel, ylabel, x, *args, **kwargs):
+    display_rows, display_cols = plot_layout(channels)
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
+    fig.suptitle(title)
+    axes = axes_reshape(axes, channels)
+    for row in range(0,display_rows):
+        for col in range(0,display_cols):
+            i = 2*row+col
+            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
+                axes[row][col].set_axis_off()
+                break
+            plot_func(axes[row][col], i, channels[i], xlabel, ylabel, x, *args, **kwargs)
+    plt.show()

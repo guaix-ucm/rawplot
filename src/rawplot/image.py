@@ -53,7 +53,7 @@ def image_histo(args):
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
     bias = bias_from(args)
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias, use_median=True)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -81,7 +81,7 @@ def image_histo(args):
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     bias = bias_from(args)
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias, use_median=True)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     pixels = analyzer.pixels()

@@ -66,3 +66,10 @@ def bias_from(args):
     else:
         bias = None
     return bias
+
+def make_title_from(title, metadata, roi):
+    title = f"{title}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n" \
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
+    return title
