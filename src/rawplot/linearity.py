@@ -134,23 +134,23 @@ def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabe
     )
 
 
-def plot_linearity(axes, i, channel, xlabel, ylabel, x,  **kargs):
+def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kargs):
     exptime = x[i]
-    signal = kargs['signal'][i]
+    signal = y[i]
     good_exptime = kargs['good_exptime'][i]
     good_signal = kargs['good_signal'][i]
     sat_exptime = kargs['sat_exptime'][i]
     sat_signal = kargs['sat_signal'][i]
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
-    score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channel)
+    score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channels[i])
     fit_signal = estimator.predict(exptime.reshape(-1,1)) # For the whole range
     text = rf"Theil-Sen fit: $R^2 = {score:.2f}$"
-    axes.plot(exptime, signal,  marker='o', linewidth=0, label="data")
+    axes.plot(exptime, signal,  marker='o', linewidth=0, label=ylabel)
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.plot(exptime, fit_signal, label=text)
     plot_linear_equation(axes, exptime, fit_signal, slope, intercept, xlabel='t', ylabel='S(t)')
-    axes.set_xlabel(xlabel)
-    axes.set_ylabel(ylabel)
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(ytitle)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -174,11 +174,12 @@ def linearity(args):
         figsize  = (12, 9),
         channels = channels,
         plot_func = plot_linearity,
-        xlabel = "Exposure time [S]",
-        ylabel = "Signal [DN]",
-        x     = exptime,
+        xtitle = "Exposure time [s]",
+        ytitle = "Signal [DN]",
+        ylabel = "good",
+        x  = exptime,
+        y  = signal,
         # Optional arguments tpo be handled by the plotting function
-        signal = signal,
         good_exptime = good_exptime,
         good_signal  = good_signal,
         sat_exptime  = sat_exptime,

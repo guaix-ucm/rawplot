@@ -45,33 +45,30 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-
-def plot_histo(axes, i, channel, xlabel, ylabel, x, *args, **kwargs):
+def plot_histo(axes, i, x, y, xtitle, ytitle, ylabel, channel, **kwargs):
     median = kwargs['median'][i]
     mean = kwargs['mean'][i]
     stddev = kwargs['stddev'][i]
     decimate = kwargs.get('decimate', 10)
     ylog = kwargs.get('ylog', False)
-    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
+    title = fr'{channel[i]}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
-    data = x.reshape(-1)[::decimate]
+    data = x[i].reshape(-1)[::decimate]
     if data.dtype  in (np.uint16, np.uint32,):
         bins=list(range(data.min(), data.max()+1))
     else:
         bins='auto'
     if ylog:
         axes.set_yscale('log', base=10)
-    axes.hist(data, bins=bins, rwidth=0.9, align='left', label='hist')
-    axes.set_xlabel(xlabel)
-    axes.set_ylabel(ylabel)
+    axes.hist(data, bins=bins, rwidth=0.9, align='left', label=ylabel)
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(ytitle)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-    axes.legend()
   
 
-
-def plot_image(axes, i, channel, roi, colormap, edgecolor, pixels, *args, **kwargs):
+def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
     median = kwargs['median'][i]
     mean = kwargs['mean'][i]
     stddev = kwargs['stddev'][i]
@@ -107,11 +104,12 @@ def image_histo(args):
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
-        channels = channels,
         plot_func = plot_histo,
-        xlabel = "Pixel value [DN]",
-        ylabel = "Pixel Count",
+        xtitle = "Pixel value [DN]",
+        ytitle = "Pixel Count",
         x     = pixels,
+        y     = None, # Y is the pixel count, no explicit array is needed
+        channels = channels,
         # Extra arguments
         decimate = decimate,
         mean = aver,

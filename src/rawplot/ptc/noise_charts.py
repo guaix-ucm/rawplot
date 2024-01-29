@@ -84,24 +84,28 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     return signal, total_noise_var, shot_read_noise_var, shot_noise_var, fixed_pattern_noise_var, read_noise_var
 
 
-def plot_noise_vs_signal(axes, i, channel, xlabel, ylabel, signal, *args, **kwargs):
+def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 1 to 8'''
+    # Main plot goes here
+    axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
+    # Additional plots go here
     for key, noise in kwargs.items():
         label = rf"$\sigma_{ {key.upper()} }$" if key != "shot_read_noise" else r"$\sigma_{SHOT+READ}$"
-        axes.plot(signal[i], noise[i], marker='o', linewidth=0, label=label)
-    axes.set_title(f'channel {channel}')
+        axes.plot(x[i], noise[i], marker='o', linewidth=0, label=label)
+    axes.set_title(f'channel {channels[i]}')
     axes.set_xscale('log', base=2)
     axes.set_yscale('log', base=2)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-    axes.set_xlabel(xlabel)
-    axes.set_ylabel(ylabel)
-    axes.legend()
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(ytitle)
+    if ylabel:
+        axes.legend()
 
 
 def noise_chart1(args):
-    log.info(" === NOISE CHART 1: Total Noise Sources vs. Signal === ")
+    log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = 0.0 if args.read_noise is None else args.read_noise
@@ -116,16 +120,18 @@ def noise_chart1(args):
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
     read_noise = np.sqrt(read_noise_var) # Now, read_noise is a numpy array
-    title = make_plot_title_from("Total Noise Sources vs. Signal",metadata, roi)
+    title = make_plot_title_from("Individual Noise Sources vs. Signal",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
-        channels = channels,
         plot_func = plot_noise_vs_signal,
-        xlabel = "Signal [DN]",
-        ylabel = "Noise [DN]",
+        xtitle = "Signal [DN]",
+        ytitle = "Noise [DN]",
         x     = signal,
-        total = total_noise,
+        y     = total_noise,
+        ylabel =r"$\sigma_{TOTAL}$",
+        channels = channels,
+        # Optional arguments
         shot  = shot_noise,
         fpn   = fpn_noise,
         read  = read_noise
@@ -145,16 +151,16 @@ def noise_chart2(args):
         read_noise = read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
-    title = make_plot_title_from("Shot + Readout Noise vs. Signal", metadata, roi)
+    title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
-        channels = channels,
         plot_func = plot_noise_vs_signal,
-        xlabel = "Signal [DN]",
-        ylabel = "Noise [DN]",
+        xtitle = "Signal [DN]",
+        ytitle = "Noise [DN]",
         x     = signal,
-        shot_read_noise  = shot_read_noise,
+        y  = shot_read_noise,
+        channels = channels,
     )
 
 
@@ -171,16 +177,16 @@ def noise_chart3(args):
         read_noise = read_noise
     )
     shot_noise = np.sqrt(shot_var)
-    title = make_plot_title_from("Shot Noise vs. Signal", metadata, roi)
+    title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
-        channels = channels,
         plot_func = plot_noise_vs_signal,
-        xlabel = "Signal [DN]",
-        ylabel = "Noise [DN]",
+        xtitle = "Signal [DN]",
+        ytitle = "Noise [DN]",
         x     = signal,
-        shot  = shot_noise,
+        y  = shot_noise,
+        channels = channels,
     )
 
 
@@ -197,14 +203,14 @@ def noise_chart4(args):
         read_noise = read_noise
     )
     fpn_noise = np.sqrt(fpn_var)
-    title = make_plot_title_from("Shot Noise vs. Signal", metadata, roi)
+    title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
-        channels = channels,
         plot_func = plot_noise_vs_signal,
-        xlabel = "Signal [DN]",
-        ylabel = "Noise [DN]",
+        xtitle = "Signal [DN]",
+        ytitle = "Noise [DN]",
         x     = signal,
-        shot  = shot_noise,
+        y  = fpn_noise,
+        channels = channels,
     )

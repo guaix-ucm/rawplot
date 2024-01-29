@@ -68,7 +68,7 @@ def axes_reshape(axes, channels):
         return axes.reshape(1,2)
     return axes
 
-def mpl_main_image_loop(title, figsize, channels, roi, plot_func, pixels, *args, **kwargs):
+def mpl_main_image_loop(title, figsize, pixels, plot_func, channels, roi, **kwargs):
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
     fig.suptitle(title)
@@ -81,10 +81,10 @@ def mpl_main_image_loop(title, figsize, channels, roi, plot_func, pixels, *args,
                 break
             cmap = plot_cmap(channels)
             edge_color = plot_edge_color(channels)
-            plot_func(axes[row][col], i, channels[i], roi, cmap[i], edge_color[i], pixels[i], *args, **kwargs)
+            plot_func(axes[row][col], i,  pixels[i], channels[i], roi, cmap[i], edge_color[i], **kwargs)
     plt.show()
 
-def mpl_main_plot_loop(title, figsize, channels, plot_func, xlabel, ylabel, x, *args, **kwargs):
+def mpl_main_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel=None, **kwargs):
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
     fig.suptitle(title)
@@ -95,5 +95,5 @@ def mpl_main_plot_loop(title, figsize, channels, plot_func, xlabel, ylabel, x, *
             if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
                 axes[row][col].set_axis_off()
                 break
-            plot_func(axes[row][col], i, channels[i], xlabel, ylabel, x, *args, **kwargs)
+            plot_func(axes[row][col], i, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
     plt.show()
