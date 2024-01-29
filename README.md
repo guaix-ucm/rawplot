@@ -147,10 +147,10 @@ An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https:
 
 |  CHART   |                Description               | Units                   |
 | :------: | :--------------------------------------- | :---------------------- |
-| Chart 1  | read, shot, FPN & total noise vs. signal | log2 rms DN vs. log2 DN |
-| Chart 2  | read + shot noise vs. signal             | log2 rms DN vs. log2 DN |
-| Chart 3  | shot noise vs. signal                    | log2 rms DN vs. log2 DN |
-| Chart 4  | FPN vs. signal                           | log2 rms DN vs. log2 DN |
+| Chart 1  | read, shot, FPN & total noise vs. signal | log rms DN vs. log DN |
+| Chart 2  | read + shot noise vs. signal             | log rms DN vs. log DN |
+| Chart 3  | shot noise vs. signal                    | log rms DN vs. log DN |
+| Chart 4  | FPN vs. signal                           | log rms DN vs. log DN |
 
 
 From the same dataset we used to determine the camera linearity, we generate PTC Chart #1, this time with a bigger ROI.
