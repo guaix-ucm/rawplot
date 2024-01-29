@@ -54,6 +54,15 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
+def check_physical(args):
+    gain = args.gain
+    phys = args.physical_units
+    if gain is None and phys:
+        raise ValueError("Can'use physycal units [-e] if --gain is not set")
+    units = r"$[e^{-}]$" if gain is not None and phys else "[DN]"
+    return units, gain, phys
+
+
 def fit_estimator(estimator, exptime, signal, channel):
     T = exptime.reshape(-1,1)
     fitted = estimator.fit(T, signal)
@@ -79,7 +88,8 @@ def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
     good_signal_list=list()
     sat_exptime_list=list()
     sat_signal_list=list()
-    for ch in range(len(channels)):
+    N = len(channels)
+    for ch in range(N):
         good_exptime = exptime[ch].copy()
         good_signal = signal[ch].copy()
         sat_exptime = np.full_like(exptime[ch], np.nan)
@@ -167,11 +177,16 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kargs):
 
 def linearity(args):
     log.info(" === LINEARITY PLOT === ")
+    units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias)
     log.info("estimated signal & noise for %s points", exptime.shape)
     good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, 0.5)
+    if gain and phys:
+        signal *= gain
+        good_signal *= gain
+        sat_signal *= gain
     title = make_plot_title_from("Linearity plot",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -179,7 +194,7 @@ def linearity(args):
         channels = channels,
         plot_func = plot_linearity,
         xtitle = "Exposure time [s]",
-        ytitle = "Signal [DN]",
+        ytitle = f"Signal {units}",
         ylabel = "good",
         x  = exptime,
         y  = signal,
@@ -208,7 +223,8 @@ def add_args(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
-
+    parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>', default=None, help='Gain [e-/DN] (default: %(default)s)')
+    parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [-e] physical units instead of [DN]. Requires --gain')
 
 # ================
 # MAIN ENTRY POINT

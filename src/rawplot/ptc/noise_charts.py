@@ -49,6 +49,14 @@ log = logging.getLogger(__name__)
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
+def check_physical(args):
+    gain = args.gain
+    phys = args.physical_units
+    if gain is None and phys:
+        raise ValueError("Can'use physycal units [-e] if --gain is not set")
+    units = r"$[e^{-}]$" if gain is not None and phys else "[DN]"
+    return units, gain, phys
+
 def signal_and_total_noise_from(file_list, n_roi, channels, bias):
     file_list = file_list[::2]
     N = len(file_list)
@@ -124,6 +132,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
 
 def noise_chart1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
+    units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
@@ -137,13 +146,19 @@ def noise_chart1(args):
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
     read_noise = np.sqrt(read_noise_var) # Now, read_noise is a numpy array
+    if gain and phys:
+        total_noise *= gain
+        shot_noise *= gain
+        fpn_noise *= gain
+        read_noise *= gain
+        signal  *= gain
     title = make_plot_title_from("Individual Noise Sources vs. Signal",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
-        xtitle = "Signal [DN]",
-        ytitle = "Noise [DN]",
+        xtitle = f"Signal {units}",
+        ytitle = f"Noise {units}",
         x     = signal,
         y     = total_noise,
         ylabel =r"$\sigma_{TOTAL}$",
@@ -153,13 +168,14 @@ def noise_chart1(args):
         fpn   = fpn_noise,
         read  = read_noise, 
         p_fpn = args.p_fpn,
-        gain = args.gain,
+        gain = gain,
         log2 = args.log2,
     )
 
 
 def noise_chart2(args):
     log.info(" === NOISE CHART 2: Shot plus Readout Noise vs. Signal === ")
+    units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
@@ -170,13 +186,16 @@ def noise_chart2(args):
         read_noise = args.read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
+    if gain and phys:
+        shot_read_noise *= gain
+        signal *= gain
     title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
-        xtitle = "Signal [DN]",
-        ytitle = "Noise [DN]",
+        xtitle = f"Signal {units}",
+        ytitle = f"Noise {units}",
         x     = signal,
         y  = shot_read_noise,
         channels = channels,
@@ -186,6 +205,7 @@ def noise_chart2(args):
 
 def noise_chart3(args):
     log.info(" === NOISE CHART 3: Shot Noise vs. Signal === ")
+    units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
@@ -197,13 +217,16 @@ def noise_chart3(args):
         log2 = args.log2,
     )
     shot_noise = np.sqrt(shot_var)
+    if gain and phys:
+        shot_noise *= gain
+        signal *= gain
     title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
-        xtitle = "Signal [DN]",
-        ytitle = "Noise [DN]",
+        xtitle = f"Signal {units}",
+        ytitle = f"Noise {units}",
         x     = signal,
         y  = shot_noise,
         channels = channels,
@@ -212,6 +235,7 @@ def noise_chart3(args):
 
 def noise_chart4(args):
     log.info(" === NOISE CHART 4: Fixed Pattern Noise vs. Signal === ")
+    units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
@@ -223,13 +247,16 @@ def noise_chart4(args):
         log2 = args.log2,
     )
     fpn_noise = np.sqrt(fpn_var)
+    if gain and phys:
+        fpn_noise *= gain
+        signal *= gain
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
-        xtitle = "Signal [DN]",
-        ytitle = "Noise [DN]",
+        xtitle = f"Signal {units}",
+        ytitle = f"Noise {units}",
         x     = signal,
         y  = fpn_noise,
         channels = channels,
