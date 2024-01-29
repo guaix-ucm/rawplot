@@ -79,27 +79,27 @@ def read_and_shot_noise_from(file_list, n_roi, channels, bias):
 
 def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     signal, total_noise_var = signal_and_total_noise_from(file_list, n_roi, channels, bias)
-    read_noise_var = np.full_like(signal, read_noise**2)
     shot_read_noise_var = read_and_shot_noise_from(file_list, n_roi, channels, bias)
     fixed_pattern_noise_var = total_noise_var - shot_read_noise_var
-    shot_noise_var = shot_read_noise_var - read_noise_var
-    return signal, total_noise_var, shot_read_noise_var, shot_noise_var, fixed_pattern_noise_var, read_noise_var
+    shot_noise_var = shot_read_noise_var - read_noise**2
+    return signal, total_noise_var, shot_read_noise_var, shot_noise_var, fixed_pattern_noise_var
 
 
 def plot_read_noise_line(axes, read_noise):
     '''Plot an horizontal line'''
-    axes.axhline(read_noise, linestyle='-', label=r"$\sigma_{READ}$")
+    text = r"$\sigma_{READ}$"
+    axes.axhline(read_noise, linestyle='-', label=text)
 
 def plot_fpn_line(axes, p_fpn):
     P0 = (1, p_fpn)
     P1 = (1/p_fpn, 1)
-    text = r"$\sigma_{FPN}$ ideal"
+    text = r"$\sigma_{FPN}, m=1$"
     axes.axline(P0, P1, linestyle='--', label=text)
 
 def plot_shot_line(axes, gain):
     P0 = (1, 1/math.sqrt(gain))
     P1 = (gain, 1)
-    text = r"$\sigma_{SHOT}$ ideal"
+    text = r"$\sigma_{SHOT}, m=\frac{1}{2}$"
     axes.axline(P0, P1, linestyle=':', label=text)
 
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
@@ -113,7 +113,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
             label = rf"$\sigma_{ {key.upper()} }$"
             axes.plot(x[i], value[i], marker='o', linewidth=0, label=label)
         elif key == 'read' and value is not None:
-            plot_read_noise_line(axes, value[i,0])
+            plot_read_noise_line(axes, value) #  read noise is a scalar
         elif key == 'p_fpn' and value is not None:
             plot_fpn_line(axes, value)
         elif key == 'gain' and value is not None:
@@ -135,17 +135,17 @@ def noise_chart1(args):
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
+    read_noise = args.read_noise
+    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise
+        read_noise = read_noise
     )
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
-    read_noise = np.sqrt(read_noise_var) # Now, read_noise is a numpy array
     if gain and phys:
         total_noise *= gain
         shot_noise *= gain
@@ -166,7 +166,7 @@ def noise_chart1(args):
         # Optional arguments
         shot  = shot_noise,
         fpn   = fpn_noise,
-        read  = read_noise, 
+        read  = read_noise, # Still an scalar
         p_fpn = args.p_fpn,
         gain = gain,
         log2 = args.log2,
@@ -178,17 +178,19 @@ def noise_chart2(args):
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
+    read_noise = args.read_noise
+    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise
+        read_noise = read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
     if gain and phys:
         shot_read_noise *= gain
         signal *= gain
+        read_noise *= gain
     title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -196,9 +198,12 @@ def noise_chart2(args):
         plot_func = plot_noise_vs_signal,
         xtitle = f"Signal {units}",
         ytitle = f"Noise {units}",
+        ylabel =r"$\sigma_{SHOT+READ}$",
         x     = signal,
         y  = shot_read_noise,
         channels = channels,
+        # Optional arguments
+        read = read_noise,
         log2 = args.log2,
     )
 
@@ -208,18 +213,20 @@ def noise_chart3(args):
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
+    read_noise = args.read_noise
+    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise,
+        read_noise = read_noise,
         log2 = args.log2,
     )
     shot_noise = np.sqrt(shot_var)
     if gain and phys:
         shot_noise *= gain
         signal *= gain
+        read_noise *= gain
     title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -229,7 +236,10 @@ def noise_chart3(args):
         ytitle = f"Noise {units}",
         x     = signal,
         y  = shot_noise,
+        ylabel =r"$\sigma_{SHOT}$",
         channels = channels,
+        # Optional arguments
+        read = read_noise,
     )
 
 
@@ -238,18 +248,20 @@ def noise_chart4(args):
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
+    read_noise = args.read_noise
+    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise,
+        read_noise = read_noise,
         log2 = args.log2,
     )
     fpn_noise = np.sqrt(fpn_var)
     if gain and phys:
         fpn_noise *= gain
         signal *= gain
+        read_noise *= gain
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -259,6 +271,9 @@ def noise_chart4(args):
         ytitle = f"Noise {units}",
         x     = signal,
         y  = fpn_noise,
+        ylabel =r"$\sigma_{FPN}$",
         channels = channels,
+        # Optional arguments
+        read = read_noise,
         log2 = args.log2,
     )
