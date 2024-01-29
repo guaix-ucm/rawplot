@@ -38,7 +38,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, bias_from, make_plot_title_from
+from .util.common import common_list_info, bias_from, make_plot_title_from, check_physical
 
 # ----------------
 # Module constants
@@ -54,13 +54,6 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def check_physical(args):
-    gain = args.gain
-    phys = args.physical_units
-    if gain is None and phys:
-        raise ValueError("Can'use physycal units [-e] if --gain is not set")
-    units = r"$[e^{-}]$" if gain is not None and phys else "[DN]"
-    return units, gain, phys
 
 
 def fit_estimator(estimator, exptime, signal, channel):

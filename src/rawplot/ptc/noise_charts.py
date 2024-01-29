@@ -31,7 +31,7 @@ from lica.raw.analyzer.image import ImageStatistics, ImagePairStatistics
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from
+from ..util.common import common_list_info, bias_from, make_plot_title_from, check_physical
 
 # ----------------
 # Module constants
@@ -48,14 +48,6 @@ log = logging.getLogger(__name__)
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
-
-def check_physical(args):
-    gain = args.gain
-    phys = args.physical_units
-    if gain is None and phys:
-        raise ValueError("Can'use physycal units [-e] if --gain is not set")
-    units = r"$[e^{-}]$" if gain is not None and phys else "[DN]"
-    return units, gain, phys
 
 def signal_and_total_noise_from(file_list, n_roi, channels, bias):
     file_list = file_list[::2]
@@ -94,15 +86,21 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     return signal, total_noise_var, shot_read_noise_var, shot_noise_var, fixed_pattern_noise_var, read_noise_var
 
 
+def plot_read_noise_line(axes, read_noise):
+    '''Plot an horizontal line'''
+    axes.axhline(read_noise, linestyle='-', label=r"$\sigma_{READ}$")
+
 def plot_fpn_line(axes, p_fpn):
     P0 = (1, p_fpn)
     P1 = (1/p_fpn, 1)
-    axes.axline(P0, P1, linestyle='--', label=r"$\sigma_{FPN}$ ideal")
+    text = r"$\sigma_{FPN}$ ideal"
+    axes.axline(P0, P1, linestyle='--', label=text)
 
 def plot_shot_line(axes, gain):
     P0 = (1, 1/math.sqrt(gain))
     P1 = (gain, 1)
-    axes.axline(P0, P1, linestyle=':', label=r"$\sigma_{SHOT}$ ideal")
+    text = r"$\sigma_{SHOT}$ ideal"
+    axes.axline(P0, P1, linestyle=':', label=text)
 
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 1 to 8'''
@@ -111,9 +109,11 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     # Additional plots go here
     base = 2 if kwargs.get('log2', False) else 10
     for key, value in kwargs.items():
-        if key in ('shot', 'fpn', 'read') :
+        if key in ('shot', 'fpn',) :
             label = rf"$\sigma_{ {key.upper()} }$"
             axes.plot(x[i], value[i], marker='o', linewidth=0, label=label)
+        elif key == 'read' and value is not None:
+            plot_read_noise_line(axes, value[i,0])
         elif key == 'p_fpn' and value is not None:
             plot_fpn_line(axes, value)
         elif key == 'gain' and value is not None:
