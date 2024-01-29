@@ -33,19 +33,6 @@ LAYOUT = { 1: (1,1), 2: (1,2), 3: (2,2), 4: (2,2)}
 # Module utility functions
 # ------------------------
 
-def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabel='y'):
-    angle = math.atan(slope)*(180/math.pi)
-    x0 = np.min(xdata); x1 = np.max(xdata)
-    y0 = np.min(ydata); y1 = np.max(ydata)
-    x = x0 + 0.35*(x1-x0)
-    y = y0 + 0.45*(y1-y0)
-    text = f"${ylabel} = {slope:.2f}{xlabel}{intercept:+.2f}$"
-    axes.text(x, y, text,
-        rotation_mode='anchor',
-        rotation=angle,
-        transform_rotates_text=True,
-        ha='left', va='top'
-    )
 
 def plot_cmap(channels):
     '''Plot color map of channels to display'''

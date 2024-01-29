@@ -41,3 +41,5 @@ def ptc_parser_arguments_dn(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>', default=None, help='Fixed Pattern Noise Percentage factor [0..1] (default: %(default)s)')
+    parser.add_argument('--gain', type=vfloat, metavar='<g>', default=None, help='Gain [e-/DN] (default: %(default)s)')

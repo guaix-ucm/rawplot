@@ -84,14 +84,29 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     return signal, total_noise_var, shot_read_noise_var, shot_noise_var, fixed_pattern_noise_var, read_noise_var
 
 
+def plot_fpn_line(axes, p_fpn):
+    P0 = (1, p_fpn)
+    P1 = (1/p_fpn, 1)
+    axes.axline(P0, P1, linestyle='--', label=r"$\sigma_{FPN}$ ideal")
+
+def plot_shot_line(axes, gain):
+    P0 = (1, 1/math.sqrt(gain))
+    P1 = (gain, 1)
+    axes.axline(P0, P1, linestyle=':', label=r"$\sigma_{SHOT}$ ideal")
+
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 1 to 8'''
     # Main plot goes here
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
-    for key, noise in kwargs.items():
-        label = rf"$\sigma_{ {key.upper()} }$" if key != "shot_read_noise" else r"$\sigma_{SHOT+READ}$"
-        axes.plot(x[i], noise[i], marker='o', linewidth=0, label=label)
+    for key, value in kwargs.items():
+        if key in ('shot', 'fpn', 'read') :
+            label = rf"$\sigma_{ {key.upper()} }$"
+            axes.plot(x[i], value[i], marker='o', linewidth=0, label=label)
+        elif key == 'p_fpn' and value is not None:
+            plot_fpn_line(axes, value)
+        elif key == 'gain' and value is not None:
+            plot_shot_line(axes, value)
     axes.set_title(f'channel {channels[i]}')
     axes.set_xscale('log', base=2)
     axes.set_yscale('log', base=2)
@@ -133,7 +148,9 @@ def noise_chart1(args):
         # Optional arguments
         shot  = shot_noise,
         fpn   = fpn_noise,
-        read  = read_noise
+        read  = read_noise, 
+        p_fpn = args.p_fpn,
+        gain = args.gain,
     )
 
 
