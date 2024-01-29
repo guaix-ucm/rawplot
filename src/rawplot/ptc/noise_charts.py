@@ -108,13 +108,12 @@ def noise_chart1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = 0.0 if args.read_noise is None else args.read_noise
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise
     )
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
@@ -142,13 +141,12 @@ def noise_chart2(args):
     log.info(" === NOISE CHART 2: Shot plus Readout Noise vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = 0.0 if args.read_noise is None else args.read_noise
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
     title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
@@ -168,13 +166,12 @@ def noise_chart3(args):
     log.info(" === NOISE CHART 3: Shot Noise vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = 0.0 if args.read_noise is None else args.read_noise
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise
     )
     shot_noise = np.sqrt(shot_var)
     title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
@@ -194,13 +191,12 @@ def noise_chart4(args):
     log.info(" === NOISE CHART 4: Fixed Pattern Noise vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = 0.0 if args.read_noise is None else args.read_noise
     signal, total_var, shot_read_var, shot_var, fpn_var, read_noise_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise
     )
     fpn_noise = np.sqrt(fpn_var)
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
