@@ -62,8 +62,11 @@ def fit_estimator(estimator, exptime, signal, channel):
     predicted = estimator.predict(T)
     return score, estimator.coef_[0], estimator.intercept_
 
-# The saturation analysis is made on the assupotion that the measured noise
-# should be dominated by shot noise (ignoring FPN here ...mmm),
+# The saturation analysis is made on the assumption that the measured noise
+# should be dominated by shot noise if the ROI is small
+# We are neglecting FPN, which would make the noise even larger anyway.
+# In any case, beyornd the saturation point, the noise decreases 
+# and this is what we are looking for.
 # So we compute the threshold noise / sqrt(signal)
 # and discard values below a certain threshold (0.5 seems a reasonable compromise)
 def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
@@ -71,7 +74,7 @@ def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
     ratio =  noise / estimated_poisson_noise
     sat_exptime = np.full_like(exptime, np.nan)
     sat_signal = np.full_like(signal, np.nan)
-    # They are not matrices as each channel may have its own length
+    # They are not matrices as each channel may have its own row length
     good_exptime_list=list()
     good_signal_list=list()
     sat_exptime_list=list()

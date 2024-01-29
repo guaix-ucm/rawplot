@@ -100,12 +100,20 @@ This utility displays a single image or histogram. useful to determine exposure 
 rawplot-image --console pixels -i images/20240117/linearity/flath_g1_001_3500000_a.jpg -wi 1/20 -he 1/16
 ```
 
+As the image shows, this exposure is shows severe vignetting.
+For the linearity plot below, we chose a small ROI in the image center to quickly detect saturation. 
+Otherwise, vignetting bias the statistics.
+
+When using a larger ROI, this vignetting is shown as the Fixed Pattern Noise component 
+of the noise analysis as shown by the PTC graph below.
+
 ![Raspberry Pi HQ camera flat image](doc/images/flat_image.png)
 
 ```bash
 rawplot-image --console histo -i images/20240117/linearity/flath_g1_001_3500000_a.jpg --every 100
 ```
 ![Raspberry Pi HQ camera flat image histogram](doc/images/flat_histo.png)
+
 
 ## rawplot-linearity
 
@@ -154,6 +162,8 @@ rawplot-ptc --console chart1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 ```
 
 If not specified in the command line, the read noise line is at 0 DN (not shown) so that we estimate its value from the total noise plot.
+
+With the ROI as large as this one, vignetting shows up and we can see the three main components of noise in this PTC analysis.
 
 After plot analysis, it can be experimentally determined that the read noise is about 1.25 DN
 At Signal level 19 DN approx. the shot noise equals the readout noise. At signal level 268 DN approx. the
