@@ -143,7 +143,7 @@ rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --s
 
 ## Photon Transfer Charts (PTC)
 
-An (ongoing) series of PTC charts, based on the classic (Photon Transfer)[https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_] book have been included so far:
+An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_) book have been included so far:
 
 |  CHART   |                Description               | Units                   |
 | :------: | :--------------------------------------- | :---------------------- |
