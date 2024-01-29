@@ -129,11 +129,11 @@ def add_args(parser):
     parser.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
     parser.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
     parser.add_argument('-c','--channels', choices=('R', 'Gr', 'Gb', 'G', 'B'), default=('R','Gr','Gb','B'), nargs='+', 
                     help='color plane(s) to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser.add_argument('-s', '--start', type=int, default=0, help='(Optional) Index to trim power spectrum DC component (recommended value between 2..4')
+    parser.add_argument('-s', '--start', type=int, default=0, help='Index to trim power spectrum DC component (recommended value between 2..4) (default: %(default)s)')
     parser.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
     
 # ================

@@ -213,7 +213,7 @@ def add_args(parser):
     parser_stops.add_argument('-ti', '--t-initial', type=vfloat, required=True, help='Initial exposure time [secs]')
     parser_stops.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_stops.add_argument('-m', '--max-dn',  type=int, required=True, help='Saturation value in image [DN]')
-    parser_stops.add_argument('-ppl', '--points-per-level',  type=int, default=3, help='Number of images per level')
+    parser_stops.add_argument('-ppl', '--points-per-level', type=int, default=3, help='Number of images per level (default: %(default)s)')
     parser_stops.add_argument('-r','--reverse',  action='store_true', help='reverse point distribution')
     parser_stops.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
 
@@ -233,7 +233,7 @@ def add_args(parser):
     parser_combistops.add_argument('-ti', '--t-initial', type=vfloat, required=True, help='Initial exposure time [secs]')
     parser_combistops.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_combistops.add_argument('-m', '--max-dn',  type=int, metavar='<MAX DN>', required=True, help='Saturation value in image [DN]')
-    parser_combistops.add_argument('-ppl', '--points-per-level', type=int, default=3, help='Number of images per level')
+    parser_combistops.add_argument('-ppl', '--points-per-level', type=int, default=3, help='Number of images per level (default: %(default)s)')
     parser_combistops.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
 
 # ================

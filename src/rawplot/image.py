@@ -103,7 +103,7 @@ def image_histo(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     pixels = analyzer.pixels()
-    title = make_plot_title_from(f"(Decimated {dcm}", metadata, roi)
+    title = make_plot_title_from(f"{metadata['name']} (decimated {dcm})", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
@@ -131,7 +131,7 @@ def image_pixels(args):
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
-    title = make_plot_title_from("", metadata, roi)
+    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,
         figsize  = (12, 9),
@@ -171,8 +171,8 @@ def add_args(parser):
     parser_pixels.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
     parser_pixels.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_pixels.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_pixels.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_pixels.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser_pixels.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_pixels.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
     parser_pixels.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
@@ -188,12 +188,12 @@ def add_args(parser):
     parser_histo.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
     parser_histo.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
     parser_histo.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot')
+    parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot (default: %(default)s) ')
     group0 = parser_histo.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level',  type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')

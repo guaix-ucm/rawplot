@@ -165,14 +165,14 @@ def add_args(parser):
     parser.add_argument('-b', '--bias-filter', type=str, default=None, help='Bias Images filter, glob-style (i.e. bias*')
     parser.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
-    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
+    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
     parser.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--stops',   action='store_true', help='Plot X asis in stops (log2(x))')
     parser.add_argument('--full-scale', type=int, metavar="<MAX DN>", default=None, help='Normalize X axes relative to full scale value')
-    parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting (default: %(default)s)')
 
 # ================
 # MAIN ENTRY POINT
