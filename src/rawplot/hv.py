@@ -46,13 +46,14 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def plot_hv(axes, xh, xv, H, V, title):
+def plot_hv(axes, xh, xv, H, V, title, log2):
+    base = 2 if log2 else 10
     axes.set_title(f'Channel {title}')
-    axes.set_yscale('log', base=2)
+    axes.set_yscale('log', base=base)
     axes.plot(xh, H, label='Horizontal')
     axes.plot(xv, V, label='Vertical')
     axes.set_xlabel('Cycles per pixel pitch [c/p]')
-    axes.set_ylabel('Average Energy Spectrum [stops]')
+    axes.set_ylabel('Average Energy Spectrum')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -89,6 +90,7 @@ def averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, start):
 # ------------------------
 
 def hv(args):
+    log2 = args.log2
     file_path, roi, n_roi, channels, metadata = common_info(args)
     xh, xv, H, V = averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, args.start)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
@@ -102,7 +104,7 @@ def hv(args):
             if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
                 axes[row][col].set_axis_off()
                 break
-            plot_hv(axes[row][col], xh, xv, H[i], V[i], channels[i])
+            plot_hv(axes[row][col], xh, xv, H[i], V[i], channels[i], log2)
     plt.show()
 
 
@@ -119,6 +121,7 @@ def add_args(parser):
     parser.add_argument('-c','--channels', choices=('R', 'Gr', 'Gb', 'G', 'B'), default=('R','Gr','Gb','B'), nargs='+', 
                     help='color plane(s) to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('-s', '--start', type=int, default=0, help='Index to trim power spectrum DC component (recommended value between 2..4) (default: %(default)s)')
+    parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')
     parser.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
     
 # ================

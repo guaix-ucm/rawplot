@@ -106,10 +106,11 @@ def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
 
 def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, every=2):
     file_list = file_list[::every]
+    N = len(file_list)
     signal_list = list()
     noise_list = list()
     exptime_list = list()
-    for path in file_list:
+    for i, path in enumerate(file_list, start=1):
         analyzer = ImageStatistics(path, n_roi, channels, bias)
         analyzer.run()
         signal = analyzer.mean()
@@ -118,7 +119,7 @@ def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, every=
         exptime_list.append(exptime)
         noise = analyzer.std()
         noise_list.append(noise)
-        log.info("\u03C3\u00b2(total) for image %s = %s", analyzer.name(), noise)
+        log.info("[%d/%d] \u03C3\u00b2(total) for image %s = %s", i, N, analyzer.name(), noise)
     return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
 
 

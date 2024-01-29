@@ -51,27 +51,29 @@ log = logging.getLogger(__name__)
 
 def signal_and_total_noise_from(file_list, n_roi, channels, bias):
     file_list = file_list[::2]
+    N = len(file_list)
     signal_list = list()
     noise_list = list()
-    for path in file_list:
+    for i, path in enumerate (file_list, start=1):
         analyzer = ImageStatistics(path, n_roi, channels, bias)
         analyzer.run()
         signal_list.append(analyzer.mean())
         noise_var = analyzer.variance()
         noise_list.append(noise_var)
-        log.info("\u03C3\u00b2(total) for image %s = %s", analyzer.name(), noise_var)
+        log.info("[%d/%d] \u03C3\u00b2(total) for image %s = %s", i, N, analyzer.name(), noise_var)
     return np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
 
 
 def read_and_shot_noise_from(file_list, n_roi, channels, bias):
     file_pairs = list(zip(file_list, file_list[1:]))[::2]
+    N = len(file_pairs)
     noise_list = list()
-    for path_a, path_b in file_pairs:
+    for i, (path_a, path_b) in enumerate(file_pairs, start=1):
         analyzer = ImagePairStatistics(path_a, path_b, n_roi, channels, bias)
         analyzer.run()
         noise_var = analyzer.variance()
         noise_list.append(noise_var)
-        log.info("\u03C3\u00b2(sh+rd) for image pair %s = %s", analyzer.names(), noise_var)
+        log.info("[%d/%d] \u03C3\u00b2(sh+rd) for image pair %s = %s",  i, N, analyzer.names(), noise_var)
     return  np.stack(noise_list, axis=-1)
 
 
@@ -99,6 +101,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     # Main plot goes here
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
+    base = 2 if kwargs.get('log2', False) else 10
     for key, value in kwargs.items():
         if key in ('shot', 'fpn', 'read') :
             label = rf"$\sigma_{ {key.upper()} }$"
@@ -108,8 +111,8 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
         elif key == 'gain' and value is not None:
             plot_shot_line(axes, value)
     axes.set_title(f'channel {channels[i]}')
-    axes.set_xscale('log', base=2)
-    axes.set_yscale('log', base=2)
+    axes.set_xscale('log', base=base)
+    axes.set_yscale('log', base=base)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -151,6 +154,7 @@ def noise_chart1(args):
         read  = read_noise, 
         p_fpn = args.p_fpn,
         gain = args.gain,
+        log2 = args.log2,
     )
 
 
@@ -176,6 +180,7 @@ def noise_chart2(args):
         x     = signal,
         y  = shot_read_noise,
         channels = channels,
+        log2 = args.log2,
     )
 
 
@@ -188,7 +193,8 @@ def noise_chart3(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise
+        read_noise = args.read_noise,
+        log2 = args.log2,
     )
     shot_noise = np.sqrt(shot_var)
     title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
@@ -213,7 +219,8 @@ def noise_chart4(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise
+        read_noise = args.read_noise,
+        log2 = args.log2,
     )
     fpn_noise = np.sqrt(fpn_var)
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
@@ -226,4 +233,5 @@ def noise_chart4(args):
         x     = signal,
         y  = fpn_noise,
         channels = channels,
+        log2 = args.log2,
     )

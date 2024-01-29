@@ -53,18 +53,16 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def plot_snr(axes, signal, sn_ratio, channel, use_stops, full_scale):
+def plot_snr(axes, signal, sn_ratio, channel, full_scale, use_log, log2):
+    base = 2 if log2 else 10
     axes.set_title(fr'channel {channel}')
     full_scale = 1 if full_scale is None else full_scale
     signal = signal / full_scale
-    if use_stops:
-        axes.set_xscale('log', base=2)
-        axes.set_yscale('log', base=2)
-        units = "[stops]"
-    else:
-        units = "[DN]"
+    if use_log:
+        axes.set_xscale('log', base=base)
+        axes.set_yscale('log', base=base)
     relative = "(relative to full scale)" if full_scale is not None else ""
-    title = f'Signal {relative} {units}'
+    title = f'Signal {relative} [DN]'
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -133,7 +131,8 @@ def measure_readout_noise(image_a, image_b):
 
 def snr(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    use_stops = args.stops
+    use_log = args.use_log
+    log2 = args.log2
     full_scale = args.full_scale    
     signals, snrs = measure_snr_for(file_list, n_roi, channels)
     if(args.bias_filter):
@@ -151,7 +150,7 @@ def snr(args):
             if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
                 axes[row][col].set_axis_off()
                 break
-            plot_snr(axes[row][col], signals[i], snrs[i], channels[i], use_stops, full_scale)
+            plot_snr(axes[row][col], signals[i], snrs[i], channels[i], full_scale, use_log, log2)
     plt.show()
 
 
@@ -170,7 +169,8 @@ def add_args(parser):
     parser.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser.add_argument('--stops',   action='store_true', help='Plot X asis in stops (log2(x))')
+    parser.add_argument('--use-log',  action='store_true', help='Use s logaritmic scale for Y axis')
+    parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')
     parser.add_argument('--full-scale', type=int, metavar="<MAX DN>", default=None, help='Normalize X axes relative to full scale value')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting (default: %(default)s)')
 
