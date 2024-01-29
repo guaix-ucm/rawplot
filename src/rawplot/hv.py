@@ -33,6 +33,9 @@ from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from ._version import __version__
 from .util.mpl.plot import plot_layout, axes_reshape
 
+from .util.mpl.plot import mpl_main_plot_loop
+from .util.common import common_info, bias_from, make_plot_title_from
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -44,10 +47,8 @@ log = logging.getLogger(__name__)
 # ------------------
 
 def plot_hv(axes, xh, xv, H, V, title):
-    def stops(x, pos): return f'{math.log2(x):.0f}'
     axes.set_title(f'Channel {title}')
     axes.set_yscale('log', base=2)
-    #axes.yaxis.set_major_formatter(ticker.FuncFormatter(stops))
     axes.plot(xh, H, label='Horizontal')
     axes.plot(xv, V, label='Vertical')
     axes.set_xlabel('Cycles per pixel pitch [c/p]')
@@ -57,56 +58,40 @@ def plot_hv(axes, xh, xv, H, V, title):
     axes.minorticks_on()
     axes.legend()
 
-
-# ------------------------
-# AUXILIARY MAIN FUNCTIONS
-# ------------------------
-
-def hv(args):
-    channels = valid_channels(args.channels)
-    log.info("Working with %d channels: %s", len(channels), channels)
-    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
-    log.info("Normalized ROI is %s", n_roi)
-    if args.sim_dark is not None:
-        image = SimulatedDarkImage(args.input_file, n_roi, channels, dk_current=args.sim_dark)
-    else:
-        factory =  ImageLoaderFactory()
-        image = factory.image_from(args.input_file, n_roi=None, channels=channels)
-    metadata = image.metadata()
-    stack = image.load()
-    image_section = factory.image_from(args.input_file, n_roi=n_roi, channels=channels)
-    section = image_section.load()
-    roi = image_section.roi()
-    Z, ROWS, COLS = stack.shape
-    # Taking the mean from the image itself is more effective removing the DC component
-    # than using the black levels
-    aver_img =  np.mean(stack, axis=(1,2))
-    log.info("Stack mean values are %s", aver_img)
-    stack = stack - aver_img.reshape(Z, 1, 1) # Take out the avergae value to reduce the (0,0) DC peak in the FFT2
-    fft2 = np.fft.fft2(stack)
+def averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, start):
+    pixels = ImageLoaderFactory().image_from(file_path, n_roi, channels).load()
+    Z, ROWS, COLS = pixels.shape
+    # To remove the DC component it is more effective
+    # to take the mean from the image itself rather than
+    # using the embedded EXIF black levels
+    aver_img =  np.mean(pixels, axis=(1,2))
+    log.info("Pixels mean values are %s", aver_img)
+    pixels = pixels - aver_img.reshape(Z, 1, 1) # Reduce the (0,0) DC peak in the FFT2
+    fft2 = np.fft.fft2(pixels)
     log.info("FFT2 Stack shape is %s", fft2.shape)
     power_spectrum = np.power(np.abs(fft2), 2)
     log.info("Power Spectrum Stack shape is %s", power_spectrum.shape)
     aver_pe =  np.mean(power_spectrum,  axis=(1,2))
-    log.info("Before normalization, average Power Spectrum shape is %s", aver_pe)
+    log.info("Before normalization, average Power Spectrum is %s", aver_pe)
     power_spectrum = power_spectrum / aver_pe.reshape(Z,1,1)
-    start=args.start
     # For all the color planes in the stack
     # To calculate the average of each column, use axis=1
     # Then slice to the proprer range
     H = np.mean(power_spectrum, axis=1)[:,start:COLS//2+1]    
     # To calculate the average of each row, use axis=2.
     V = np.mean(power_spectrum, axis=2)[:,start:ROWS//2+1]
-    xh = np.arange(start, COLS//2+1)/COLS # Normalized abscissa for H plot
-    xv = np.arange(start, ROWS//2+1)/ROWS # Normalized abscissa for V plot
-    log.info("H shape is %s", H.shape)
-    log.info("V shape is %s", V.shape)
-    log.info("xv shape is %s", xv.shape)
-    log.info("xh shape is %s", xh.shape)
-    title = f"Image: {metadata['name']}\n" \
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Exposure: {metadata['exposure']} [s]\n" \
-            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
-            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
+    xh = np.arange(start, COLS//2+1)/COLS # Normalized x for H plot
+    xv = np.arange(start, ROWS//2+1)/ROWS # Normalized x for V plot
+    return xh, xv, H, V
+
+# ------------------------
+# AUXILIARY MAIN FUNCTIONS
+# ------------------------
+
+def hv(args):
+    file_path, roi, n_roi, channels, metadata = common_info(args)
+    xh, xv, H, V = averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, args.start)
+    title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
     fig.suptitle(title)

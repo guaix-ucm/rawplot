@@ -129,7 +129,7 @@ See the aforementioned post for more details.
 In the tests I made, the HV plots showed a strong peak at (0) that flattens the rest of the graph, even after removing the mean signal from the image itself. Hence, I have included the`--start` option. The results are in line with [Jack's analysis of the RaspberryPi HQ camera performance](https://www.strollswithmydog.com/pi-hq-cam-sensor-performance/).
 
 ```bash
-rawplot-hv -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --start 3
+rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --start 3
 ```
 ![Raspberry Pi HQ HV Spectrogram](doc/images/hv.png)
 
