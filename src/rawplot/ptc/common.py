@@ -47,8 +47,8 @@ def signal_and_noise_variances_from(file_list, n_roi, channels, bias):
         signal_list.append(signal)
         total_noise_list.append(total_noise_var)
         fpn_corrected_noise_list.append(fpn_corrected_noise_var)
-        log.info("[%d/%d] \u03C3\u00b2(total)     for image %s = %.6E", i, N, analyzer.name(), total_noise_var)
-        log.info("[%d/%d] \u03C3\u00b2(total-fpn) for image pair %s = %.6E",  i, N, analyzer.names(), fpn_corrected_noise_var)
+        log.info("[%d/%d] \u03C3\u00b2(total)     for image %s = %s", i, N, analyzer.name(), total_noise_var)
+        log.info("[%d/%d] \u03C3\u00b2(total-fpn) for image pair %s = %s",  i, N, analyzer.names(), fpn_corrected_noise_var)
     return  np.stack(signal_list, axis=-1), np.stack(total_noise_list, axis=-1), np.stack(fpn_corrected_noise_list, axis=-1)
 
 

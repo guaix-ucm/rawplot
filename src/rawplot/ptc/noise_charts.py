@@ -71,15 +71,16 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
     base = 2 if kwargs.get('log2', False) else 10
+    phys = kwargs.get('phys', False)
     for key, value in kwargs.items():
         if key in ('shot', 'fpn',) :
             label = rf"$\sigma_{ {key.upper()} }$"
             axes.plot(x[i], value[i], marker='o', linewidth=0, label=label)
         elif key == 'read' and value is not None:
             plot_read_noise_line(axes, value) #  read noise is a scalar
-        elif key == 'p_fpn' and value is not None:
+        elif key == 'p_fpn' and value is not None and not phys:
             plot_fpn_line(axes, value)
-        elif key == 'gain' and value is not None:
+        elif key == 'gain' and value is not None and not phys:
             plot_shot_line(axes, value)
     axes.set_title(f'channel {channels[i]}')
     axes.set_xscale('log', base=base)
@@ -133,6 +134,7 @@ def noise_curve1(args):
         p_fpn = args.p_fpn,
         gain = gain,
         log2 = args.log2,
+        phys = phys,
     )
 
 
@@ -168,6 +170,7 @@ def noise_curve2(args):
         # Optional arguments
         read = read_noise,
         log2 = args.log2,
+        phys = phys,
     )
 
 
@@ -203,6 +206,7 @@ def noise_curve3(args):
         channels = channels,
         # Optional arguments
         read = read_noise,
+        phys = phys,
     )
 
 
@@ -239,4 +243,5 @@ def noise_curve4(args):
         # Optional arguments
         read = read_noise,
         log2 = args.log2,
+         phys = phys,
     )
