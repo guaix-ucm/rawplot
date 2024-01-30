@@ -66,10 +66,21 @@ def noise_parser_arguments(parser):
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
     
 
+
+def plot_read_noise_zone(axes, read_noise, gain):
+    '''Plot an horizontal line'''
+    y = gain*(read_noise**2)
+    axes.axvline(y, linestyle='--', linewidth=3, color='b')
+
+def plot_shot_noise_zone(axes, gain, p_fpn):
+    '''Plot an horizontal line'''
+    y = 1 / (gain*p_fpn**2)
+    axes.axvline(y, linestyle='--', linewidth=3, color='b')
+
 def plot_read_noise_line(axes, read_noise):
     '''Plot an horizontal line'''
     text = r"$\sigma_{READ}$"
-    axes.axhline(read_noise, linestyle='-', label=text)
+    axes.axhline(read_noise, linestyle='-',  label=text)
 
 def plot_fpn_line(axes, p_fpn):
     P0 = (1, p_fpn)
@@ -100,6 +111,12 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
             plot_fpn_line(axes, value)
         elif key == 'gain' and value is not None and not phys:
             plot_shot_line(axes, value)
+
+    gain = kwargs['gain']
+    read_noise =  kwargs['read']
+    p_fpn =  kwargs['p_fpn']
+    plot_read_noise_zone(axes, read_noise, gain)
+    plot_shot_noise_zone(axes, gain, p_fpn)
     axes.set_title(f'channel {channels[i]}')
     axes.set_xscale('log', base=base)
     axes.set_yscale('log', base=base)
