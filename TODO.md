@@ -1,12 +1,10 @@
 # TO DO LIST
-1. New rawplot-bias with commands to:
-	* create a master bias
-		- Calculate the pixel average (master bias) and save as 3D FITS 
-		- Calculate the pixel stddev (master stdev) and save as 3D FITS 
-		- Calculate the max pixel value (master max) and save as 3D FITS 
-	* display a FITS image (the master bias, stde or max)
-
-2. Continue with PTC curves to estimate readount noise, FWC, etc.
-3. from log2 to log10 for displays?
-4. from `(R G1 G2 B)` to `(R Gr Gb B)` ?
-	* Update doc images as well
+1. Fittig line in PTC read+shot noise vs signal variance
+   - plot equation in text
+2. Refactore plotiing noises
+     - when to display m=1 and m=1/2 fits
+     - when to display zones
+     - Display FPC noise vs Signal (non log) => estoimate p by LS fitting
+3. Estoimate Quantum yield ?
+4. Dark current PTCs
+5. Spectral Response from images and phoytodiode readings (with its readout noise)

@@ -21,6 +21,9 @@ import logging
 
 import numpy as np
 
+from sklearn.linear_model import  TheilSenRegressor
+
+
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 
@@ -53,7 +56,7 @@ def variance_parser_arguments(parser):
     parser.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
     parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1]')
     parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1]')
-    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>', default=0.0, help='Read noise [DN] (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>', default=None, help='Read noise [DN] (default: %(default)s)')
     parser.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
@@ -61,27 +64,65 @@ def variance_parser_arguments(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
-    parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>', default=None, help='Gain [e-/DN] (default: %(default)s)')
-   
+    parser.add_argument('-fr','--from-value', type=vfloat, metavar='<x0>', default=None, help='Lower signal limit to fit [DN] (default: %(default)s)')
+    parser.add_argument('-to','--to-value', type=vfloat, metavar='<x1>', default=None, help='Upper signal limit to fit [DN] (default: %(default)s)')
 
 
-def plot_read_noise_variance_line(axes, read_noise):
-    '''Plot an horizontal line'''
-    text = r"$\sigma_{READ}^2$"
-    axes.axhline(read_noise**2, linestyle='--', label=text)
+def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
+    signal, total_noise_var, fpn_corrected_noise_var = signal_and_noise_variances_from(file_list, n_roi, channels, bias)
+    fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
+    return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var
+
+def fit_params(args):
+    if args.from_value is not None and args.to_value is not None:
+        estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+        return estimator, args.from_value, args.to_value
+    else:
+        return None, None, None
+
+def procesa(estimator, x, y, x0, x1):
+    #indices = np.where(np.logical_and(x0 <= x, x <= x1))
+    #log.info(indices)
+    log.info("From %s to %s => %s", x0, x1, x [ (x >=x0) * (x <= x1)])
+
+    start = np.searchsorted(x, x0, 'left') 
+    end = np.searchsorted(x, x1, 'right') 
+    result = np.arange(start, end) 
+    log.info(result)
+    return
+     
+    xx = x.reshape(-1,1)
+    fitted = estimator.fit(xx, y)
+    score = estimator.score(xx, y)
+    log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", channel, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+    b = estimator.intercept_
+    m = estimator.coef_[0]
+    r_sq = score
+    return r_sq, b, m
+
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 1 to 8'''
-    # Main plot goes here
+    # Main plot goes here (signal_and_read noise...)
+    base = 2 if kwargs.get('log2', False) else 10
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
-    base = 2 if kwargs.get('log2', False) else 10
-    for key, value in kwargs.items():
-        if key in ('total',) :
-            label = r"$\sigma_{TOTAL}^2$"
-            axes.plot(x[i], value[i], marker='o', linewidth=0, label=label)
-        elif key == 'read' and value is not None:
-            plot_read_noise_variance_line(axes, value) #  read noise is a scalar
+    total_noise = kwargs.get('total_var', None)
+    if total_noise is not None:
+        label = r"$\sigma_{TOTAL}^2$"
+        axes.plot(x[i], total_noise[i], marker='o', linewidth=0, label=label)
+    fpn_noise = kwargs.get('fpn_var', None)
+    if fpn_noise is not None:
+        label = r"$\sigma_{FPN}^2$"
+        axes.plot(x[i], fpn_noise[i], marker='o', linewidth=0, label=label)
+    read_noise = kwargs.get('read', None)
+    if read_noise is not None:
+        label = r"$\sigma_{READ}^2$"
+        axes.axhline(read_noise**2, linestyle='--', label=text)
+    fitted = kwargs.get('fitted', None)
+    if fitted is not None:
+        label = rf"fitted: $r^2 = {fitted['score']:.3f}$"
+        axes.plot(x[i], fitted['y'][i], marker='-', linewidth=0, label=label)
     axes.set_title(f'channel {channels[i]}')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
@@ -95,17 +136,21 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
 def variance_curve1(args):
     log.info(" === VARIANCE CHART 1: Shot + Readout Noise vs. Signal === ")
     units = "[DN]"
-    gain = args.gain
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
+    estimator, signal_from, signal_to = fit_params(args)
     read_noise = args.read_noise
-    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_and_read_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
         read_noise = read_noise
     )
+
+    procesa(estimator, signal, shot_and_read_var, signal_from, signal_to)
+    return
+
     title = make_plot_title_from(r"$\sigma_{READ+SHOT}^2$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -115,11 +160,11 @@ def variance_curve1(args):
         ytitle = f"Noise Variance {units}",
         ylabel =r"$\sigma_{READ+SHOT}^2$",
         x    = signal,
-        y  = shot_read_var,
+        y  = shot_and_read_var,
         channels = channels,
         # Optional arguments
         read = read_noise,
-        total_var = total_var,
+        #total_var = total_var,
     )
 
 

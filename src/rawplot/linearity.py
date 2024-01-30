@@ -151,7 +151,7 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kargs):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channels[i])
     fit_signal = estimator.predict(exptime.reshape(-1,1)) # For the whole range
-    text = rf"Theil-Sen fit: $R^2 = {score:.2f}$"
+    text = rf"fitted: $r^2 = {score:.3f}$"
     axes.plot(exptime, signal,  marker='o', linewidth=0, label=ylabel)
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.plot(exptime, fit_signal, label=text)
