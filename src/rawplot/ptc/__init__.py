@@ -34,7 +34,7 @@ from lica.misc import file_paths
 
 from .._version import __version__
 from ..util.mpl.plot import plot_layout, axes_reshape
-from .noise_charts import noise_chart1, noise_chart2, noise_chart3, noise_chart4
+from .noise_charts import noise_curve1, noise_curve2, noise_curve4, noise_curve4
 from .common import ptc_parser_arguments_dn
 
 # ----------------
@@ -43,17 +43,17 @@ from .common import ptc_parser_arguments_dn
 
 SQRT_2 = math.sqrt(2)
 
-COLUMN_LABELS = ["Chart", "Plot", "Units"]
+COLUMN_LABELS = ["Curve", "Plot", "Units"]
 
 DATA = [
-    ["Chart 1", "read, shot, FPN (total noise) vs. signal", "log rms DN vs. log DN"],
-    ["Chart 2", "read, shot noise vs. signal",              "log rms DN vs. log DN"],
-    ["Chart 3", "shot noise vs. signal",                    "log rms DN vs. log DN"],
-    ["Chart 4", "FPN vs. signal",                           "log rms DN vs. log DN"],
-    ["Chart 5", "read, shot, FPN (total noise) vs. signal", "log rms $e^{-}$ vs. log $e^{-}$"],
-    ["Chart 6", "read, shot noise vs. signal",              "log rms $e^{-}$ vs. log $e^{-}$"],
-    ["Chart 7", "shot noise vs. signal",                    "log rms $e^{-}$ vs. log $e^{-}$"],
-    ["Chart 8", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Curve 1", "read, shot, FPN (total noise) vs. signal", "log rms DN vs. log DN"],
+    ["Curve 1", "read, shot, FPN (total noise) vs. signal", "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Curve 2", "read, shot noise vs. signal",              "log rms DN vs. log DN"],
+    ["Curve 2", "read, shot noise vs. signal",              "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Curve 3", "shot noise vs. signal",                    "log rms DN vs. log DN"],
+    ["Curve 3", "shot noise vs. signal",                    "log rms $e^{-}$ vs. log $e^{-}$"],
+    ["Curve 4", "FPN vs. signal",                           "log rms DN vs. log DN"],
+    ["Curve 4", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
 ]
 
 
@@ -67,10 +67,10 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def ptc_charts(args):
+def ptc_curves(args):
     log.info("Displaying PTC charts")
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 3), layout='tight')
-    fig.suptitle("Available Photon Transfer Charts")
+    fig.suptitle("Available Photon Transfer Curves")
     ax.axis("tight")
     ax.axis("off")
     ax.set_url('https://www.google.com/')
@@ -98,24 +98,24 @@ def ptc(args):
 
 def add_args(parser):
     subparser = parser.add_subparsers(dest='command')
-    parser_charts = subparser.add_parser('charts', help='Plot avaliable PTC charts in matplotlib')
+    parser_charts = subparser.add_parser('curves', help='Plot available PTC curves in matplotlib')
 
-    parser_chart1 = subparser.add_parser('chart1', help='Plot read, shot, FPN (total noise) vs. signal [DN]')
-    ptc_parser_arguments_dn(parser_chart1)
-    parser_chart2 = subparser.add_parser('chart2', help='read, shot noise vs. signal [DN]')
-    ptc_parser_arguments_dn(parser_chart2)
-    parser_chart3 = subparser.add_parser('chart3', help='shot noise vs. signal [DN]')
-    ptc_parser_arguments_dn(parser_chart3)
-    parser_chart4 = subparser.add_parser('chart4', help='FPN vs. signal [DN}')
-    ptc_parser_arguments_dn(parser_chart4)
+    parser_curve1 = subparser.add_parser('curve1', help='Plot read, shot, FPN (total noise) vs. signal, [DN] or [e-]')
+    ptc_parser_arguments_dn(parser_curve1)
+    parser_curve2 = subparser.add_parser('curve2', help='read, shot noise vs. signal, [DN] or [e-]')
+    ptc_parser_arguments_dn(parser_curve2)
+    parser_curve4 = subparser.add_parser('curve4', help='shot noise vs. signal, [DN] or [e-]')
+    ptc_parser_arguments_dn(parser_curve4)
+    parser_curve4 = subparser.add_parser('curve4', help='FPN vs. signal, [DN] or [e-]')
+    ptc_parser_arguments_dn(parser_curve4)
 
 
 CHARTS_TABLE = {
-    'charts': ptc_charts,
-    'chart1': noise_chart1,
-    'chart2': noise_chart2,
-    'chart3': noise_chart3,
-    'chart4': noise_chart4,
+    'curves': ptc_curves,
+    'curve1': noise_curve1,
+    'curve2': noise_curve2,
+    'curve4': noise_curve4,
+    'curve4': noise_curve4,
 }
 
 # ================
@@ -127,5 +127,5 @@ def main():
         add_args_func=add_args, 
         name=__name__, 
         version=__version__,
-        description="Plot Sensor SNR per channel over a numbr of flat fields"
+        description="Plot PTC curves from a set of RAW images"
     )

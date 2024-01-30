@@ -130,7 +130,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
         axes.legend()
 
 
-def noise_chart1(args):
+def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
@@ -173,7 +173,7 @@ def noise_chart1(args):
     )
 
 
-def noise_chart2(args):
+def noise_curve2(args):
     log.info(" === NOISE CHART 2: Shot plus Readout Noise vs. Signal === ")
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
@@ -208,7 +208,7 @@ def noise_chart2(args):
     )
 
 
-def noise_chart3(args):
+def noise_curve3(args):
     log.info(" === NOISE CHART 3: Shot Noise vs. Signal === ")
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
@@ -243,7 +243,7 @@ def noise_chart3(args):
     )
 
 
-def noise_chart4(args):
+def noise_curve4(args):
     log.info(" === NOISE CHART 4: Fixed Pattern Noise vs. Signal === ")
     units, gain, phys = check_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)

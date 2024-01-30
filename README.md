@@ -141,24 +141,24 @@ rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --s
 ```
 ![Raspberry Pi HQ HV Spectrogram](doc/images/hv.png)
 
-## Photon Transfer Charts (PTC)
+## Photon Transfer Curves (PTC)
 
 An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_) book have been included so far:
 
-|  CHART   |                Description               | Units                   |
+|  CURVE   |                Description               | Units                   |
 | :------: | :--------------------------------------- | :---------------------- |
-| Chart 1  | read, shot, FPN & total noise vs. signal | log rms DN vs. log DN |
-| Chart 2  | read + shot noise vs. signal             | log rms DN vs. log DN |
-| Chart 3  | shot noise vs. signal                    | log rms DN vs. log DN |
-| Chart 4  | FPN vs. signal                           | log rms DN vs. log DN |
+| Curve 1  | read, shot, FPN & total noise vs. signal | log rms DN vs. log DN |
+| Curve 2  | read + shot noise vs. signal             | log rms DN vs. log DN |
+| Curve 3  | shot noise vs. signal                    | log rms DN vs. log DN |
+| Curve 4  | FPN vs. signal                           | log rms DN vs. log DN |
 
 
-From the same dataset we used to determine the camera linearity, we generate PTC Chart #1, this time with a bigger ROI.
+From the same dataset we used to determine the camera linearity, we generate PTC Curve #1, this time with a bigger ROI.
 For this technique to work, we require to have images taken in pairs at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
 
 
 ```bash
-rawplot-ptc --console chart1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr
+rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr
 ```
 
 If not specified in the command line, the read noise line is at 0 DN (not shown) so that we estimate its value from the total noise plot.
@@ -170,10 +170,10 @@ At Signal level 19 DN approx. the shot noise equals the readout noise. At signal
 shot noise equals the Fixed Pattern Noise (FPN) (3 DN approx.)
 
 ```bash
-rawplot-ptc --console chart1 --read-noise 1.25 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr 
+rawplot-ptc --console curve1 --read-noise 1.25 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr 
 ```
 
-![Raspberry Pi HQ Camera PTC Chart plot](doc/images/ptc_noise_chart1.png)
+![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1.png)
 
 
 ## Signal to Noise Ratio plot
