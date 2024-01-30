@@ -68,7 +68,7 @@ def variance_parser_arguments(parser):
 def plot_read_noise_variance_line(axes, read_noise):
     '''Plot an horizontal line'''
     text = r"$\sigma_{READ}^2$"
-    axes.axhline(read_noise**2, linestyle='-', label=text)
+    axes.axhline(read_noise**2, linestyle='--', label=text)
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 1 to 8'''
