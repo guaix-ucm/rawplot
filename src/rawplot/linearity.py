@@ -117,19 +117,19 @@ def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, every=
     return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
 
 
-def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabel='y'):
-    angle = math.atan(slope)*(180/math.pi)
-    x0 = np.min(xdata); x1 = np.max(xdata)
-    y0 = np.min(ydata); y1 = np.max(ydata)
-    x = x0 + 0.35*(x1-x0)
-    y = y0 + 0.45*(y1-y0)
-    text = f"${ylabel} = {slope:.2f}{xlabel}{intercept:+.2f}$"
-    axes.text(x, y, text,
-        rotation_mode='anchor',
-        rotation=angle,
-        transform_rotates_text=True,
-        ha='left', va='top'
-    )
+def plot_fitted(axes, fitted, fitted_x, fitted_y):
+    '''All graphical elements for a fitting line'''
+    slope = fitted['slope']
+    score = fitted['score']
+    intercept = fitted['intercept']
+    label = rf"fitted"
+    P0 = (0, intercept) 
+    P1 = ( -intercept/slope)
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"fitting")
+    axes.axline(P0, slope=slope, linestyle=':', label=label)
+    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}x+{intercept:0.2f}$"))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    axes.text(0.3, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
 
 
 def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
@@ -142,15 +142,8 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
     sat_exptime = kwargs['sat_exptime'][i]
     sat_signal = kwargs['sat_signal'][i]
     fitted = kwargs['fitted'][i]
-    score = fitted['score']
-    slope = fitted['slope']
-    intercept = fitted['intercept']
-    label = rf"fitted: $r^2 = {score:.3f}$"
-    P0 = (0, intercept); P1 = ( -intercept/slope)
-    axes.plot(good_exptime, good_signal, marker='o', linewidth=0, label="fitting")
+    plot_fitted(axes, fitted, good_exptime, good_signal)
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
-    axes.axline(P0, slope=slope, linestyle=':', label=label)
-    plot_linear_equation(axes, good_exptime, good_signal, slope, intercept, xlabel='t', ylabel='S(t)')
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
     axes.grid(True,  which='major', color='silver', linestyle='solid')

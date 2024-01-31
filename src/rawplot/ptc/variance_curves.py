@@ -21,7 +21,7 @@ import logging
 
 import numpy as np
 
-from sklearn.linear_model import  TheilSenRegressor
+from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
@@ -70,6 +70,7 @@ def variance_parser_arguments(parser):
 
 def fit(x, y, x0, x1, channels):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+    #estimator = LinearRegression(fit_intercept=True)
     fit_params = list()
     mask = np.logical_and(x >= x0, x <= x1)
     for i, ch in enumerate(channels):
@@ -84,6 +85,25 @@ def fit(x, y, x0, x1, channels):
             'x': sub_x, 'y': sub_y})
     return fit_params
 
+def plot_fitted(axes, fitted):
+    '''All graphical elements for a fitting line'''
+    slope = fitted['slope']
+    score = fitted['score']
+    intercept = fitted['intercept']
+    fitted_x = fitted['x']
+    fitted_y = fitted['y']
+    label = rf"fitted"
+    P0 = (0, intercept) 
+    P1 = ( -intercept/slope)
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$\sigma_{READ+SHOT}^2$ (selected)")
+    axes.axline(P0, slope=slope, linestyle=':', label=label)
+    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$g = {1/slope:0.2f}\quad e^{{-}}/DN$"))
+    if intercept >= 0:
+        text = text + rf"$\sigma_{{READ}} = {math.sqrt(intercept)}$ [DN]"
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    axes.text(0.5, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
+
+
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Charts 5'''
@@ -96,15 +116,7 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
         axes.plot(x[i], shot_noise[i], marker='o', linewidth=0, label=label)
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
-        slope = fitted[i]['slope']
-        score = fitted[i]['score']
-        intercept = fitted[i]['intercept']
-        fitted_x = fitted[i]['x']
-        fitted_y = fitted[i]['y']
-        label = rf"fitted: $r^2 = {score:.3f},\quad g = {1/slope:0.2f}\quad e^{{-}}/DN$"
-        P0 = (0, intercept); P1 = ( -intercept/slope)
-        axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"fitting $\sigma_{READ+SHOT}^2$")
-        axes.axline(P0, slope=slope, linestyle=':', label=label)
+        plot_fitted(axes, fitted[i])
     read_noise = kwargs.get('read', None)
     if read_noise is not None:
         label = r"$\sigma_{READ}^2$"
