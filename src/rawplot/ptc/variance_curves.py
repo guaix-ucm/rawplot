@@ -92,14 +92,17 @@ def plot_fitted(axes, fitted):
     intercept = fitted['intercept']
     fitted_x = fitted['x']
     fitted_y = fitted['y']
-    label = rf"fitted"
+    label = rf"$\sigma_{{READ+SHOT}}^2$ (model)"
     P0 = (0, intercept) 
     P1 = ( -intercept/slope)
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$\sigma_{READ+SHOT}^2$ (selected)")
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$\sigma_{READ+SHOT}^2$ (fitted)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
-    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$g = {1/slope:0.2f}\quad e^{{-}}/DN$"))
     if intercept >= 0:
-        text = text + rf"$\sigma_{{READ}} = {math.sqrt(intercept)}$ [DN]"
+        text_b = rf"$\sigma_{{READ}} = {math.sqrt(intercept)}$ [DN]"
+    else:
+        text_b = rf"$\sigma_{{READ}} = ?$"
+    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$g = {1/slope:0.2f}\quad [e^{{-}}/DN$]", text_b))
+    
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.5, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
 

@@ -122,12 +122,12 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
     slope = fitted['slope']
     score = fitted['score']
     intercept = fitted['intercept']
-    label = rf"fitted"
+    label = rf"$S(t)$ (model)"
     P0 = (0, intercept) 
     P1 = ( -intercept/slope)
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"fitting")
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$S(t)$ (fitted)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
-    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}x+{intercept:0.2f}$"))
+    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t+{intercept:0.2f}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.3, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
 
@@ -165,9 +165,9 @@ def linearity(args):
     log.info("estimated signal & noise for %s points", exptime.shape)
     good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, threshold=0.5)
     if args.gain and args.physical_units:
-        signal *= gain
-        good_signal *= gain
-        sat_signal *= gain
+        signal = [args.gain * s for s in signal]
+        good_signal = [args.gain * s for s in good_signal]
+        sat_signal = [args.gain * s for s in sat_signal]
     title = make_plot_title_from("Linearity plot",metadata, roi)
     fit_params = fit(good_exptime, good_signal, channels)
     mpl_main_plot_loop(
