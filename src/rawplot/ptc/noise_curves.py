@@ -74,6 +74,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     read_noise = kwargs.get('read', None)
     fpn_noise = kwargs.get('fpn', None)
     shot_noise = kwargs.get('shot', None)
+    phys = kwargs.get('phys', False)
     if shot_noise is not None:
         label = r"$\sigma_{SHOT}$" if read_noise is not None else r"$\sigma_{SHOT+READ}$"
         axes.plot(x[i], shot_noise[i], marker='o', linewidth=0, label=label)
@@ -85,15 +86,19 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
         axes.axhline(read_noise, linestyle=':', label=r"$\sigma_{READ}$")
     gain = kwargs.get('gain', None)
     if gain is not None:
-        axes.axline((1, 1/math.sqrt(gain)), (gain, 1), linestyle='-.', label=r"$\sigma_{SHOT}, m=\frac{1}{2}$")
+        P0 = (1,1) if phys else (1, 1/math.sqrt(gain))
+        P1 = (4,2) if phys else (gain, 1)
+        axes.axline(P0, P1, linestyle='-.', label=r"$\sigma_{SHOT}, m=\frac{1}{2}$")
     p_fpn = kwargs.get('p_fpn', None)
     if p_fpn is not None:
         axes.axline( (1, p_fpn), (1/p_fpn, 1), linestyle='--', label=r"$\sigma_{FPN}, m=1$")
     # Optional (vertical) Zones
     if read_noise is not None and gain is not None:
-        axes.axvline(gain*(read_noise**2), linestyle='--', linewidth=2, color='k')
+        Y = read_noise**2 if phys else gain*(read_noise**2)
+        axes.axvline(Y, linestyle='--', linewidth=2, color='k')
     if gain is not None and p_fpn is not None:
-        axes.axvline(1 / (gain*p_fpn**2), linestyle='--', linewidth=2, color='k')
+        Y = 1 / (p_fpn**2) if phys else 1 / (gain*p_fpn**2)
+        axes.axvline(Y, linestyle='--', linewidth=2, color='k')
     # Titles, scales and grids
     axes.set_title(f'channel {channels[i]}')
     base = 2 if kwargs.get('log2', False) else 10
@@ -102,7 +107,6 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-    phys = kwargs.get('phys', False)
     units = r"$[e^{-}]$" if phys else "[DN]"
     axes.set_xlabel(f"{xtitle} {units}")
     axes.set_ylabel(f"{ytitle} {units}")
