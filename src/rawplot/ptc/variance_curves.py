@@ -66,7 +66,7 @@ def variance_parser_arguments(parser):
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
     parser.add_argument('-fr','--from-value', type=vfloat, metavar='<x0>', default=None, help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to-value', type=vfloat, metavar='<x1>', default=None, help='Upper signal limit to fit [DN] (default: %(default)s)')
-
+    parser.add_argument('--total-noise',  action='store_true', help='Also displays Total Noise Variance [DN]')
 
 def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     signal, total_noise_var, fpn_corrected_noise_var = signal_and_noise_variances_from(file_list, n_roi, channels, bias)
@@ -160,7 +160,7 @@ def variance_curve1(args):
         channels = channels,
         # Optional arguments
         read = args.read_noise,
-        #total_var = total_var,
+        total_var = total_var if args.total_noise else None,
         fitted = fit_params
     )
 
