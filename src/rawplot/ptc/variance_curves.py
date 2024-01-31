@@ -85,20 +85,7 @@ def fit(x, y, x0, x1, label):
     log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", label, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
     intercept = estimator.intercept_
     slope = estimator.coef_[0]
-    return slope, intercept, score
-
-
-def plot_linear_equation(axes, xy, slope, intercept, xlabel='x', ylabel='y'):
-    angle = math.atan(slope)*(180/math.pi)
-    x = xy[0]
-    y = xy[1]
-    text = f"${ylabel} = {slope:.2f}{xlabel}{intercept:+.2f}$"
-    axes.text(x, y, text,
-        rotation_mode='anchor',
-        rotation=angle,
-        transform_rotates_text=True,
-        ha='left', va='top'
-    )
+    return slope, intercept, score, sub_x, sub_y
 
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
@@ -122,6 +109,7 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
     if fitted is not None:
         label = rf"fitted: $r^2 = {fitted[2]:.3f},\quad g = {1/fitted[0]:0.2f}\quad e^{{-}}/DN$"
         P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
+        axes.plot(fitted[3], fitted[4], marker='o', linewidth=0, label="selected")
         axes.axline(P0, slope=fitted[0], linestyle='--', label=label)
     axes.set_title(f'channel {channels[i]}')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
