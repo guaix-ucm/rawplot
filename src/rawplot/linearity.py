@@ -147,7 +147,7 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
     intercept = fitted['intercept']
     label = rf"fitted: $r^2 = {score:.3f}$"
     P0 = (0, intercept); P1 = ( -intercept/slope)
-    axes.plot(good_exptime, good_signal, marker='o', linewidth=0, label="selected")
+    axes.plot(good_exptime, good_signal, marker='o', linewidth=0, label="fitting")
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
     plot_linear_equation(axes, good_exptime, good_signal, slope, intercept, xlabel='t', ylabel='S(t)')

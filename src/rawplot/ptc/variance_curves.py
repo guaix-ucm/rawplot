@@ -34,7 +34,7 @@ from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances_from, signal_and_noise_variances
+from .common import signal_and_noise_variances
 # ----------------
 # Module constants
 # ----------------
@@ -66,12 +66,7 @@ def variance_parser_arguments(parser):
     group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
     parser.add_argument('-fr','--from-value', type=vfloat, metavar='<x0>', default=None, help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to-value', type=vfloat, metavar='<x1>', default=None, help='Upper signal limit to fit [DN] (default: %(default)s)')
-    parser.add_argument('--total-noise',  action='store_true', help='Also displays Total Noise Variance [DN]')
 
-def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
-    signal, total_noise_var, fpn_corrected_noise_var = signal_and_noise_variances_from(file_list, n_roi, channels, bias)
-    fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
-    return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var
 
 def fit(x, y, x0, x1, channels):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
@@ -95,14 +90,10 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
     # Main plot goes here (signal_and_read noise...)
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
-    total_noise = kwargs.get('total_var', None)
-    if total_noise is not None:
-        label = r"$\sigma_{TOTAL}^2$"
-        axes.plot(x[i], total_noise[i], marker='o', linewidth=0, label=label)
-    fpn_noise = kwargs.get('fpn_var', None)
-    if fpn_noise is not None:
-        label = r"$\sigma_{FPN}^2$"
-        axes.plot(x[i], fpn_noise[i], marker='o', linewidth=0, label=label)
+    shot_noise = kwargs.get('shot_var', None)
+    if shot_noise is not None:
+        label = r"$\sigma_{SHOT}^2$"
+        axes.plot(x[i], shot_noise[i], marker='o', linewidth=0, label=label)
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
         slope = fitted[i]['slope']
@@ -112,7 +103,7 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
         fitted_y = fitted[i]['y']
         label = rf"fitted: $r^2 = {score:.3f},\quad g = {1/slope:0.2f}\quad e^{{-}}/DN$"
         P0 = (0, intercept); P1 = ( -intercept/slope)
-        axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label="selected")
+        axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"fitting $\sigma_{READ+SHOT}^2$")
         axes.axline(P0, slope=slope, linestyle=':', label=label)
     read_noise = kwargs.get('read', None)
     if read_noise is not None:
@@ -135,7 +126,7 @@ def variance_curve1(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
-    signal, total_var, shot_and_read_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_and_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
@@ -160,7 +151,7 @@ def variance_curve1(args):
         channels = channels,
         # Optional arguments
         read = args.read_noise,
-        total_var = total_var if args.total_noise else None,
+        shot_var = shot_var if args.read_noise else None,
         fitted = fit_params
     )
 

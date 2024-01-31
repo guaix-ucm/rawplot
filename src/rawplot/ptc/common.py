@@ -76,4 +76,4 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     signal, total_noise_var, fpn_corrected_noise_var = signal_and_noise_variances_from(file_list, n_roi, channels, bias)
     fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
     shot_noise_var = fpn_corrected_noise_var - read_noise**2
-    return signal, total_noise_var, fpn_corrected_noise_var, shot_noise_var, fixed_pattern_noise_var
+    return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var, shot_noise_var,

@@ -31,7 +31,7 @@ from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
-from .common import signal_and_noise_variances_from, signal_and_noise_variances
+from .common import signal_and_noise_variances
 
 # ----------------
 # Module constants
@@ -124,7 +124,7 @@ def noise_curve1(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
-    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
@@ -168,7 +168,7 @@ def noise_curve2(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
-    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
@@ -205,7 +205,7 @@ def noise_curve3(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
-    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
@@ -242,7 +242,7 @@ def noise_curve4(args):
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
-    signal, total_var, shot_read_var, shot_var, fpn_var = signal_and_noise_variances(
+    signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
