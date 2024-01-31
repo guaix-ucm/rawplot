@@ -56,15 +56,15 @@ log = logging.getLogger(__name__)
 
 def fit(exptime, signal, channels):
     fit_params = list()
+    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     for i, ch in enumerate(channels):
-        estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
         T = exptime[i].reshape(-1,1)
         fitted = estimator.fit(T, signal[i])
         score = estimator.score(T, signal[i])
         log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
         intercept = estimator.intercept_
         slope = estimator.coef_[0]
-        fit_params.append((slope, intercept, score))
+        fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_})
     return fit_params
 
 # The saturation analysis is made on the assumption that the measured noise
@@ -79,19 +79,18 @@ def saturation_analysis(exptime, signal, noise, channels, threshold):
     ratio =  noise / estimated_poisson_noise
     bad_mask = ratio < threshold
     good_mask = ratio >= threshold
-    N = len(channels)
     good_exptime_list=list()
     good_signal_list=list()
     sat_exptime_list=list()
     sat_signal_list=list()
-    for ch in range(N):
-        bm = bad_mask[ch]
-        gm = good_mask[ch]
-        sat_exptime = exptime[ch][bm]
-        sat_signal = signal[ch][bm]
-        good_exptime = exptime[ch][gm]
-        good_signal = signal[ch][gm]
-        log.info("[%s]. Good signal for only %d points", channels[ch], good_exptime.shape[0])
+    for i, ch in enumerate(channels):
+        bmsk = bad_mask[i]
+        gmsk = good_mask[i]
+        sat_exptime = exptime[i][bmsk]
+        sat_signal = signal[i][bmsk]
+        good_exptime = exptime[i][gmsk]
+        good_signal = signal[i][gmsk]
+        log.info("[%s]. Good signal for only %d points", ch, good_exptime.shape[0])
         good_exptime_list.append(good_exptime)
         sat_exptime_list.append(sat_exptime)
         good_signal_list.append(good_signal)
@@ -143,12 +142,15 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
     sat_exptime = kwargs['sat_exptime'][i]
     sat_signal = kwargs['sat_signal'][i]
     fitted = kwargs['fitted'][i]
-    label = rf"fitted: $r^2 = {fitted[2]:.3f}$"
-    P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
+    score = fitted['score']
+    slope = fitted['slope']
+    intercept = fitted['intercept']
+    label = rf"fitted: $r^2 = {score:.3f}$"
+    P0 = (0, intercept); P1 = ( -intercept/slope)
     axes.plot(good_exptime, good_signal, marker='o', linewidth=0, label="selected")
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
-    axes.axline(P0, slope=fitted[0], linestyle=':', label=label)
-    plot_linear_equation(axes, good_exptime, good_signal, fitted[0], fitted[1], xlabel='t', ylabel='S(t)')
+    axes.axline(P0, slope=slope, linestyle=':', label=label)
+    plot_linear_equation(axes, good_exptime, good_signal, slope, intercept, xlabel='t', ylabel='S(t)')
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
     axes.grid(True,  which='major', color='silver', linestyle='solid')
@@ -175,8 +177,6 @@ def linearity(args):
         sat_signal *= gain
     title = make_plot_title_from("Linearity plot",metadata, roi)
     fit_params = fit(good_exptime, good_signal, channels)
-    log.info("FIT PARAMS = %s", fit_params)
-    
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
@@ -192,8 +192,8 @@ def linearity(args):
         good_signal  = good_signal,
         sat_exptime  = sat_exptime,
         sat_signal   = sat_signal,
-        phys = args.physical_units,
         fitted = fit_params,
+        phys = args.physical_units,
     )
 
 # ===================================

@@ -73,19 +73,21 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
     return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var
 
-def fit(x, y, x0, x1, label):
-    assert x.shape[0] == 1, "Only one color plane is allowed. Set --channel to one color only" 
-    mask = np.logical_and(x >= x0, x <= x1)
-    sub_x = x[mask]
-    sub_y = y[mask]
-    sub_x = sub_x.reshape(-1,1)
+def fit(x, y, x0, x1, channels):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
-    estimator.fit(sub_x, sub_y)
-    score = estimator.score(sub_x, sub_y)
-    log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", label, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
-    intercept = estimator.intercept_
-    slope = estimator.coef_[0]
-    return slope, intercept, score, sub_x, sub_y
+    fit_params = list()
+    mask = np.logical_and(x >= x0, x <= x1)
+    for i, ch in enumerate(channels):
+        m = mask[i]
+        sub_x = x[i][m]
+        sub_y = y[i][m]
+        sub_x = sub_x.reshape(-1,1)
+        estimator.fit(sub_x, sub_y)
+        score = estimator.score(sub_x, sub_y)
+        log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+        fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_, 
+            'x': sub_x, 'y': sub_y})
+    return fit_params
 
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
@@ -103,10 +105,15 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
         axes.plot(x[i], fpn_noise[i], marker='o', linewidth=0, label=label)
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
-        label = rf"fitted: $r^2 = {fitted[2]:.3f},\quad g = {1/fitted[0]:0.2f}\quad e^{{-}}/DN$"
-        P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
-        axes.plot(fitted[3], fitted[4], marker='o', linewidth=0, label="selected")
-        axes.axline(P0, slope=fitted[0], linestyle=':', label=label)
+        slope = fitted[i]['slope']
+        score = fitted[i]['score']
+        intercept = fitted[i]['intercept']
+        fitted_x = fitted[i]['x']
+        fitted_y = fitted[i]['y']
+        label = rf"fitted: $r^2 = {score:.3f},\quad g = {1/slope:0.2f}\quad e^{{-}}/DN$"
+        P0 = (0, intercept); P1 = ( -intercept/slope)
+        axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label="selected")
+        axes.axline(P0, slope=slope, linestyle=':', label=label)
     read_noise = kwargs.get('read', None)
     if read_noise is not None:
         label = r"$\sigma_{READ}^2$"
@@ -136,7 +143,7 @@ def variance_curve1(args):
         read_noise = read_noise
     )
     if args.from_value and args.to_value:
-        fit_params =  tuple(fit(signal, shot_and_read_var, args.from_value, args.to_value, channels[0]))
+        fit_params = fit(signal, shot_and_read_var, args.from_value, args.to_value, channels)
     else:
         fit_params = None
 
