@@ -54,15 +54,18 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-
-
-def fit_estimator(estimator, exptime, signal, channel):
-    T = exptime.reshape(-1,1)
-    fitted = estimator.fit(T, signal)
-    score = estimator.score(T, signal)
-    log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", channel, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
-    predicted = estimator.predict(T)
-    return score, estimator.coef_[0], estimator.intercept_
+def fit(exptime, signal, channels):
+    fit_params = list()
+    for i, ch in enumerate(channels):
+        estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+        T = exptime[i].reshape(-1,1)
+        fitted = estimator.fit(T, signal[i])
+        score = estimator.score(T, signal[i])
+        log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+        intercept = estimator.intercept_
+        slope = estimator.coef_[0]
+        fit_params.append((slope, intercept, score))
+    return fit_params
 
 # The saturation analysis is made on the assumption that the measured noise
 # should be dominated by shot noise if the ROI is small
@@ -74,36 +77,25 @@ def fit_estimator(estimator, exptime, signal, channel):
 def saturation_analysis(exptime, signal, noise, channels, threshold):
     estimated_poisson_noise = np.sqrt(signal)
     ratio =  noise / estimated_poisson_noise
-    sat_exptime = np.full_like(exptime, np.nan)
-    sat_signal = np.full_like(signal, np.nan)
-    # They are not matrices as each channel may have its own row length
+    bad_mask = ratio < threshold
+    good_mask = ratio >= threshold
+    N = len(channels)
     good_exptime_list=list()
     good_signal_list=list()
     sat_exptime_list=list()
     sat_signal_list=list()
-    N = len(channels)
     for ch in range(N):
-        good_exptime = exptime[ch].copy()
-        good_signal = signal[ch].copy()
-        sat_exptime = np.full_like(exptime[ch], np.nan)
-        sat_signal = np.full_like(signal[ch], np.nan)
-        for i in range(ratio.shape[1]):
-            if ratio[ch,i] < threshold:
-                sat_signal[i] = good_signal[i]
-                sat_exptime[i] = good_exptime[i]
-                # Mark with non valid values
-                good_signal[i] = np.nan
-                good_exptime[i] = np.nan
-        # Wipe the NaNs out, thus making the arrays smaller
-        # This is needed for the least squares fitting routine
-        good_exptime = good_exptime[~np.isnan(good_exptime)]
-        sat_exptime = sat_exptime[~np.isnan(sat_exptime)]
+        bm = bad_mask[ch]
+        gm = good_mask[ch]
+        sat_exptime = exptime[ch][bm]
+        sat_signal = signal[ch][bm]
+        good_exptime = exptime[ch][gm]
+        good_signal = signal[ch][gm]
         log.info("[%s]. Good signal for only %d points", channels[ch], good_exptime.shape[0])
-        log.info("[%s]. Saturated signal in %d points", channels[ch], sat_exptime.shape[0])
         good_exptime_list.append(good_exptime)
         sat_exptime_list.append(sat_exptime)
-        good_signal_list.append(good_signal[~np.isnan(good_signal)])
-        sat_signal_list.append(sat_signal[~np.isnan(sat_signal)])
+        good_signal_list.append(good_signal)
+        sat_signal_list.append(sat_signal)
     return good_exptime_list, good_signal_list, sat_exptime_list, sat_signal_list
 
 
@@ -150,14 +142,13 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
     good_signal = kwargs['good_signal'][i]
     sat_exptime = kwargs['sat_exptime'][i]
     sat_signal = kwargs['sat_signal'][i]
-    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
-    score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channels[i])
-    fit_signal = estimator.predict(exptime.reshape(-1,1)) # For the whole range
-    text = rf"fitted $r^2: {score:.3f}$"
-    axes.plot(exptime, signal,  marker='o', linewidth=0, label=ylabel)
+    fitted = kwargs['fitted'][i]
+    label = rf"fitted: $r^2 = {fitted[2]:.3f}$"
+    P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
+    axes.plot(good_exptime, good_signal, marker='o', linewidth=0, label="selected")
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
-    axes.plot(exptime, fit_signal, label=text)
-    plot_linear_equation(axes, exptime, fit_signal, slope, intercept, xlabel='t', ylabel='S(t)')
+    axes.axline(P0, slope=fitted[0], linestyle=':', label=label)
+    plot_linear_equation(axes, good_exptime, good_signal, fitted[0], fitted[1], xlabel='t', ylabel='S(t)')
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
     axes.grid(True,  which='major', color='silver', linestyle='solid')
@@ -183,6 +174,9 @@ def linearity(args):
         good_signal *= gain
         sat_signal *= gain
     title = make_plot_title_from("Linearity plot",metadata, roi)
+    fit_params = fit(good_exptime, good_signal, channels)
+    log.info("FIT PARAMS = %s", fit_params)
+    
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
@@ -199,6 +193,7 @@ def linearity(args):
         sat_exptime  = sat_exptime,
         sat_signal   = sat_signal,
         phys = args.physical_units,
+        fitted = fit_params,
     )
 
 # ===================================
