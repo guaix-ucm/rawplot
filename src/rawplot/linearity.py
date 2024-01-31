@@ -84,12 +84,12 @@ def saturation_analysis(exptime, signal, noise, channels, threshold):
     sat_exptime_list=list()
     sat_signal_list=list()
     for i, ch in enumerate(channels):
-        bmsk = bad_mask[i]
-        gmsk = good_mask[i]
-        sat_exptime = exptime[i][bmsk]
-        sat_signal = signal[i][bmsk]
-        good_exptime = exptime[i][gmsk]
-        good_signal = signal[i][gmsk]
+        b_msk = bad_mask[i]
+        g_msk = good_mask[i]
+        sat_exptime = exptime[i][b_msk]
+        sat_signal = signal[i][b_msk]
+        good_exptime = exptime[i][g_msk]
+        good_signal = signal[i][g_msk]
         log.info("[%s]. Good signal for only %d points", ch, good_exptime.shape[0])
         good_exptime_list.append(good_exptime)
         sat_exptime_list.append(sat_exptime)
