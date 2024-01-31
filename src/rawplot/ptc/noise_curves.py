@@ -68,13 +68,13 @@ def noise_parser_arguments(parser):
 
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Curves 1 to 8'''
+    phys = kwargs.get('phys', False) # rae we dealing with physical values?
     # Main data plot goes here
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional data plots go here
     read_noise = kwargs.get('read', None)
     fpn_noise = kwargs.get('fpn', None)
     shot_noise = kwargs.get('shot', None)
-    phys = kwargs.get('phys', False)
     if shot_noise is not None:
         label = r"$\sigma_{SHOT}$" if read_noise is not None else r"$\sigma_{SHOT+READ}$"
         axes.plot(x[i], shot_noise[i], marker='o', linewidth=0, label=label)
@@ -112,7 +112,6 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     axes.set_ylabel(f"{ytitle} {units}")
     if ylabel:
         axes.legend()
-
 
 # ------------------------
 # AUXILIARY MAIN FUNCTIONS
@@ -157,8 +156,8 @@ def noise_curve1(args):
         read = None if read_noise == 0.0 else read_noise,
         p_fpn = args.p_fpn,
         gain = args.gain,
-        log2 = args.log2,
         phys = args.physical_units,
+        log2 = args.log2,
     )
 
 
@@ -193,8 +192,8 @@ def noise_curve2(args):
         channels = channels,
         # Optional arguments
         read = None if read_noise == 0.0 else read_noise,
-        log2 = args.log2,
         phys = args.physical_units,
+        log2 = args.log2,
     )
 
 
@@ -232,6 +231,7 @@ def noise_curve3(args):
         read = None if read_noise == 0.0 else read_noise,
         gain = args.gain,
         phys = args.physical_units,
+        log2 = args.log2,
     )
 
 
@@ -267,6 +267,6 @@ def noise_curve4(args):
         # Optional arguments
         read = None if read_noise == 0.0 else read_noise,
         p_fpn = args.p_fpn,
-        log2 = args.log2,
         phys = args.physical_units,
+        log2 = args.log2,
     )

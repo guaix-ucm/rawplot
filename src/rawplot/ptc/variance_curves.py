@@ -33,7 +33,7 @@ from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
+from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances_from, signal_and_noise_variances
 # ----------------
 # Module constants
@@ -73,38 +73,37 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
     return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var
 
-def fit_params(args):
-    if args.from_value is not None and args.to_value is not None:
-        estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
-        return estimator, args.from_value, args.to_value
-    else:
-        return None, None, None
+def fit(x, y, x0, x1, label):
+    assert x.shape[0] == 1, "Only one color plane is allowed. Set --channel to one color only" 
+    mask = np.logical_and(x >= x0, x <= x1)
+    sub_x = x[mask]
+    sub_y = y[mask]
+    sub_x = sub_x.reshape(-1,1)
+    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+    estimator.fit(sub_x, sub_y)
+    score = estimator.score(sub_x, sub_y)
+    log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", label, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+    intercept = estimator.intercept_
+    slope = estimator.coef_[0]
+    return slope, intercept, score
 
-def procesa(estimator, x, y, x0, x1):
-    #indices = np.where(np.logical_and(x0 <= x, x <= x1))
-    #log.info(indices)
-    log.info("From %s to %s => %s", x0, x1, x [ (x >=x0) * (x <= x1)])
 
-    start = np.searchsorted(x, x0, 'left') 
-    end = np.searchsorted(x, x1, 'right') 
-    result = np.arange(start, end) 
-    log.info(result)
-    return
-     
-    xx = x.reshape(-1,1)
-    fitted = estimator.fit(xx, y)
-    score = estimator.score(xx, y)
-    log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", channel, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
-    b = estimator.intercept_
-    m = estimator.coef_[0]
-    r_sq = score
-    return r_sq, b, m
+def plot_linear_equation(axes, xy, slope, intercept, xlabel='x', ylabel='y'):
+    angle = math.atan(slope)*(180/math.pi)
+    x = xy[0]
+    y = xy[1]
+    text = f"${ylabel} = {slope:.2f}{xlabel}{intercept:+.2f}$"
+    axes.text(x, y, text,
+        rotation_mode='anchor',
+        rotation=angle,
+        transform_rotates_text=True,
+        ha='left', va='top'
+    )
 
 
 def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    '''For Charts 1 to 8'''
+    '''For Charts 5'''
     # Main plot goes here (signal_and_read noise...)
-    base = 2 if kwargs.get('log2', False) else 10
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     # Additional plots go here
     total_noise = kwargs.get('total_var', None)
@@ -121,8 +120,9 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
         axes.axhline(read_noise**2, linestyle='--', label=text)
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
-        label = rf"fitted: $r^2 = {fitted['score']:.3f}$"
-        axes.plot(x[i], fitted['y'][i], marker='-', linewidth=0, label=label)
+        label = rf"fitted: $r^2 = {fitted[2]:.3f},\quad g = {1/fitted[0]:0.2f}\quad e^{{-}}/DN$"
+        P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
+        axes.axline(P0, slope=fitted[0], linestyle='--', label=label)
     axes.set_title(f'channel {channels[i]}')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
@@ -135,10 +135,10 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
 
 def variance_curve1(args):
     log.info(" === VARIANCE CHART 1: Shot + Readout Noise vs. Signal === ")
+    assert_range(args)
     units = "[DN]"
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    estimator, signal_from, signal_to = fit_params(args)
     read_noise = args.read_noise
     signal, total_var, shot_and_read_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
@@ -147,9 +147,10 @@ def variance_curve1(args):
         bias = bias, 
         read_noise = read_noise
     )
-
-    procesa(estimator, signal, shot_and_read_var, signal_from, signal_to)
-    return
+    if args.from_value and args.to_value:
+        fit_params =  tuple(fit(signal, shot_and_read_var, args.from_value, args.to_value, channels[0]))
+    else:
+        fit_params = None
 
     title = make_plot_title_from(r"$\sigma_{READ+SHOT}^2$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
@@ -159,12 +160,13 @@ def variance_curve1(args):
         xtitle = f"Signal {units}",
         ytitle = f"Noise Variance {units}",
         ylabel =r"$\sigma_{READ+SHOT}^2$",
-        x    = signal,
+        x  = signal,
         y  = shot_and_read_var,
         channels = channels,
         # Optional arguments
-        read = read_noise,
+        read = args.read_noise,
         #total_var = total_var,
+        fitted = fit_params
     )
 
 
