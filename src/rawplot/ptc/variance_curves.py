@@ -33,7 +33,7 @@ from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from, check_physical
+from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
 from .common import signal_and_noise_variances_from, signal_and_noise_variances
 # ----------------
 # Module constants

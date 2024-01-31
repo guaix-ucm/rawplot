@@ -38,7 +38,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, bias_from, make_plot_title_from, check_physical
+from .util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
 
 # ----------------
 # Module constants
@@ -71,7 +71,7 @@ def fit_estimator(estimator, exptime, signal, channel):
 # and this is what we are looking for.
 # So we compute the threshold noise / sqrt(signal)
 # and discard values below a certain threshold (0.5 seems a reasonable compromise)
-def saturation_analysis(exptime, signal, noise, channels, threshold=0.5):
+def saturation_analysis(exptime, signal, noise, channels, threshold):
     estimated_poisson_noise = np.sqrt(signal)
     ratio =  noise / estimated_poisson_noise
     sat_exptime = np.full_like(exptime, np.nan)
@@ -141,23 +141,25 @@ def plot_linear_equation(axes, xdata, ydata, slope, intercept, xlabel='x', ylabe
     )
 
 
-def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kargs):
+def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
     exptime = x[i]
     signal = y[i]
-    good_exptime = kargs['good_exptime'][i]
-    good_signal = kargs['good_signal'][i]
-    sat_exptime = kargs['sat_exptime'][i]
-    sat_signal = kargs['sat_signal'][i]
+    phys = kwargs.get('phys', False)
+    units = r"$[e^{-}]$" if phys else "[DN]" 
+    good_exptime = kwargs['good_exptime'][i]
+    good_signal = kwargs['good_signal'][i]
+    sat_exptime = kwargs['sat_exptime'][i]
+    sat_signal = kwargs['sat_signal'][i]
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     score, slope, intercept = fit_estimator(estimator, good_exptime, good_signal, channels[i])
     fit_signal = estimator.predict(exptime.reshape(-1,1)) # For the whole range
-    text = rf"fitted: $r^2 = {score:.3f}$"
+    text = rf"fitted $r^2: {score:.3f}$"
     axes.plot(exptime, signal,  marker='o', linewidth=0, label=ylabel)
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.plot(exptime, fit_signal, label=text)
     plot_linear_equation(axes, exptime, fit_signal, slope, intercept, xlabel='t', ylabel='S(t)')
     axes.set_xlabel(xtitle)
-    axes.set_ylabel(ytitle)
+    axes.set_ylabel(f"{ytitle} {units}")
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -170,13 +172,13 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kargs):
 
 def linearity(args):
     log.info(" === LINEARITY PLOT === ")
-    units, gain, phys = check_physical(args)
+    assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias)
     log.info("estimated signal & noise for %s points", exptime.shape)
-    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, 0.5)
-    if gain and phys:
+    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, threshold=0.5)
+    if args.gain and args.physical_units:
         signal *= gain
         good_signal *= gain
         sat_signal *= gain
@@ -187,7 +189,7 @@ def linearity(args):
         channels = channels,
         plot_func = plot_linearity,
         xtitle = "Exposure time [s]",
-        ytitle = f"Signal {units}",
+        ytitle = f"Signal",
         ylabel = "good",
         x  = exptime,
         y  = signal,
@@ -195,7 +197,8 @@ def linearity(args):
         good_exptime = good_exptime,
         good_signal  = good_signal,
         sat_exptime  = sat_exptime,
-        sat_signal   = sat_signal
+        sat_signal   = sat_signal,
+        phys = args.physical_units,
     )
 
 # ===================================

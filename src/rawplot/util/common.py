@@ -30,13 +30,9 @@ from lica.misc import file_paths
 
 log = logging.getLogger(__name__)
 
-def check_physical(args):
-    gain = args.gain
-    phys = args.physical_units
-    if gain is None and phys:
-        raise ValueError("Can'use physycal units [-e] if --gain is not set")
-    units = r"$[e^{-}]$" if gain is not None and phys else "[DN]"
-    return units, gain, phys
+def assert_physical(args):
+    if args.gain is None and args.physical_units:
+        raise ValueError("Can'use physical units [-e] if --gain is not set")
 
 def common_list_info(args):
     channels = valid_channels(args.channels)
