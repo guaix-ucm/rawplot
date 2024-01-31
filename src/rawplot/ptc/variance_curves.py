@@ -101,16 +101,16 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
     if fpn_noise is not None:
         label = r"$\sigma_{FPN}^2$"
         axes.plot(x[i], fpn_noise[i], marker='o', linewidth=0, label=label)
-    read_noise = kwargs.get('read', None)
-    if read_noise is not None:
-        label = r"$\sigma_{READ}^2$"
-        axes.axhline(read_noise**2, linestyle='--', label=text)
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
         label = rf"fitted: $r^2 = {fitted[2]:.3f},\quad g = {1/fitted[0]:0.2f}\quad e^{{-}}/DN$"
         P0 = (0, fitted[1]); P1 = ( -fitted[1]/fitted[0])
         axes.plot(fitted[3], fitted[4], marker='o', linewidth=0, label="selected")
-        axes.axline(P0, slope=fitted[0], linestyle='--', label=label)
+        axes.axline(P0, slope=fitted[0], linestyle=':', label=label)
+    read_noise = kwargs.get('read', None)
+    if read_noise is not None:
+        label = r"$\sigma_{READ}^2$"
+        axes.axhline(read_noise**2, linestyle='--', label=label)
     axes.set_title(f'channel {channels[i]}')
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
@@ -127,7 +127,7 @@ def variance_curve1(args):
     units = "[DN]"
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = args.read_noise
+    read_noise = args.read_noise if args.read_noise is not None else 0.0
     signal, total_var, shot_and_read_var, fpn_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 

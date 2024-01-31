@@ -86,6 +86,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
         axes.axhline(read_noise, linestyle=':', label=r"$\sigma_{READ}$")
     gain = kwargs.get('gain', None)
     if gain is not None:
+        # Points following Poison error
         P0 = (1,1) if phys else (1, 1/math.sqrt(gain))
         P1 = (4,2) if phys else (gain, 1)
         axes.axline(P0, P1, linestyle='-.', label=r"$\sigma_{SHOT}, m=\frac{1}{2}$")
