@@ -136,7 +136,6 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
 def variance_curve1(args):
     log.info(" === VARIANCE CHART 1: Shot + Readout Noise vs. Signal === ")
     assert_range(args)
-    units = "[DN]"
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
@@ -157,8 +156,8 @@ def variance_curve1(args):
         title    = title,
         figsize  = (12, 9),
         plot_func = plot_variance_vs_signal,
-        xtitle = f"Signal {units}",
-        ytitle = f"Noise Variance {units}",
+        xtitle = f"Signal [DN]",
+        ytitle = f"Noise Variance [DN]",
         ylabel =r"$\sigma_{READ+SHOT}^2$",
         x  = signal,
         y  = shot_and_read_var,
