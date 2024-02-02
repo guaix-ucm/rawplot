@@ -24,7 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi, FULL_FRAME_NROI
+from lica.raw.loader import ImageLoaderFactory,  NormRoi, FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------

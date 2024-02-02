@@ -7,14 +7,14 @@
 2. Create a virtual environment and activate it
 
 ```bash
-(main) ~/repos/own/stars4all/raw-plot$ python3 -m venv .venv
-(main) ~/repos/own/stars4all/raw-plot$ source .venv/bin/activate
+(main) ~/repos/own/stars4all/rawplot$ python3 -m venv .venv
+(main) ~/repos/own/stars4all/rawplot$ source .venv/bin/activate
 ```
 3. Install it.
 
 ```bash
-(.venv)  (main) ~/repos/own/stars4all/raw-plot$ pip install -U pip
-(.venv)  (main) ~/repos/own/stars4all/raw-plot$ pip install .
+(.venv)  (main) ~/repos/own/stars4all/rawplot$ pip install -U pip
+(.venv)  (main) ~/repos/own/stars4all/rawplot$ pip install .
 ```
 # Usage
 

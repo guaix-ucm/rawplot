@@ -22,7 +22,7 @@ import logging
 import numpy as np
 
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory, SimulatedDarkImage, NormRoi
+from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 # ------------------------
 # Own modules and packages
