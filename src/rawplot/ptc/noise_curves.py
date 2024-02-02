@@ -30,7 +30,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
+from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances
 
 # ----------------
@@ -62,11 +62,11 @@ def noise_parser_arguments(parser):
     
     group1 = parser.add_mutually_exclusive_group(required=False)
     group1.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
-    group1.add_argument('-fr','--from-value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
+    group1.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     
     group2 = parser.add_mutually_exclusive_group(required=False)
     group2.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor [0..1] (default: %(default)s)')
-    group2.add_argument('-to','--to-value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
+    group2.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
     
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
@@ -126,6 +126,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
 
 def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
+    assert_range(args)
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)

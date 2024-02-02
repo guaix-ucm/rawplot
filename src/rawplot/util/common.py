@@ -35,8 +35,17 @@ def assert_physical(args):
         raise ValueError("Can'use physical units [-e] if --gain is not set")
 
 def assert_range(args):
-    if args.from_value is not None and args.to_value is not None  and args.from_value >= args.to_value:
-        raise ValueError("--from-value must be < --to-value ")
+    if args.from_value is not None and args.to_value is None:
+        raise ValueError("Missing --to value")
+    if args.from_value is None and args.to_value is not None:
+        raise ValueError("Missing --from value")
+    if args.from_value is None and args.to_value is None:
+        return
+    if args.from_value > args.to_value:
+        temp = args.from_value
+        args.from_value = args.to_value
+        args.to_value = temp
+
 
 def common_list_info(args):
     channels = valid_channels(args.channels)
