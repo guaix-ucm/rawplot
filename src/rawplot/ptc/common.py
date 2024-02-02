@@ -18,6 +18,8 @@ import logging
 
 import numpy as np
 
+from sklearn.linear_model import  TheilSenRegressor, LinearRegression
+
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.analyzer.image import ImagePairStatistics
 
@@ -57,3 +59,24 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
     shot_noise_var = fpn_corrected_noise_var - read_noise**2
     return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var, shot_noise_var
+
+
+def fit(x, y, x0, x1, channels, loglog=False):
+    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+    #estimator = LinearRegression(fit_intercept=True)
+    if loglog:
+        x = np.log(x)
+        y = np.log(y)
+    fit_params = list()
+    mask = np.logical_and(x >= x0, x <= x1)
+    for i, ch in enumerate(channels):
+        m = mask[i]
+        sub_x = x[i][m]
+        sub_y = y[i][m]
+        sub_x = sub_x.reshape(-1,1)
+        estimator.fit(sub_x, sub_y)
+        score = estimator.score(sub_x, sub_y)
+        log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+        fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_, 
+            'x': sub_x, 'y': sub_y})
+    return fit_params

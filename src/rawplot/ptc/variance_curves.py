@@ -21,9 +21,6 @@ import logging
 
 import numpy as np
 
-from sklearn.linear_model import  TheilSenRegressor, LinearRegression
-
-
 from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
@@ -34,7 +31,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances
+from .common import signal_and_noise_variances, fit
 # ----------------
 # Module constants
 # ----------------
@@ -68,22 +65,6 @@ def variance_parser_arguments(parser):
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
 
 
-def fit(x, y, x0, x1, channels):
-    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
-    #estimator = LinearRegression(fit_intercept=True)
-    fit_params = list()
-    mask = np.logical_and(x >= x0, x <= x1)
-    for i, ch in enumerate(channels):
-        m = mask[i]
-        sub_x = x[i][m]
-        sub_y = y[i][m]
-        sub_x = sub_x.reshape(-1,1)
-        estimator.fit(sub_x, sub_y)
-        score = estimator.score(sub_x, sub_y)
-        log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
-        fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_, 
-            'x': sub_x, 'y': sub_y})
-    return fit_params
 
 def plot_fitted(axes, fitted):
     '''All graphical elements for a fitting line'''
