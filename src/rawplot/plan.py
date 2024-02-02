@@ -194,7 +194,7 @@ def add_args(parser):
     parser_linear.add_argument('-ti', '--t-initial', type=vfloat, required=True, help='Initial exposure time [secs]')
     parser_linear.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_linear.add_argument('-n', '--num-images', type=int, required=True, help='Number of images to take')
-    parser_linear.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
+    parser_linear.add_argument('-f', '--csv-file', type=str,  help='(Optional) CSV file to export')
 
     # ------------------------------
     # Arguments for 'log' command
@@ -204,7 +204,7 @@ def add_args(parser):
     parser_log.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_log.add_argument('-n', '--num-images', type=int, required=True, help='Number of images to take')
     parser_log.add_argument('-r','--reverse',  action='store_true', help='reverse point distribution')
-    parser_log.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
+    parser_log.add_argument('-f', '--csv-file', type=str,  help='(Optional) CSV file to export')
 
     # ------------------------------
     # Arguments for 'stops' command
@@ -215,7 +215,7 @@ def add_args(parser):
     parser_stops.add_argument('-m', '--max-dn',  type=int, required=True, help='Saturation value in image [DN]')
     parser_stops.add_argument('-ppl', '--points-per-level', type=int, default=3, help='Number of images per level (default: %(default)s)')
     parser_stops.add_argument('-r','--reverse',  action='store_true', help='reverse point distribution')
-    parser_stops.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
+    parser_stops.add_argument('-f', '--csv-file', type=str,  help='(Optional) CSV file to export')
 
     # ------------------------------
     # Arguments for 'combilog' command
@@ -224,7 +224,7 @@ def add_args(parser):
     parser_combilog.add_argument('-ti', '--t-initial', type=vfloat, required=True, help='Initial exposure time [secs]')
     parser_combilog.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_combilog.add_argument('-n', '--num-images', type=int, metavar='<N>', required=True, help='Number of images to take')
-    parser_combilog.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
+    parser_combilog.add_argument('-f', '--csv-file', type=str,  help='(Optional) CSV file to export')
 
     # ------------------------------
     # Arguments for 'combistops' command
@@ -234,7 +234,7 @@ def add_args(parser):
     parser_combistops.add_argument('-tf', '--t-final', type=vfloat, required=True, help='Final exposure time [secs]')
     parser_combistops.add_argument('-m', '--max-dn',  type=int, metavar='<MAX DN>', required=True, help='Saturation value in image [DN]')
     parser_combistops.add_argument('-ppl', '--points-per-level', type=int, default=3, help='Number of images per level (default: %(default)s)')
-    parser_combistops.add_argument('-f', '--csv-file', type=str, default=None, help='(Optional) CSV file to export')
+    parser_combistops.add_argument('-f', '--csv-file', type=str,  help='(Optional) CSV file to export')
 
 # ================
 # MAIN ENTRY POINT

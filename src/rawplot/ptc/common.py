@@ -31,6 +31,7 @@ from lica.raw.analyzer.image import ImagePairStatistics
 
 log = logging.getLogger(__name__)
     
+
 def signal_and_noise_variances_from(file_list, n_roi, channels, bias):
     file_pairs = list(zip(file_list, file_list[1:]))[::2]
     N = len(file_pairs)
@@ -55,4 +56,4 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     signal, total_noise_var, fpn_corrected_noise_var = signal_and_noise_variances_from(file_list, n_roi, channels, bias)
     fixed_pattern_noise_var = total_noise_var - fpn_corrected_noise_var
     shot_noise_var = fpn_corrected_noise_var - read_noise**2
-    return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var, shot_noise_var,
+    return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var, shot_noise_var

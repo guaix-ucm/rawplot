@@ -137,7 +137,7 @@ def add_args(parser):
     parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e flat*, dark*)')
     parser.add_argument('-p', '--output-prefix', type=str, required=True, help='Output file prefix')
-    parser.add_argument('-o', '--output-dir', type=vdir, default=None, help='Output directory defaults to current dir.')
+    parser.add_argument('-o', '--output-dir', type=vdir,  help='Output directory defaults to current dir.')
     parser.add_argument('-t', '--image-type',  choices=['BIAS', 'DARK', 'FLAT', 'OBJECT'], default='BIAS', help='Image type. (default: %(default)s)')
     parser.add_argument('--stdev-map',  action='store_true', help='Also create standard deviation map')
     parser.add_argument('--max-map',  action='store_true', help='Also create max. pixel value map')

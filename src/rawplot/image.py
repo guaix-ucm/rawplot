@@ -167,25 +167,25 @@ def add_args(parser):
     # Pixels command parsing
     # ----------------------
     parser_pixels.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
-    parser_pixels.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_pixels.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_pixels.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_pixels.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_pixels.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
     parser_pixels.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
     parser_pixels.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     group0 = parser_pixels.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level',  type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
+    group0.add_argument('-bl', '--bias-level',  type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
+    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
 
-    parser_pixels.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
+    parser_pixels.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 
     # -------------------------
     # Histogram command parsing
     # -------------------------
     parser_histo.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
-    parser_histo.add_argument('-x', '--x0', type=vfloat01, default=None, help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser_histo.add_argument('-y', '--y0', type=vfloat01, default=None, help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_histo.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_histo.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_histo.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
     parser_histo.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
     parser_histo.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
@@ -193,10 +193,10 @@ def add_args(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot (default: %(default)s) ')
     group0 = parser_histo.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level',  type=vfloat, default=None, help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile, default=None, help='Bias image (3D FITS cube) (default: %(default)s)')
+    group0.add_argument('-bl', '--bias-level',  type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
+    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
-    parser_histo.add_argument('--sim-dark', type=float, default=None, help='Simulate dark frame with given dark current')
+    parser_histo.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 
 # ================
 # MAIN ENTRY POINT
