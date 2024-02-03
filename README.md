@@ -234,17 +234,6 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 ![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1_full.png)
 
 
-## Signal to Noise Ratio plot
-
-(likely to be removed if expanding the PTC commands)
-
-This plot is also based on the blog posts [Determining Sensor IQ Metrics: RN, FWC, PRNU, DR, gain – 1](https://www.strollswithmydog.com/determining-sensor-iq-metrics-rn-fwc-prnu-gain/) and [Determining Sensor IQ Metrics: RN, FWC, PRNU, DR, gain – 2](https://www.strollswithmydog.com/determining-sensor-iq-metrics-rn-fwc-prnu-dr-gain-2/)
-
-```bash
-rawplot-snr -d images/20240117/linearity -f flatm* -wi 1/4 -he 1/3 --stops --full-scale 4095
-```
-![Raspberry Pi HQ Signal to Noise Ratio](doc/images/snr.png)
-
-
+### PTC Signal to Noise Curve
 
 ***Pending ...***
