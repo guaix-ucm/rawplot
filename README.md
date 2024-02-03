@@ -81,6 +81,34 @@ Only when an image file is open, this normalized ROI transforms into a physical 
 
 Bref description of commands and results. The examples has been taken with the [Raspberry Pi HQ Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/), intalled in a [GoNET project](https://www.researchgate.net/publication/351459667_The_GONet_Ground_Observing_Network_Camera_An_Inexpensive_Light_Pollution_Monitoring_System) device.
 
+## rawplot-master
+
+Utility to make master bias, dark or flat frames from a series of RAW files.
+
+
+```bash
+rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --image-type bias
+```
+
+Produces the following result:
+
+
+bash```
+2024-02-03 12:38:17,855 [INFO] ============== rawplot.master 0.1.dev89+gc34abee ==============
+2024-02-03 12:38:17,855 [INFO] Normalized ROI is [P0=(0.0000,0.0000) DIM=(1.0000 x 1.0000)]
+2024-02-03 12:38:17,921 [INFO] The process comprises 8 batches of 5 images max. per batch
+2024-02-03 12:38:17,921 [INFO] [1/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:18,343 [INFO] [2/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:18,727 [INFO] [3/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,124 [INFO] [4/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,513 [INFO] [5/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,892 [INFO] [6/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,274 [INFO] [7/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,658 [INFO] [8/8] Begin loading 1 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,794 [INFO] Saving master bias file from 36 images in /home/rafa/repos/own/lica/rawplot/master_bias_frame_aver.fit
+```
+
+
 ## rawplot-plan
 
 Before analyzing camera images, the first thing to do is to take images. This utility helps to design an exposue plan, with a number of images of number of images and exposure time for each one. There are several strategies. For linearity study purposes, it may be worth to concentrate capture on both ends of the exposure range, so that we may have a more detailed view of non linearities.
