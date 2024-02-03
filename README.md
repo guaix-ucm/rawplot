@@ -176,7 +176,7 @@ aided by choosing several points in a selected signal range, applying the formul
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise estimate --from 0.1 --to 5
 ```
 
-![Raspberry Pi HQ Camera Read Noise Estimation](ptc_noise_curve1_read_noise.png)
+![Raspberry Pi HQ Camera Read Noise Estimation](doc/images/ptc_noise_curve1_read_noise.png)
 
 ```bash
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --p-fpn estimate --from 100 --to 2500
@@ -200,7 +200,7 @@ Finally, we can depict the three noise regions in this PTC, either in [DN] or [e
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
 ```
 
-![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1.png)
+![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1_full.png)
 
 
 ## Signal to Noise Ratio plot
