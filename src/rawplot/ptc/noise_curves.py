@@ -154,7 +154,6 @@ def noise_curve1(args):
         bias = bias, 
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
-
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
@@ -215,6 +214,12 @@ def noise_curve2(args):
         shot_read_noise *= args.gain
         signal *= args.gain
         read_noise *= args.gain
+    if is_estimate(args.read_noise):
+        assert_range(args)
+        fit_params = estimate(signal, shot_read_noise, args.from_value, args.to_value, channels, 
+            rdnoise_estimator, label=r"$\sigma_{READ}$")
+    else:
+        fit_params = None
     title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -227,19 +232,18 @@ def noise_curve2(args):
         y  = shot_read_noise,
         channels = channels,
         # Optional arguments
-        read = None if read_noise == 0.0 else read_noise,
+        read = float_or_none(args.read_noise),
         phys = args.physical_units,
         log2 = args.log2,
+        fitted = fit_params
     )
 
 
 def noise_curve3(args):
     log.info(" === NOISE CHART 3: Shot Noise vs. Signal === ")
     assert_physical(args)
-    assert args.read_noise is not None
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = args.read_noise if args.read_noise is not None else 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
@@ -264,7 +268,7 @@ def noise_curve3(args):
         ylabel =r"$\sigma_{SHOT}$",
         channels = channels,
         # Optional arguments
-        read = None if read_noise == 0.0 else read_noise,
+        read = float_or_none(args.read_noise),
         gain = args.gain,
         phys = args.physical_units,
         log2 = args.log2,
@@ -276,7 +280,6 @@ def noise_curve4(args):
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = args.read_noise if args.read_noise is not None else 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
@@ -289,6 +292,12 @@ def noise_curve4(args):
         fpn_noise *= args.gain
         signal *= args.gain
         read_noise *= args.gain
+    if is_estimate(args.p_fpn):
+        assert_range(args)
+        fit_params = estimate(signal, fpn_noise, args.from_value, args.to_value, channels, 
+            p_fpn_estimator, label=r"$\sigma_{FPN}$")
+    else:
+        fit_params = None
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -301,8 +310,9 @@ def noise_curve4(args):
         ylabel =r"$\sigma_{FPN}$",
         channels = channels,
         # Optional arguments
-        read = None if read_noise == 0.0 else read_noise,
-        p_fpn = args.p_fpn,
+        read = float_or_none(args.read_noise),
+        p_fpn = float_or_none(args.p_fpn),
         phys = args.physical_units,
         log2 = args.log2,
+        fitted = fit_params
     )
