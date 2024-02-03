@@ -185,6 +185,9 @@ An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https:
 | Curve 4  | FPN vs. signal                           | log rms e- vs. log e- |
 | Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN             |           
 
+
+### PTC Noise and Variance Curves
+
 From the same dataset we used to determine the camera linearity, we generate PTC Curve #1, this time with a bigger ROI.
 For this technique to work, we require to have images taken *in pairs* at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
 
