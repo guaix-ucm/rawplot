@@ -93,7 +93,7 @@ rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --ba
 Produces the following result:
 
 
-bash```
+```bash
 2024-02-03 12:38:17,855 [INFO] ============== rawplot.master 0.1.dev89+gc34abee ==============
 2024-02-03 12:38:17,855 [INFO] Normalized ROI is [P0=(0.0000,0.0000) DIM=(1.0000 x 1.0000)]
 2024-02-03 12:38:17,921 [INFO] The process comprises 8 batches of 5 images max. per batch
