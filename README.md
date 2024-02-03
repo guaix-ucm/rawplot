@@ -43,26 +43,26 @@ All utilities share these command line options, mainly used for debugging purpos
 
 ### Color planes selection
 
-Since we are dealing with RAW images, we are dealing with 4 separate color planes (channels): `R G1 G2 B`. Most of the commands supports being run on all or a subset of these color planes.
+Since we are dealing with RAW images, we are dealing with 4 separate color planes (channels): `R Gr Gb B`. Most of the commands supports being run on all or a subset of these color planes.
 
-* `--channel` Specify which of the R, G1, G2, or B channels to handle by the command. Can be one or a combination of them. Some commands accept a G channel
-(an average of G1 and G2)
+* `--channel` Specify which of the R, Gr, Gb, or B channels to handle by the command. Can be one or a combination of them. Some commands accept a G channel
+(an average of Gr and Gb)
 
-Order in the command line is not important. They are internally reordered so that the display & processing order is (R, G1, G2, B)
+Order in the command line is not important. They are internally reordered so that the display & processing order is (R, Gr, Gb, B)
 
 Valid Examples:
 ```bash
 --channel B
---channel G1 G2   
+--channel Gr Gb   
 --channel R G B
---channel G1 R B G2
+--channel Gr R B Gb
 ```
 Invalid Examples:
 
 ```bash
 --channel B B (duplicated)
 --channel R A (A is not supported)
---channel R G B G2 (this commbination is not supported)
+--channel R G B Gb (this commbination is not supported)
 ```
 ### Region of Interest (ROI)
 
