@@ -61,7 +61,7 @@ def variance_parser_arguments(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
-    parser.add_argument('--fit-shot',  action='store_true', help='Fit Shot+Read noise line')
+    parser.add_argument('--fit',  action='store_true', help='Fit Shot+Read noise line')
     parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
 
@@ -127,7 +127,7 @@ def variance_curve1(args):
         bias = bias, 
         read_noise = read_noise
     )
-    if args.fit_shot:
+    if args.fit:
         assert_range(args)
         fit_params = fit(signal, shot_and_read_var, args.from_value, args.to_value, channels)
     else:

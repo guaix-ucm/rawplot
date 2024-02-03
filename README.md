@@ -145,32 +145,59 @@ rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --s
 
 An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_) book have been included so far:
 
-|  CURVE   |                Description               | Units                   |
-| :------: | :--------------------------------------- | :---------------------- |
+|  CURVE   |                Description               | Units                 |
+| :------: | :--------------------------------------- | :-------------------- |
 | Curve 1  | read, shot, FPN & total noise vs. signal | log rms DN vs. log DN |
+| Curve 1  | read, shot, FPN & total noise vs. signal | log rms e- vs. log e- |
 | Curve 2  | read + shot noise vs. signal             | log rms DN vs. log DN |
+| Curve 2  | read + shot noise vs. signal             | log rms e- vs. log e- |
 | Curve 3  | shot noise vs. signal                    | log rms DN vs. log DN |
+| Curve 3  | shot noise vs. signal                    | log rms e- vs. log e- |
 | Curve 4  | FPN vs. signal                           | log rms DN vs. log DN |
-
+| Curve 4  | FPN vs. signal                           | log rms e- vs. log e- |
+| Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN             |           
 
 From the same dataset we used to determine the camera linearity, we generate PTC Curve #1, this time with a bigger ROI.
-For this technique to work, we require to have images taken in pairs at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
+For this technique to work, we require to have images taken *in pairs* at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
 
 
 ```bash
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr
 ```
 
-If not specified in the command line, the read noise line is at 0 DN (not shown) so that we estimate its value from the total noise plot.
+![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1.png)
 
 With the ROI as large as this one, vignetting shows up and we can see the three main components of noise in this PTC analysis.
 
-After plot analysis, it can be experimentally determined that the read noise is about 1.25 DN
-At Signal level 19 DN approx. the shot noise equals the readout noise. At signal level 268 DN approx. the
-shot noise equals the Fixed Pattern Noise (FPN) (3 DN approx.)
+The gain, readout noise and fixed patter noise factor factor can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula. This visual inpection process can be aided 
+aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
 
 ```bash
-rawplot-ptc --console curve1 --read-noise 1.25 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr 
+rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise estimate --from 0.1 --to 5
+```
+
+![Raspberry Pi HQ Camera Read Noise Estimation](ptc_noise_curve1_read_noise.png)
+
+```bash
+rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --p-fpn estimate --from 100 --to 2500
+```
+![Raspberry Pi HQ Camera p-FPN Estimation](doc/images/ptc_noise_curve1_p_fpn.png)
+
+
+```bash
+rawplot-ptc --console curve5 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --fit --from 100 --to 2800
+```
+
+The gain can be more accurately estimated by fitting a straigth line into the Readout + Shot Noise Variance vs Signal curve.
+
+
+![Raspberry Pi HQ Camera Gain Estimation](doc/images/ptc_variance_curve5.png)
+
+
+Finally, we can depict the three noise regions in this PTC, either in [DN] or [e-] units.
+
+```bash
+rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
 ```
 
 ![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1.png)
@@ -185,9 +212,8 @@ This plot is also based on the blog posts [Determining Sensor IQ Metrics: RN, FW
 ```bash
 rawplot-snr -d images/20240117/linearity -f flatm* -wi 1/4 -he 1/3 --stops --full-scale 4095
 ```
-![Raspberry Pi HQ HV Spectrogram](doc/images/snr.png)
+![Raspberry Pi HQ Signal to Noise Ratio](doc/images/snr.png)
 
-Parameter estimation: 
-Readount Noise (RN) [e-], Full Well Capacity (FWC) [e-], Pixel Response Non Uniformity (PRNU) p (%), Gain (g) [DN/e-] Still and ongoing work ...
+
 
 ***Pending ...***
