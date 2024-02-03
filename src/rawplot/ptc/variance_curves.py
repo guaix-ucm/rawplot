@@ -61,6 +61,7 @@ def variance_parser_arguments(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser.add_argument('--fit-shot',  action='store_true', help='Fit Shot+Read noise line')
     parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
 
@@ -75,7 +76,7 @@ def plot_fitted(axes, fitted):
     fitted_y = fitted['y']
     label = rf"$\sigma_{{READ+SHOT}}^2$ (model)"
     P0 = (0, intercept) 
-    P1 = ( -intercept/slope)
+    P1 = ( -intercept/slope, 0)
     axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$\sigma_{READ+SHOT}^2$ (fitted)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
     if intercept >= 0:
@@ -116,7 +117,6 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
 
 def variance_curve1(args):
     log.info(" === VARIANCE CHART 1: Shot + Readout Noise vs. Signal === ")
-    assert_range(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
@@ -127,11 +127,11 @@ def variance_curve1(args):
         bias = bias, 
         read_noise = read_noise
     )
-    if args.from_value and args.to_value:
+    if args.fit_shot:
+        assert_range(args)
         fit_params = fit(signal, shot_and_read_var, args.from_value, args.to_value, channels)
     else:
         fit_params = None
-
     title = make_plot_title_from(r"$\sigma_{READ+SHOT}^2$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,

@@ -61,22 +61,22 @@ def signal_and_noise_variances(file_list, n_roi, channels, bias, read_noise):
     return signal, total_noise_var, fpn_corrected_noise_var, fixed_pattern_noise_var, shot_noise_var
 
 
-def fit(x, y, x0, x1, channels, loglog=False):
+def fit(X, Y, x0, x1, channels, loglog=False):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     #estimator = LinearRegression(fit_intercept=True)
+    mask = np.logical_and(X >= x0, X <= x1)
     if loglog:
-        x = np.log(x)
-        y = np.log(y)
+        X = np.log(X)
+        Y = np.log(Y)
     fit_params = list()
-    mask = np.logical_and(x >= x0, x <= x1)
     for i, ch in enumerate(channels):
         m = mask[i]
-        sub_x = x[i][m]
-        sub_y = y[i][m]
+        sub_x = X[i][m]
+        sub_y = Y[i][m]
         sub_x = sub_x.reshape(-1,1)
         estimator.fit(sub_x, sub_y)
         score = estimator.score(sub_x, sub_y)
         log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
         fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_, 
-            'x': sub_x, 'y': sub_y})
+            'x': sub_x, 'y': sub_y, 'mask': mask})
     return fit_params

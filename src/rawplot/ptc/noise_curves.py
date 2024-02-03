@@ -31,7 +31,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances
+from .common import signal_and_noise_variances, fit
 
 # ----------------
 # Module constants
@@ -59,18 +59,59 @@ def noise_parser_arguments(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
-    
-    group1 = parser.add_mutually_exclusive_group(required=False)
-    group1.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
-    group1.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
-    
-    group2 = parser.add_mutually_exclusive_group(required=False)
-    group2.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor [0..1] (default: %(default)s)')
-    group2.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
-    
+    parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor [0..1] (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
     parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')
+    group1 = parser.add_mutually_exclusive_group(required=False)
+    group1.add_argument('--fit-fpn',  action='store_true', help='Fit Fixed Pattern Noise line')
+    group1.add_argument('--fit-read',  action='store_true', help='Fit Read Noise line')
+    parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
+    parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
+
+def assert_read(args):
+    if args.read_noise is not None and args.fit_read is not None:
+        raise ValueError("--read-noise or --fit-read are exclusive")
+
+def assert_fpn(args):
+    if args.p_fpn is not None and args.fit_fpn is not None:
+        raise ValueError("Either --p-fpn or --fit-fpn are exclusive")
+
+def p_fpn(y, x):
+    return y/x
+
+def rdnoise(y, x):
+    return y
+
+def estimate(X, Y, x0, x1, channels, func, label):
+    mask = np.logical_and(X >= x0, X <= x1)
+    estimation = list()
+    func_vec = np.vectorize(func)
+    for i, ch in enumerate(channels):
+        m = mask[i]
+        sub_x = X[i][m]
+        sub_y = Y[i][m]
+        result = func_vec(sub_y, sub_x)
+        aver = np.mean(result)
+        stddev = np.std(result)
+        log.info("[%s] applyng %s over selected input data gives \u03BC = %0.2e, \u03C3  = %0.2e", ch, func.__name__, aver, stddev)
+        estimation.append({'mean': aver, 'std': stddev, 'label': label, 'x': sub_x, 'y': sub_y})
+    return estimation
+
+
+def plot_fitted_box(axes, fitted):
+    '''All graphical elements for a fitting line'''
+    mean = fitted['mean']
+    std = fitted['std']
+    label = fitted['label']
+    fitted_y = fitted['y']
+    fitted_x = fitted['x']
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=1, label=f"{label} (selected)")
+    text = "\n".join( (f"{label}", fr"$\mu = {mean:0.2e}$", fr"$\sigma = {std:0.2e}$"))
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    axes.text(0.4, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
+
 
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Curves 1 to 8'''
@@ -86,6 +127,9 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
         axes.plot(x[i], shot_noise[i], marker='o', linewidth=0, label=label)
     if fpn_noise is not None:
         axes.plot(x[i], fpn_noise[i], marker='o', linewidth=0, label=r"$\sigma_{FPN}$")
+    fitted = kwargs.get('fitted', None)
+    if fitted is not None:
+        plot_fitted_box(axes, fitted[i])
     # Optional theoretical model lines
     read_noise = kwargs.get('read', None)
     if read_noise is not None:
@@ -126,7 +170,8 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
 
 def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
-    assert_range(args)
+    assert_read(args)
+    assert_fpn(args)
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
@@ -147,6 +192,16 @@ def noise_curve1(args):
         fpn_noise *= args.gain
         read_noise *= args.gain
         signal *= args.gain
+    if args.fit_read and args.to_value:
+        assert_range(args)
+        fit_params = estimate(signal, total_noise, args.from_value, args.to_value, channels, rdnoise, label=r"$\sigma_{READ}$")
+    elif args.fit_fpn:
+        assert_range(args)
+        fit_params = estimate(signal, fpn_noise, args.from_value, args.to_value, channels, p_fpn, label=r"$\sigma_{FPN}$")
+    else:
+        fit_params = None
+
+
     title = make_plot_title_from("Individual Noise Sources vs. Signal",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -166,6 +221,7 @@ def noise_curve1(args):
         gain = args.gain,
         phys = args.physical_units,
         log2 = args.log2,
+        fitted = fit_params
     )
 
 

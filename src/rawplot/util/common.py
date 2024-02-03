@@ -40,7 +40,7 @@ def assert_range(args):
     if args.from_value is None and args.to_value is not None:
         raise ValueError("Missing --from value")
     if args.from_value is None and args.to_value is None:
-        return
+        raise ValueError("Missing --from and --to values")
     if args.from_value > args.to_value:
         temp = args.from_value
         args.from_value = args.to_value
