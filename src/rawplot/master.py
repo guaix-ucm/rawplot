@@ -95,16 +95,15 @@ def output_path(output_dir, prefix, metadata, roi, tag):
 # -----------------------
 
 def master(args):
-    n_roi = FULL_FRAME_NROI
     M = len(CHANNELS)
     image_type = args.image_type
-    log.info("Normalized ROI is %s", n_roi)
+    log.info("Normalized ROI is %s", FULL_FRAME_NROI)
     if args.output_dir is None:
         args.output_dir = os.getcwd()
     file_list = sorted(file_paths(args.input_dir, args.image_filter))
     factory = ImageLoaderFactory()
     # get common metadata from the first image in the list
-    image0 = factory.image_from(file_list[0], n_roi, CHANNELS)
+    image0 = factory.image_from(file_list[0], FULL_FRAME_NROI, CHANNELS)
     roi = image0.roi()
     h, w = image0.shape()
     metadata = image0.metadata()
@@ -118,7 +117,7 @@ def master(args):
     batched_list = list(batched(file_list, args.batch))
     log.info("The process comprises %d batches of %d images max. per batch", len(batched_list), args.batch)
     for i, batch in enumerate(batched_list, start=1):
-        images = [factory.image_from(path, n_roi, CHANNELS) for path in batch]
+        images = [factory.image_from(path, FULL_FRAME_NROI, CHANNELS) for path in batch]
         log.info("[%d/%d] Begin loading %d images into RAM with %s channels, %d x %d each", 
             i, len(batched_list), len(batch), " ".join(CHANNELS), w, h)
         pixels = [image.load().astype(np.float32, copy=False) for image in images] 
