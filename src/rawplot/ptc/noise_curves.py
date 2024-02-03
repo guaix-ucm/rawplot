@@ -31,7 +31,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances, estimate
+from .common import signal_and_noise_variances, estimate, vfit, float_or_none, is_estimate
 
 # ----------------
 # Module constants
@@ -59,29 +59,19 @@ def noise_parser_arguments(parser):
     group0 = parser.add_mutually_exclusive_group(required=False)
     group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
     group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
-    parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor [0..1] (default: %(default)s)')
-    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
+    parser.add_argument('--p-fpn', type=vfit, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] or "estimate" (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfit, metavar='<\u03C3>',  help='Read noise [DN] or "estimate" (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
     parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')
-    group1 = parser.add_mutually_exclusive_group(required=False)
-    group1.add_argument('--fit-fpn',  action='store_true', help='Fit Fixed Pattern Noise line')
-    group1.add_argument('--fit-read',  action='store_true', help='Fit Read Noise line')
     parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
 
-def assert_read(args):
-    if args.read_noise is not None and args.fit_read is not None:
-        raise ValueError("--read-noise or --fit-read are exclusive")
 
-def assert_fpn(args):
-    if args.p_fpn is not None and args.fit_fpn is not None:
-        raise ValueError("Either --p-fpn or --fit-fpn are exclusive")
-
-def p_fpn(x, y):
+def p_fpn_estimator(x, y):
     return y/x
 
-def rdnoise(x, y):
+def rdnoise_estimator(x, y):
     return y
 
 def plot_fitted_box(axes, fitted):
@@ -154,19 +144,17 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
 
 def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
-    assert_read(args)
-    assert_fpn(args)
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
-    read_noise = args.read_noise if args.read_noise is not None else 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
+
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
     fpn_noise = np.sqrt(fpn_var)
@@ -176,16 +164,16 @@ def noise_curve1(args):
         fpn_noise *= args.gain
         read_noise *= args.gain
         signal *= args.gain
-    if args.fit_read and args.to_value:
+    if is_estimate(args.read_noise):
         assert_range(args)
-        fit_params = estimate(signal, total_noise, args.from_value, args.to_value, channels, rdnoise, label=r"$\sigma_{READ}$")
-    elif args.fit_fpn:
+        fit_params = estimate(signal, total_noise, args.from_value, args.to_value, channels, 
+            rdnoise_estimator, label=r"$\sigma_{READ}$")
+    elif is_estimate(args.p_fpn):
         assert_range(args)
-        fit_params = estimate(signal, fpn_noise, args.from_value, args.to_value, channels, p_fpn, label=r"$\sigma_{FPN}$")
+        fit_params = estimate(signal, fpn_noise, args.from_value, args.to_value, channels, 
+            p_fpn_estimator, label=r"$\sigma_{FPN}$")
     else:
         fit_params = None
-
-
     title = make_plot_title_from("Individual Noise Sources vs. Signal",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -200,8 +188,8 @@ def noise_curve1(args):
         # Optional arguments
         shot  = shot_noise, # 2D (channel, data) Numpy array
         fpn   = fpn_noise,  # 2D (channel, data) Numpy array
-        read = None if read_noise == 0.0 else read_noise,
-        p_fpn = args.p_fpn,
+        read = float_or_none(args.read_noise),
+        p_fpn = float_or_none(args.p_fpn),
         gain = args.gain,
         phys = args.physical_units,
         log2 = args.log2,
@@ -220,7 +208,7 @@ def noise_curve2(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise
+        read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
     shot_read_noise = np.sqrt(shot_read_var)
     if args.gain and args.physical_units:
@@ -257,7 +245,7 @@ def noise_curve3(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise,
+        read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     shot_noise = np.sqrt(shot_var)
     if args.gain and args.physical_units:
@@ -294,7 +282,7 @@ def noise_curve4(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = read_noise,
+        read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     fpn_noise = np.sqrt(fpn_var)
     if args.gain and args.physical_units:

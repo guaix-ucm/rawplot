@@ -11,6 +11,7 @@
 # -------------------
 
 import logging
+import fractions
 
 # ---------------------
 # Thrid-party libraries
@@ -96,3 +97,16 @@ def estimate(X, Y, x0, x1, channels, func, label):
         log.info("[%s] applyng %s over selected input data gives \u03BC = %0.2e, \u03C3  = %0.2e", ch, func.__name__, aver, stddev)
         estimation.append({'mean': aver, 'std': stddev, 'label': label, 'x': sub_x, 'y': sub_y})
     return estimation
+
+
+def vfit(num_str):
+    '''Validator that admits fractions and special word 'estimate'  '''
+    if num_str == 'estimate':
+        return num_str
+    return float(fractions.Fraction(num_str))
+
+def float_or_none(x):
+    return x if type(x) == float else None
+
+def is_estimate(x):
+    return True if type(x) == str and x == 'estimate' else False
