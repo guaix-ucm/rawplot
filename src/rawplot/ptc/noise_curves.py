@@ -31,7 +31,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances, fit
+from .common import signal_and_noise_variances, estimate
 
 # ----------------
 # Module constants
@@ -78,27 +78,11 @@ def assert_fpn(args):
     if args.p_fpn is not None and args.fit_fpn is not None:
         raise ValueError("Either --p-fpn or --fit-fpn are exclusive")
 
-def p_fpn(y, x):
+def p_fpn(x, y):
     return y/x
 
-def rdnoise(y, x):
+def rdnoise(x, y):
     return y
-
-def estimate(X, Y, x0, x1, channels, func, label):
-    mask = np.logical_and(X >= x0, X <= x1)
-    estimation = list()
-    func_vec = np.vectorize(func)
-    for i, ch in enumerate(channels):
-        m = mask[i]
-        sub_x = X[i][m]
-        sub_y = Y[i][m]
-        result = func_vec(sub_y, sub_x)
-        aver = np.mean(result)
-        stddev = np.std(result)
-        log.info("[%s] applyng %s over selected input data gives \u03BC = %0.2e, \u03C3  = %0.2e", ch, func.__name__, aver, stddev)
-        estimation.append({'mean': aver, 'std': stddev, 'label': label, 'x': sub_x, 'y': sub_y})
-    return estimation
-
 
 def plot_fitted_box(axes, fitted):
     '''All graphical elements for a fitting line'''

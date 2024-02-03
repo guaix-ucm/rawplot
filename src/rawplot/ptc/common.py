@@ -80,3 +80,19 @@ def fit(X, Y, x0, x1, channels, loglog=False):
         fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_, 
             'x': sub_x, 'y': sub_y, 'mask': mask})
     return fit_params
+
+
+def estimate(X, Y, x0, x1, channels, func, label):
+    mask = np.logical_and(X >= x0, X <= x1)
+    estimation = list()
+    func_vec = np.vectorize(func)
+    for i, ch in enumerate(channels):
+        m = mask[i]
+        sub_x = X[i][m]
+        sub_y = Y[i][m]
+        result = func_vec(sub_x, sub_y)
+        aver = np.mean(result)
+        stddev = np.std(result)
+        log.info("[%s] applyng %s over selected input data gives \u03BC = %0.2e, \u03C3  = %0.2e", ch, func.__name__, aver, stddev)
+        estimation.append({'mean': aver, 'std': stddev, 'label': label, 'x': sub_x, 'y': sub_y})
+    return estimation
