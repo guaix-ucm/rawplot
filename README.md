@@ -84,10 +84,11 @@ Bref description of commands and results. The examples has been taken with the [
 ## rawplot-master
 
 Utility to make master bias, dark or flat frames from a series of RAW files.
+Produces a 3D FITS cube.
 
 
 ```bash
-rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --imag$e^-$type bias
+rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --image-type bias
 ```
 
 Produces the following result:
