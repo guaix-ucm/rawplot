@@ -1,6 +1,6 @@
 # rawplot
  
- Collection of plotting commands to analyze RGB imagers producing RAW (not processed/compresed) images using matplotlib.
+ Collection of plotting commands to analyze RGB imagers producing Bayer RAW (not processed/compresed) images using matplotlib.
 
  ## Installation
 1. Clone project from GitHub repository
