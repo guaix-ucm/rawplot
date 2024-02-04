@@ -236,4 +236,12 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 ### PTC Signal to Noise Curve
 
-***Pending ...***
+Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` `read-noise` and `p-FPN` parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model.
+
+$$SNR = \sqrt(2)$$
+
+```bash
+rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
+```
+
+![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)

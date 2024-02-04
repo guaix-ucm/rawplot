@@ -107,7 +107,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     axes.minorticks_on()
     units = r"$[e^{-}]$" if phys else "[DN]"
     axes.set_xlabel(f"{xtitle} {units}")
-    axes.set_ylabel(f"{ytitle} {units}")
+    axes.set_ylabel(f"{ytitle}")
     if ylabel:
         axes.legend()
 
@@ -120,12 +120,13 @@ def snr_curve1(args):
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     bias = bias_from(args)
+    read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = bias, 
-        read_noise = args.read_noise or 0.0
+        read_noise = read_noise
     )
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
@@ -136,7 +137,7 @@ def snr_curve1(args):
         fpn_noise *= args.gain
         read_noise *= args.gain
         signal *= args.gain
-        model =  model_snr(signal, args.read_noise, args.p_fpn) if check_model(args) else None
+        model =  model_snr(signal, read_noise, args.p_fpn) if check_model(args) else None
     else:
         model = model_snr(signal, args.read_noise, args.p_fpn, args.gain) if check_model(args) else None
     snr = signal / total_noise
@@ -147,7 +148,7 @@ def snr_curve1(args):
         figsize  = (12, 9),
         plot_func = plot_noise_vs_signal, # 2D (channel, data) Numpy array
         xtitle = "Signal",
-        ytitle = "Noise",
+        ytitle = "SNR",
         x     = signal,
         y     = snr,
         ylabel = "data",
