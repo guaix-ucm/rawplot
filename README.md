@@ -87,7 +87,7 @@ Utility to make master bias, dark or flat frames from a series of RAW files.
 
 
 ```bash
-rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --image-type bias
+rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --imag$e^{-}$type bias
 ```
 
 Produces the following result:
@@ -176,16 +176,16 @@ An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https:
 |  CURVE   |                Description               | Units                 |
 | :------: | :--------------------------------------- | :-------------------- |
 | Curve 1  | read, shot, FPN & total noise vs. signal | log rms DN vs. log DN |
-| Curve 1  | read, shot, FPN & total noise vs. signal | log rms e- vs. log e- |
+| Curve 1  | read, shot, FPN & total noise vs. signal | log rms $e^{-}$ vs. log $e^{-}$ |
 | Curve 2  | read + shot noise vs. signal             | log rms DN vs. log DN |
-| Curve 2  | read + shot noise vs. signal             | log rms e- vs. log e- |
+| Curve 2  | read + shot noise vs. signal             | log rms $e^{-}$ vs. log $e^{-}$ |
 | Curve 3  | shot noise vs. signal                    | log rms DN vs. log DN |
-| Curve 3  | shot noise vs. signal                    | log rms e- vs. log e- |
+| Curve 3  | shot noise vs. signal                    | log rms $e^{-}$ vs. log $e^{-}$ |
 | Curve 4  | FPN vs. signal                           | log rms DN vs. log DN |
-| Curve 4  | FPN vs. signal                           | log rms e- vs. log e- |
-| Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN             |
-| Curve 6  | SNR vs. signal                           | log SNR vs. log DN    |
-| Curve 6  | SNR vs. signal                           | log SNR vs. log e-    |           
+| Curve 4  | FPN vs. signal                           | log rms $e^{-}$ vs. log $e^{-}$ |
+| Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN                       |
+| Curve 6  | SNR vs. signal                           | log SNR vs. log DN              |
+| Curve 6  | SNR vs. signal                           | log SNR vs. log $e^-$           |           
 
 
 ### PTC Noise and Variance Curves
@@ -227,10 +227,10 @@ The gain can be more accurately estimated by fitting a straigth line into the Re
 ![Raspberry Pi HQ Camera Gain Estimation](doc/images/ptc_variance_curve5.png)
 
 
-Finally, we can depict the three noise regions in this PTC, either in [DN] or [e-] units.
+Finally, we can depict the three noise regions in this PTC, either in [DN] or [$e^{-}$] units.
 
 ```bash
-rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
+rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38$e^{-}$2 --gain 2.31
 ```
 
 ![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1_full.png)
@@ -243,10 +243,10 @@ Another way to display the camera performance is to directly display the Signal 
 ```math
 SNR = \frac{S}{\sigma_{READ}^2 + (S/g) + p_{FPN}S}
 ```
-Where $S, \sigma_{READ}, p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
+Where $S$, $\sigma_{READ}$ and $p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
 
 ```bash
-rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
+rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38$e^{-}$2 --gain 2.31
 ```
 
 ![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
