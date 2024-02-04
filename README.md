@@ -188,7 +188,7 @@ An series of PTC charts, based on the classic [Photon Transfer](https://www.spie
 | Curve 6  | SNR vs. signal                           | log SNR vs. log $e^-$       |           
 
 
-The curves are based on the following simplified detector noise variances given by:
+The curves are based on the following simplified detector model, whose noise variances given by:
 
 ```math
 \sigma_{TOTAL}^2 = \sigma_{READ}^2 + \sigma_{SHOT}^2 + \sigma_{FPN}^2 \quad [e^-]
