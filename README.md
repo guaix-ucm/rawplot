@@ -251,4 +251,4 @@ rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 ![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
 
-Given the current values of $\sigma_{READ}$, $\sigma_{SHOT}$ and $\sigma_{FPN}$ in the model equation, the vertical lines in the plot above shows where the $\sigma_{SHOT}$ \geq \sigma_{READ}$ noise and where the $\sigma_{FPN} \geq \sigma_{SHOT}$ noise.
+Given the current values of $\sigma_{READ}$, $\sigma_{SHOT}$ and $\sigma_{FPN}$ in the model equation, the vertical lines in the plot above shows the boundaries where the $\sigma_{SHOT} \geq \sigma_{READ}$ noise and $\sigma_{FPN} \geq \sigma_{SHOT}$ noise.
