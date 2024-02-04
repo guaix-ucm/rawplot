@@ -219,7 +219,12 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 With the ROI as large as this one, vignetting shows up and we can see the three main components of noise in this PTC analysis.
 
-The gain ($g$), readout noise ($\sigma_{READ}$) and fixed pattern noise factor ($P_{FPN}$) can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula. This visual inspection process can be aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
+The gain ($g$), readout noise ($\sigma_{READ}$) and fixed pattern noise factor ($P_{FPN}$) can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula:
+
+```math
+g = \frac{S}{\sigma{SHOT}^2} \quad \quad P_{FPN} = \frac{\sigma_{FPN}{S}
+```
+This visual inspection process can be aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
 
 ```bash
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise estimate --from 0.1 --to 5
