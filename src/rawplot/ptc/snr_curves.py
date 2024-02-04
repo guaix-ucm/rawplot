@@ -95,7 +95,12 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     # Additional data plots go here
     model = kwargs.get('model', None)
     if model is not None:
+        g =  kwargs['gain']
+        rd = kwargs['read']
+        p = kwargs['p_fpn']
         axes.plot(x[i], model[i], marker='o', linewidth=0,  label='model')
+        axes.axvline(g*rd**2, linestyle='--', linewidth=1, color='k', label=r'$\sigma_{READ}$ limit')
+        axes.axvline(1/(g*p**2), linestyle='-.', linewidth=1, color='k', label=r'$\sigma_{SHOT}$ limit')
         #plot_fitted_box(axes, fitted[i])
     # Titles, scales and grids
     axes.set_title(f'channel {channels[i]}')
@@ -157,5 +162,8 @@ def snr_curve1(args):
         model = model,
         phys = args.physical_units,
         log2 = args.log2,
+        gain = args.gain,
+        read = args.read_noise,
+        p_fpn = args.p_fpn,
     )
 

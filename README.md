@@ -238,10 +238,10 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 ### PTC Signal to Noise Curve
 
-Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` ($g$) `read-noise` ($\sigma_{READ}$) and `p-fpn ` ($p_{FPN}$) parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model equation:.
+Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` ($g$) `read-noise` ($\sigma_{READ}$) and `p-fpn ` ($p_{FPN}$) parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model equation:
 
 ```math
-SNR = \frac{S}{\sigma_{READ}^2 + (S/g) + p_{FPN}S}
+SNR = \frac{S}{\sqrt{\sigma_{READ}^2 + (S/g) + p_{FPN}S}}
 ```
 Where $S$, $\sigma_{READ}$ and $p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
 
@@ -250,3 +250,5 @@ rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 ```
 
 ![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
+
+The vertical lines in the plot above shows where the $\sigma_{SHOT}$ noise begins to dominate over the $\sigma_{READ}$ noise and where the $\sigma_{FPN}$ noise begins to dominate over the $\sigma_{SHOT}$ noise in the theoretical model given by the model equation.
