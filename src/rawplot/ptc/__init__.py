@@ -37,6 +37,7 @@ from ..util.mpl.plot import plot_layout, axes_reshape
 from .table import ptc_curves
 from .noise_curves import noise_parser_arguments, noise_curve1, noise_curve2, noise_curve3, noise_curve4
 from .variance_curves import variance_parser_arguments, variance_curve1
+from .snr_curves import snr_parser_arguments, snr_curve1
 
 # ----------------
 # Module constants
@@ -54,13 +55,14 @@ log = logging.getLogger(__name__)
 # ------------------
 
 
-CHARTS_TABLE = {
+CURVES_TABLE = {
     'curves': ptc_curves,
     'curve1': noise_curve1,
     'curve2': noise_curve2,
     'curve3': noise_curve3,
     'curve4': noise_curve4,
     'curve5': variance_curve1,
+    'curve6': snr_curve1,
 }
 
 
@@ -70,7 +72,7 @@ CHARTS_TABLE = {
 
 def ptc(args):
     command =  args.command
-    function = CHARTS_TABLE[command]
+    function = CURVES_TABLE[command]
     function(args)
 
 
@@ -92,6 +94,9 @@ def add_args(parser):
     
     parser_curve5 = subparser.add_parser('curve5', help='read+shot variance vs signal, [DN]')
     variance_parser_arguments(parser_curve5)
+
+    parser_curve6 = subparser.add_parser('curve6', help='SNR vs signal, [DN] or [e-]')
+    snr_parser_arguments(parser_curve6)
 
 # ================
 # MAIN ENTRY POINT
