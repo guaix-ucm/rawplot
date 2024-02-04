@@ -86,7 +86,7 @@ Bref description of commands and results. The examples has been taken with the [
 ## rawplot-master
 
 Utility to make master bias, dark or flat frames from a series of RAW files.
-Produces a 3D FITS cube.
+Produces a 3D FITS cube, one layer per color.
 
 
 ```bash
@@ -114,7 +114,7 @@ Produces the following result:
 
 ## rawplot-plan
 
-Before analyzing camera images, the first thing to do is to take images. This utility helps to design an exposue plan, with a number of images of number of images and exposure time for each one. There are several strategies. For linearity study purposes, it may be worth to concentrate capture on both ends of the exposure range, so that we may have a more detailed view of non linearities.
+Before analyzing camera images, the first thing to do is to take images. This utility helps to design an exposure plan, with a number of images of number of images and exposure time for each one. There are several strategies. For linearity study purposes, it may be worth to concentrate capture on both ends of the exposure range, so that we may have a more detailed view of non linearities.
 
 For instance, the `combistops` is based on the maximun DN produced by the camera (4095 for the Raspberry Pi HQ Camera). It performs up to $log_{2}(DN_{MAX})$ iterations with an specified points per iteration (defaults to 3).
 
