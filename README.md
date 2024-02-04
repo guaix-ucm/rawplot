@@ -248,7 +248,7 @@ The gain ($g$) can be more accurately estimated by fitting a straigth line into 
 ![Raspberry Pi HQ Camera Gain Estimation](doc/images/ptc_variance_curve5.png)
 
 
-Finally, we can depict the three noise regions in this PTC, either in [DN] or $[e^-]$ units.
+Finally, we can depict the three noise regions in this PTC, either in [DN] or $[e^-]$.
 
 ```bash
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
