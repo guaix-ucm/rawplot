@@ -1,8 +1,8 @@
 # rawplot
  
- Collection of plotting commands to analyze RGB imagers producing Bayer RAW images, such as DSLR cameras or other imagers (i.e RasPi HQ camera) using matplotlib.
+ Collection of plotting commands to analyze RGB imagers producing Bayer RAW images, such as DSLR cameras or other imagers (i.e RasPi HQ camera) using matplotlib. Its purpose is helping characterize the camera sensor performance and key figures such as gain and read noise.
 
- This is a child project of [AZOTEA](https://guaix.ucm.es/azoteaproject), an initiative to monitor light pollution through digital imagers and its purpose it to help characterize the camera sensor performance and key figures such as gain and read noise.
+ This is a child project of [AZOTEA](https://guaix.ucm.es/azoteaproject), an initiative to monitor light pollution through digital imagers. The AZOTEA initiative was started in EU funded project ACTION - Participatory science toolkit against pollution, Grant 824603.
 
  ## Installation
 1. Clone project from GitHub repository
