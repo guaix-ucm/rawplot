@@ -194,15 +194,15 @@ The curves are based on the following simplified detector noise variances given 
 \sigma_{TOTAL}^2 = \sigma_{READ}^2 + \sigma_{SHOT}^2 + \sigma_{FPN}^2 \quad [e^-]
 ```
 
-Where $\sigma_{READ}$ is the detector read noise, $\sigma_{READ}$ is the signal-dependent Poison noise, and $\sigma_{FPN}$ is a fixed spatial pattern noise, not all pixels being equal.
+Where $\sigma_{READ}$ is the detector read noise, $\sigma_{SHOT}$ is the signal-dependent Poisson noise ($\sigma_{SHOT} = S^{1/2}$), and $\sigma_{FPN}$ is a fixed spatial pattern noise, not all pixels being equal, being also modeled as a signal-dependent noise $\sigma_{FPN} = P_{FPN}S$, where $P_{FPN} \ll 1$.
 
-Working with digital numbers, instead of electrons, equation above is rewritten as:
+Working with digital numbers [DN] - instead of electrons - equation above is rewritten as:
 
 ```math
-\sigma_{TOTAL}^2 = \sigma_{READ}^2 + (S/g) + (p_{FPN}S)^2 \quad [DN]
+\sigma_{TOTAL}^2 = \sigma_{READ}^2 + (S/g) + (P_{FPN}S)^2 \quad [DN]
 ```
 
-where $g$ is the detector gain constant, in $e⁻/DN$.
+where $g$ is the detector gain constant, in $e^⁻/DN$.
 
 
 ### PTC Noise and Variance Curves
