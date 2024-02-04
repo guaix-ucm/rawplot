@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 license = {text = "GPL-3.0-or-later"}
 authors = [
     {name = "Rafael González", email = "rafael08@ucm.es"},
+    {name = "Jaime Zamorano", email = "jzamoran@ucm.es"},
 ]
 classifiers = [
     "Programming Language :: Python :: 3.10",
