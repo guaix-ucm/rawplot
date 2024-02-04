@@ -52,6 +52,8 @@ DATA = [
     ["Curve 4", "FPN vs. signal",                           "log rms DN vs. log DN"],
     ["Curve 4", "FPN vs. signal",                           "log rms $e^{-}$ vs. log $e^{-}$"],
     ["Curve 5", "read + shot noise variance vs. signal",    "DN vs. DN"],
+    ["Curve 6", "SNR vs. signal",                           "log SNR vs. log DN"],
+    ["Curve 6", "SNR vs. signal",                           "log SNR vs. log $e^{-}$"],
 ]
 
 
