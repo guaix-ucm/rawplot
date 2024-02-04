@@ -171,7 +171,7 @@ rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --s
 
 ## Photon Transfer Curves (PTC)
 
-An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_) book have been included so far:
+An series of PTC charts, based on the classic [Photon Transfer](https://www.spiedigitallibrary.org/ebooks/PM/Photon-Transfer/eISBN-9780819478382/10.1117/3.725073#_=_) book have been included so far:
 
 |  CURVE   |                Description               | Units                       |
 | :------: | :--------------------------------------- | :-------------------------- |
@@ -202,8 +202,7 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 With the ROI as large as this one, vignetting shows up and we can see the three main components of noise in this PTC analysis.
 
-The gain, readout noise and fixed patter noise factor factor can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula. This visual inpection process can be aided 
-aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
+The gain ($g$), readout noise ($\sigma_{READ}$) and fixed pattern noise factor ($P_{FPN}$) can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula. This visual inspection process can be aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
 
 ```bash
 rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise estimate --from 0.1 --to 5
@@ -221,7 +220,7 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 rawplot-ptc --console curve5 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --fit --from 100 --to 2800
 ```
 
-The gain can be more accurately estimated by fitting a straigth line into the Readout + Shot Noise Variance vs Signal curve.
+The gain ($g$) can be more accurately estimated by fitting a straigth line into the Readout + Shot Noise Variance vs Signal curve.
 
 
 ![Raspberry Pi HQ Camera Gain Estimation](doc/images/ptc_variance_curve5.png)
