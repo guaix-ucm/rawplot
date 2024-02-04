@@ -113,7 +113,7 @@ Produces the following result:
 
 Before analyzing camera images, the first thing to do is to take images. This utility helps to design an exposue plan, with a number of images of number of images and exposure time for each one. There are several strategies. For linearity study purposes, it may be worth to concentrate capture on both ends of the exposure range, so that we may have a more detailed view of non linearities.
 
-For instance, the `combistops` is based on the maximun DN produced by the camera (4095 for the Raspberry Pi HQ Camera). It performs up to `log2(MAX DN)`  iterations with an specified points per iteration (defaults to 3).
+For instance, the `combistops` is based on the maximun DN produced by the camera (4095 for the Raspberry Pi HQ Camera). It performs up to $log_{2}(DN_{MAX})$ iterations with an specified points per iteration (defaults to 3).
 
 ```bash
 rawplot-plan combistops -ti 1/1000 -tf 6 -m 4095
@@ -183,7 +183,9 @@ An (ongoing) series of PTC charts, based on the classic [Photon Transfer](https:
 | Curve 3  | shot noise vs. signal                    | log rms e- vs. log e- |
 | Curve 4  | FPN vs. signal                           | log rms DN vs. log DN |
 | Curve 4  | FPN vs. signal                           | log rms e- vs. log e- |
-| Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN             |           
+| Curve 5  | Read + Shot Noise Variance vs. signal    | DN vs. DN             |
+| Curve 6  | SNR vs. signal                           | log SNR vs. log DN    |
+| Curve 6  | SNR vs. signal                           | log SNR vs. log e-    |           
 
 
 ### PTC Noise and Variance Curves
@@ -236,11 +238,12 @@ rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 
 ### PTC Signal to Noise Curve
 
-Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` `read-noise` and `p-FPN` parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model.
+Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` ($g$) `read-noise` ($\sigma_{READ}$) and `p-fpn ` ($p_{FPN}$) parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model equation:.
 
 ```math
-SNR = \frac{S}{\sigma_{READ}^2 + S/g + p_{FPN}S}
+SNR = \frac{S}{\sigma_{READ}^2 + (S/g) + p_{FPN}S}
 ```
+Where $S, \sigma_{READ}, p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
 
 ```bash
 rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
