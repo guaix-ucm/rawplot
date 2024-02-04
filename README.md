@@ -188,6 +188,23 @@ An series of PTC charts, based on the classic [Photon Transfer](https://www.spie
 | Curve 6  | SNR vs. signal                           | log SNR vs. log $e^-$       |           
 
 
+The curves are based on the following simplified detector noise variances given by:
+
+```math
+\sigma_{TOTAL}^2 = \sigma_{READ}^2 + \sigma_{SHOT}^2 + \sigma_{FPN}^2 [e^-]
+```
+
+Where $\sigma_{READ}$ is the detector read noise, $\sigma_{READ}$ is the signal-dependent Poison noise, and $\sigma_{FPN}$ is a fixed spatial pattern noise, not all pixels being equal.
+
+Working with digital numbers, instead of electrons, equation above is rewritten as:
+
+```math
+\sigma_{TOTAL}^2 = \sigma_{READ}^2 + (S/g) + (p_{FPN}S)^2 [DN]
+```
+
+where $g$ is the detector gain constant, in $e⁻/DN$.
+
+
 ### PTC Noise and Variance Curves
 
 From the same dataset we used to determine the camera linearity, we generate PTC Curve #1, this time with a bigger ROI.
