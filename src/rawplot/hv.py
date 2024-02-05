@@ -34,7 +34,7 @@ from ._version import __version__
 from .util.mpl.plot import plot_layout, axes_reshape
 
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_info, bias_from, make_plot_title_from
+from .util.common import common_info, make_plot_title_from
 
 # -----------------------
 # Module global variables

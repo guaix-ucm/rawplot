@@ -28,7 +28,7 @@ from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
 from lica.raw.loader import ImageLoaderFactory,  NormRoi
 from lica.raw.analyzer.image import ImageStatistics
 
@@ -38,7 +38,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, bias_from, make_plot_title_from, assert_physical
+from .util.common import common_list_info, make_plot_title_from, assert_physical
 
 # ----------------
 # Module constants
@@ -160,8 +160,7 @@ def linearity(args):
     log.info(" === LINEARITY PLOT === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    bias = bias_from(args)
-    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias)
+    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, args.bias)
     log.info("estimated signal & noise for %s points", exptime.shape)
     good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, threshold=0.5)
     if args.gain and args.physical_units:
@@ -204,9 +203,7 @@ def add_args(parser):
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
-    group0 = parser.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [-e] physical units instead of [DN]. Requires --gain')
 

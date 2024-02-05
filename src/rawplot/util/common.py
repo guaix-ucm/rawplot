@@ -74,16 +74,6 @@ def common_info(args):
     log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
     return file_path, roi, n_roi, channels, metadata
 
-
-def bias_from(args):
-    if args.bias_file is not None:
-        bias = args.bias_file
-    elif args.bias_level is not None:
-        bias = args.bias_level
-    else:
-        bias = None
-    return bias
-
 def make_plot_title_from(title, metadata, roi):
     title = f"{title}\n" \
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n" \

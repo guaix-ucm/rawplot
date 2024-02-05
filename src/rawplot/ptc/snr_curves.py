@@ -21,7 +21,7 @@ import logging
 
 import numpy as np
 
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
 from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 # ------------------------
@@ -30,7 +30,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
+from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances, estimate, vfit, float_or_none, is_estimate
 
 # ----------------
@@ -56,9 +56,7 @@ def snr_parser_arguments(parser):
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
-    group0 = parser.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] or "estimate" (default: %(default)s)')
     parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] or "estimate" (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
@@ -124,13 +122,12 @@ def snr_curve1(args):
     log.info(" === SNR CHART 1: Total SNR vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    bias = bias_from(args)
     read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
-        bias = bias, 
+        bias = args.bias, 
         read_noise = read_noise
     )
     total_noise = np.sqrt(total_var)

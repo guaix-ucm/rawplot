@@ -23,7 +23,7 @@ import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
-from lica.validators import vfile, vfloat, vfloat01, valid_channels
+from lica.validators import vfile, vfloat, vfloat01, vflopath, valid_channels
 from lica.raw.loader import ImageLoaderFactory,  NormRoi, FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
 
@@ -33,7 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, plot_layout, plot_cmap, plot_edge_color, axes_reshape
-from .util.common import common_info, bias_from, make_plot_title_from
+from .util.common import common_info, make_plot_title_from
 
 # -----------------------
 # Module global variables
@@ -92,7 +92,7 @@ def image_histo(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
-    bias = bias_from(args)
+    bias = args.bias
     analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
@@ -121,9 +121,8 @@ def image_histo(args):
 
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
-    bias = bias_from(args)
     pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels).load()
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -174,10 +173,7 @@ def add_args(parser):
     parser_pixels.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    group0 = parser_pixels.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level',  type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
-
+    parser_pixels.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 
     # -------------------------
@@ -192,9 +188,7 @@ def add_args(parser):
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot (default: %(default)s) ')
-    group0 = parser_histo.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level',  type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser_histo.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
     parser_histo.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 

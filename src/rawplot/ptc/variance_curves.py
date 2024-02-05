@@ -21,7 +21,7 @@ import logging
 
 import numpy as np
 
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
 from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 # ------------------------
@@ -30,7 +30,7 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, bias_from, make_plot_title_from, assert_physical, assert_range
+from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances, fit
 # ----------------
 # Module constants
@@ -58,9 +58,7 @@ def variance_parser_arguments(parser):
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
-    group0 = parser.add_mutually_exclusive_group(required=False)
-    group0.add_argument('-bl', '--bias-level', type=vfloat,  help='Bias level, common for all channels (default: %(default)s)')
-    group0.add_argument('-bf', '--bias-file',  type=vfile,  help='Bias image (3D FITS cube) (default: %(default)s)')
+    parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('--fit',  action='store_true', help='Fit Shot+Read noise line')
     parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
@@ -118,13 +116,12 @@ def plot_variance_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **k
 def variance_curve1(args):
     log.info(" === VARIANCE CHART 1: Shot + Readout Noise vs. Signal === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    bias = bias_from(args)
     read_noise = args.read_noise if args.read_noise is not None else 0.0
     signal, total_var, shot_and_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
-        bias = bias, 
+        bias = args.bias, 
         read_noise = read_noise
     )
     if args.fit:
