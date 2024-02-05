@@ -270,7 +270,7 @@ SNR = \frac{S}{\sqrt{\sigma_{READ}^2 + (S/g) + (p_{FPN}S)^2}}
 Where $S$, $\sigma_{READ}$ and $p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
 
 ```bash
-rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38$e^-$2 --gain 2.31
+rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
 ```
 
 ![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
