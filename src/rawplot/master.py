@@ -27,7 +27,7 @@ from astropy.io import fits
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI, CHANNELS
 
 
@@ -89,6 +89,18 @@ def output_path(output_dir, prefix, metadata, roi, tag):
     filename = f"{prefix}_{imagetyp}_{tag}.fit"
     return os.path.join(output_dir, filename)
 
+def basic_reduction(image, bias, dark):
+    if bias is None and dark is None:
+        return image.load().astype(np.float32, copy=False)
+    if bias is None and dark is not None:
+        log.info("Substracting dark count: %0.2f", dark * image.exptime())
+        return image.load().astype(np.float32, copy=False) - dark * image.exptime()
+    elif bias is not None and dark is None:
+        log.info("Substracting pedestal value: %0.2f", bias)
+        return image.load().astype(np.float32, copy=False) - bias
+    elif bias is not None and dark is not None:
+        log.info("Substracting pedestal value: %0.2f and dark count: %0.2f", bias)
+        return image.load().astype(np.float32, copy=False) - bias - dark * image.exptime()
 
 # -----------------------
 # AUXILIARY MAIN FUNCTION
@@ -120,7 +132,7 @@ def master(args):
         images = [factory.image_from(path, FULL_FRAME_NROI, CHANNELS) for path in batch]
         log.info("[%d/%d] Begin loading %d images into RAM with %s channels, %d x %d each", 
             i, len(batched_list), len(batch), " ".join(CHANNELS), w, h)
-        pixels = [image.load().astype(np.float32, copy=False) for image in images] 
+        pixels = [basic_reduction(image, args.bias, args.dark) for image in images] 
         current = np.sum(np.stack(pixels), axis=0)
         accum = np.fromfile(accum_file, dtype=np.float32).reshape(M, h, w)
         accum += current
@@ -146,7 +158,8 @@ def add_args(parser):
     parser.add_argument('-o', '--output-dir', type=vdir,  help='Output directory defaults to current dir.')
     parser.add_argument('-b', '--batch', type=int,  default=25, help='Batch size (default) %(default)s')
     parser.add_argument('-t', '--image-type',  choices=['bias', 'dark', 'flat', 'light'], default='bias', help='Image type. (default: %(default)s)')
- 
+    parser.add_argument('-bi', '--bias',  type=vfloat,  help='Substract a pedestal level in each image before averaging. (default: %(default)s)')
+    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. Rate x T is substracted from each image before averaging. (default: %(default)s)')
 # ================
 # MAIN ENTRY POINT
 # ================
