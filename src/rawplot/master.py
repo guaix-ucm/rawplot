@@ -70,7 +70,7 @@ except:
 def fill_header(header, metadata, img, history=None):
     header['CHANNELS'] = (metadata['channels'], 'Channel stored order')
     header['SECTION'] = (metadata['roi'], 'NumPy format')
-    header['EXPTIME'] = (float(img.exposure()), '[s]')
+    header['EXPTIME'] = (float(img.exptime()), '[s]')
     header['MAKER'] = (metadata['maker'], 'Manufacturer')
     header['CAMERA'] = (metadata['camera'], 'Sensor')
     header['ISO'] = (metadata['iso'], 'Sensor')

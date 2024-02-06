@@ -59,6 +59,7 @@ def variance_parser_arguments(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('--fit',  action='store_true', help='Fit Shot+Read noise line')
     parser.add_argument('-fr','--from', dest='from_value', type=vfloat, metavar='<x0>',  help='Lower signal limit to fit [DN] (default: %(default)s)')
     parser.add_argument('-to','--to', dest='to_value', type=vfloat, metavar='<x1>',  help='Upper signal limit to fit [DN] (default: %(default)s)')
@@ -122,6 +123,7 @@ def variance_curve1(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = read_noise
     )
     if args.fit:

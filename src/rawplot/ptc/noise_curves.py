@@ -57,6 +57,7 @@ def noise_parser_arguments(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('--p-fpn', type=vfit, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] or "estimate" (default: %(default)s)')
     parser.add_argument('-rd','--read-noise', type=vfit, metavar='<\u03C3>',  help='Read noise [DN] or "estimate" (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
@@ -149,6 +150,7 @@ def noise_curve1(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
     total_noise = np.sqrt(total_var)

@@ -92,8 +92,7 @@ def image_histo(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
-    bias = args.bias
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=bias)
+    analyzer = ImageStatistics(file_path, n_roi, channels, args.bias, args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -122,7 +121,7 @@ def image_histo(args):
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
     pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels).load()
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias)
+    analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -174,6 +173,7 @@ def add_args(parser):
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_pixels.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser_pixels.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 
     # -------------------------
@@ -189,6 +189,7 @@ def add_args(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_histo.add_argument('--every', type=int, metavar='<N>', default=100, help='Decimation factor for histogram plot (default: %(default)s) ')
     parser_histo.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser_histo.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
     parser_histo.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
 

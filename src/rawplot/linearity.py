@@ -98,18 +98,18 @@ def saturation_analysis(exptime, signal, noise, channels, threshold):
     return good_exptime_list, good_signal_list, sat_exptime_list, sat_signal_list
 
 
-def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, every=2):
+def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, dark, every=2):
     file_list = file_list[::every]
     N = len(file_list)
     signal_list = list()
     noise_list = list()
     exptime_list = list()
     for i, path in enumerate(file_list, start=1):
-        analyzer = ImageStatistics(path, n_roi, channels, bias)
+        analyzer = ImageStatistics(path, n_roi, channels, bias, dark)
         analyzer.run()
         signal = analyzer.mean()
         signal_list.append(signal)
-        exptime = np.full_like(signal, analyzer.loader().exposure())
+        exptime = np.full_like(signal, analyzer.loader().exptime())
         exptime_list.append(exptime)
         noise = analyzer.std()
         noise_list.append(noise)
@@ -132,7 +132,7 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
     axes.text(0.3, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
 
 
-def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels,  **kwargs):
+def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     exptime = x[i]
     signal = y[i]
     phys = kwargs.get('phys', False)
@@ -160,7 +160,7 @@ def linearity(args):
     log.info(" === LINEARITY PLOT === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, args.bias)
+    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, args.bias, args.dark)
     log.info("estimated signal & noise for %s points", exptime.shape)
     good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, threshold=0.5)
     if args.gain and args.physical_units:
@@ -204,6 +204,7 @@ def add_args(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [-e] physical units instead of [DN]. Requires --gain')
 
