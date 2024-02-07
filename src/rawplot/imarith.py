@@ -57,7 +57,6 @@ log = logging.getLogger(__name__)
     
 def add_result_header(res_header, first_header, second, history):
     for key in first_header.keys():
-        log.info("Reading %s %s", key, first_header[key])
         if key == 'COMMENT':
             for comment in first_header[key]:
                 res_header.add_comment(comment)
@@ -91,6 +90,7 @@ def arith_sub(args):
     hdu_res = fits.PrimaryHDU(pixels)
     add_result_header(hdu_res.header, header, args.second, args.history)
     hdu_res.writeto(res_path, overwrite=True)
+    log.info("Created result image on: %s", res_path)
 
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
@@ -110,8 +110,8 @@ def add_args(parser):
 
     parser_sub = subparser.add_parser('sub', help='Substracts an image or a value (second argument) from a given image (first argument)')
     parser_sub.add_argument('first', type=vfile, help='Image to be substracted')
-    parser_sub.add_argument('second', type=vflopath, help='Image to be substracted')
-    parser_sub.add_argument('-o', '--output-file', type=str, help='Optional output file name for the resulting image')
+    parser_sub.add_argument('second', type=vflopath, help='Scalar value or 3D FITS Cube image to be substracted')
+    parser_sub.add_argument('-o', '--output-file', type=str, help='Optional output file name for the resulting 3D FITS cube image')
     parser_sub.add_argument('-hi', '--history', type=str, help='Optional HISTORY FITS card to add to resulting image')
 
 # ================
