@@ -58,6 +58,8 @@ rawplot-linearity = "rawplot.linearity:main"
 rawplot-plan = "rawplot.plan:main"
 rawplot-master = "rawplot.master:main"
 rawplot-ptc = "rawplot.ptc:main"
+rawplot-imarith = "rawplot.imarith:main"
+
 
 [tool.setuptools]
 #script-files = ["scripts/photo.sh",]
