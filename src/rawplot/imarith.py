@@ -72,16 +72,21 @@ def add_result_header(res_header, first_header, second, history):
         data =  f"Substracted {second:0.2e}" if (type(second) == float) else f"Substracted {os.path.basename(second)[:60]}"
         res_header['HISTORY'] = data
 
-def arith_sub(args):
+def output_file(args):
+    if args.output_file:
+        return args.output_file
     folder = os.path.dirname(args.first)
     name, ext = os.path.splitext(os.path.basename(args.first))
-    res_path = os.path.join(folder, f"{name}_subs{ext}")
+    return os.path.join(folder, f"{name}_subs{ext}")
+
+def arith_sub(args):
+    res_path = output_file(args)
     with fits.open(args.first) as hdu1:
         header = hdu1[0].header
         if type(args.second) == float:
             pixels =   hdu1[0].data - args.second
         else:
-            with fits.open(args.first) as hdu2:
+            with fits.open(args.second) as hdu2:
                 pixels = hdu1[0].data - hdu2[0].data
     hdu_res = fits.PrimaryHDU(pixels)
     add_result_header(hdu_res.header, header, args.second, args.history)
@@ -106,6 +111,7 @@ def add_args(parser):
     parser_sub = subparser.add_parser('sub', help='Substracts an image or a value (second argument) from a given image (first argument)')
     parser_sub.add_argument('first', type=vfile, help='Image to be substracted')
     parser_sub.add_argument('second', type=vflopath, help='Image to be substracted')
+    parser_sub.add_argument('-o', '--output-file', type=str, help='Optional output file name for the resulting image')
     parser_sub.add_argument('-hi', '--history', type=str, help='Optional HISTORY FITS card to add to resulting image')
 
 # ================
