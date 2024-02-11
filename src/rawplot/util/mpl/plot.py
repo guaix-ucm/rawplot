@@ -10,16 +10,12 @@
 # System wide imports
 # -------------------
 
-import math
-import numpy as np
 
 # --------------------------
 # Matplotlib related imports
 # --------------------------
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # ---------
 # Constants
