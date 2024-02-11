@@ -21,8 +21,6 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
 from lica.csv import write_csv
@@ -52,18 +50,6 @@ def plot_plan(fig, axes, title, subtitle, num_seq, exptime):
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-
-
-def plot_image(fig, axes, color_plane, roi, title, average, median, stddev, colormap, edgecolor):
-    axes.set_title(fr'{title}: $median={median}, \mu={average},\;\sigma={stddev}$')
-    im = axes.imshow(color_plane, cmap=colormap)
-    # Create a Rectangle patch
-    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
-                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
-    axes.add_patch(rect)
-    divider = make_axes_locatable(axes)
-    cax = divider.append_axes('right', size='5%', pad=0.10)
-    fig.colorbar(im, cax=cax, orientation='vertical')
 
 def export_to_csv(path, sequence):
     header = ("image #","exposure [secs]")

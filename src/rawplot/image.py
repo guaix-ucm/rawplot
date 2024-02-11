@@ -23,8 +23,8 @@ import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
-from lica.validators import vfile, vfloat, vfloat01, vflopath, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi, FULL_FRAME_NROI
+from lica.validators import vfile, vfloat, vfloat01, vflopath
+from lica.raw.loader import ImageLoaderFactory,  FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
@@ -32,7 +32,7 @@ from lica.raw.analyzer.image import ImageStatistics
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, plot_layout, plot_cmap, plot_edge_color, axes_reshape
+from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
 from .util.common import common_info, make_plot_title_from
 
 # -----------------------

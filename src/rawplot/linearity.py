@@ -28,8 +28,8 @@ from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
+from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
+from lica.raw.loader import ImageLoaderFactory
 from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
