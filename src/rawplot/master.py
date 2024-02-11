@@ -85,7 +85,7 @@ def output_path(output_dir, prefix, metadata, roi, tag):
     width = metadata['width']
     height = metadata['height']
     channels = metadata['channels'].replace(' ', '_')
-    imagetyp = metadata['imagetyp'].lower()
+    imagetyp = metadata['imagetyp'].lower().replace(' ', '_')
     filename = f"{prefix}_{imagetyp}_{tag}.fit"
     return os.path.join(output_dir, filename)
 

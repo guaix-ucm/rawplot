@@ -83,34 +83,6 @@ Only when an image file is open, this normalized ROI transforms into a physical 
 
 Bref description of commands and results. The examples has been taken with the [Raspberry Pi HQ Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/), intalled in a [GoNET project](https://www.researchgate.net/publication/351459667_The_GONet_Ground_Observing_Network_Camera_An_Inexpensive_Light_Pollution_Monitoring_System) device.
 
-## rawplot-master
-
-Utility to make master bias, dark or flat frames from a series of RAW files.
-Produces a 3D FITS cube, one layer per color.
-
-
-```bash
-rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --image-type bias
-```
-
-Produces the following result:
-
-
-```bash
-2024-02-03 12:38:17,855 [INFO] ============== rawplot.master 0.1.dev89+gc34abee ==============
-2024-02-03 12:38:17,855 [INFO] Normalized ROI is [P0=(0.0000,0.0000) DIM=(1.0000 x 1.0000)]
-2024-02-03 12:38:17,921 [INFO] The process comprises 8 batches of 5 images max. per batch
-2024-02-03 12:38:17,921 [INFO] [1/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:18,343 [INFO] [2/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:18,727 [INFO] [3/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:19,124 [INFO] [4/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:19,513 [INFO] [5/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:19,892 [INFO] [6/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:20,274 [INFO] [7/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:20,658 [INFO] [8/8] Begin loading 1 images into RAM with R Gr Gb B channels, 2028 x 1520 each
-2024-02-03 12:38:20,794 [INFO] Saving master bias file from 36 images in /home/rafa/repos/own/lica/rawplot/master_bias_frame_aver.fit
-```
-
 
 ## rawplot-plan
 
@@ -276,3 +248,66 @@ rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 
 ![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
 
 Given the current values of $\sigma_{READ}$, $\sigma_{SHOT}$ and $\sigma_{FPN}$ in the model equation, the vertical lines in the plot above shows the boundaries where the $\sigma_{SHOT} \geq \sigma_{READ}$ noise and $\sigma_{FPN} \geq \sigma_{SHOT}$ noise.
+
+## Miscellaneous Commands
+
+Convenicence commands to help processing an analysis of images using the above commands.
+
+### rawplot-master
+
+Utility to make master bias, dark or flat frames from a series of RAW files.
+Produces a 3D FITS cube, one layer per color.
+
+
+```bash
+rawplot-master --console --input-dir images/20240124/biases/ --filter bias* --batch 5 --prefix master --image-type bias
+```
+
+Produces the following result:
+
+
+```bash
+2024-02-03 12:38:17,855 [INFO] ============== rawplot.master 0.1.dev89+gc34abee ==============
+2024-02-03 12:38:17,855 [INFO] Normalized ROI is [P0=(0.0000,0.0000) DIM=(1.0000 x 1.0000)]
+2024-02-03 12:38:17,921 [INFO] The process comprises 8 batches of 5 images max. per batch
+2024-02-03 12:38:17,921 [INFO] [1/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:18,343 [INFO] [2/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:18,727 [INFO] [3/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,124 [INFO] [4/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,513 [INFO] [5/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:19,892 [INFO] [6/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,274 [INFO] [7/8] Begin loading 5 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,658 [INFO] [8/8] Begin loading 1 images into RAM with R Gr Gb B channels, 2028 x 1520 each
+2024-02-03 12:38:20,794 [INFO] Saving master bias file from 36 images in /home/rafa/repos/own/lica/rawplot/master_bias_frame_aver.fit
+```
+
+### rawplot-imarith
+
+Basic image manipulation command. Can be expanded conveniently
+
+```bash
+rawplot-imarith -h
+
+Arithmetic operations on one or two 3D-FITS cubes
+
+positional arguments:
+  {sub}
+    sub              Substracts an image or a value (second argument) from a given image (first argument)
+
+options:
+  -h, --help         show this help message and exit
+  --version          show program's version number and exit
+  --console          Log to console.
+  --log-file <FILE>  Log to file.
+  --verbose          Verbose output.
+  --quiet            Quiet output.
+  --modules MODULES  comma separated list of modules to activate debug level upon.
+
+```
+
+```bash
+rawplot-imarith --console sub master_bias_frame_aver.fit 256
+
+2024-02-07 14:55:43,821 [INFO] ============== rawplot.imarith 0.9.1.dev4+gf89ffa4.d20240207 ==============
+2024-02-07 14:55:43,891 [INFO] Created result image on: master_bias_frame_aver_subs.fit
+```
