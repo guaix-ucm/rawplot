@@ -10,19 +10,13 @@
 # System wide imports
 # -------------------
 
-import os
-import glob
-import math
 import logging
-import functools
 
 # ---------------------
 # Thrid-party libraries
 # ---------------------
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 
