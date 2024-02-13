@@ -55,20 +55,20 @@ def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, chann
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} DN")
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.legend()
-    for i in range(len(channels)):
-        plot_func(axes, i, x, y, channels, **kwargs)
-    plt.show()
-
-
-def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
     filters = kwargs.get('filters', None)
     if filters is not None:
         for filt in filters:
             axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
+    for i in range(len(channels)):
+        plot_func(axes, i, x, y, channels, **kwargs)
+    axes.grid(True,  which='major', color='silver', linestyle='solid')
+    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
+
+
+def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
     wavelength = x[i]
     signal = y[i]
     if channels[i] == 'R':
@@ -146,8 +146,8 @@ def draft_spectrum(args):
         y  = signal,
         # Optional arguments tpo be handled by the plotting function
         filters=[ 
-            {'label':'OG570', 'wave': 570, 'style': '--'}, 
-            {'label':'RG830', 'wave': 830, 'style': '-.'},
+            {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
+            {'label':'from OG570 to RG830', 'wave': 830, 'style': '-.'},
         ] # where filters were changesd
     )
 
