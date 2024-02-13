@@ -54,13 +54,13 @@ def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, chann
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
-    axes.set_ylabel(f"{ytitle} DN")
+    axes.set_ylabel(f"{ytitle} [DN]")
     filters = kwargs.get('filters', None)
+    for i in range(len(channels)):
+        plot_func(axes, i, x, y, channels, **kwargs)
     if filters is not None:
         for filt in filters:
             axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
-    for i in range(len(channels)):
-        plot_func(axes, i, x, y, channels, **kwargs)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -85,7 +85,7 @@ def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
         marker = '2'
     else:
         color = 'green'
-    axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1)
+    axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1, label=channels[i])
    
 
 
