@@ -53,9 +53,8 @@ log = logging.getLogger(__name__)
 def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel, **kwargs):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
     fig.suptitle(title)
-    units = "[DN]" 
     axes.set_xlabel(xtitle)
-    axes.set_ylabel(f"{ytitle} {units}")
+    axes.set_ylabel(f"{ytitle} DN")
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
@@ -80,10 +79,10 @@ def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
         marker = 'o'
     elif  channels[i] == 'Gr':
         color = (0, 0.5, 0)
-        marker = 'x'
+        marker = '1'
     elif  channels[i] == 'Gb':
         color = (0, 0.25, 0)
-        marker = 'o'
+        marker = '2'
     else:
         color = 'green'
     axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1)
