@@ -18,7 +18,7 @@ import logging
 # ---------------------
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 from lica.cli import execute
 from lica.misc import file_paths
@@ -50,17 +50,45 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def plot_raw_spectral(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    wavelength = x[i]
-    signal = y[i]
+def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel, **kwargs):
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
+    fig.suptitle(title)
     units = "[DN]" 
-    axes.plot(wavelength, signal,  marker='o', linewidth=0, label=None)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
     axes.legend()
+    for i in range(len(channels)):
+        plot_func(axes, i, x, y, channels, **kwargs)
+    plt.show()
+
+
+def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
+    filters = kwargs.get('filters', None)
+    if filters is not None:
+        for filt in filters:
+            axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
+    wavelength = x[i]
+    signal = y[i]
+    if channels[i] == 'R':
+        color = 'red'
+        marker = 'o'
+    elif  channels[i] == 'B':
+        color = 'blue'
+        marker = 'o'
+    elif  channels[i] == 'Gr':
+        color = (0, 0.5, 0)
+        marker = 'x'
+    elif  channels[i] == 'Gb':
+        color = (0, 0.25, 0)
+        marker = 'o'
+    else:
+        color = 'green'
+    axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1)
+   
+
 
 def signal_from(file_list, n_roi, channels, bias, dark, every=2):
     file_list = file_list[::every]
@@ -89,8 +117,9 @@ def get_wavelengths(file_list, channels):
             item['seq'] = int(item['seq'])
             item['exptime'] = int(item['exptime'])
             data.append(item)
+    log.info("Matched %d files", len(data))
     result = np.array([item['wave'] for item in data])
-    result = np.tile(result, M)
+    result = np.tile(result, M).reshape(M,len(data))
     log.info("Wavelengthss array shape is %s", result.shape)
     return result
 
@@ -106,17 +135,21 @@ def draft_spectrum(args):
     wavelength = get_wavelengths(file_list, channels)
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
     log.info("Exptime array shape is %s", exptime.shape)
-    mpl_main_plot_loop(
+    mpl_spectra_plot_loop(
         title    = title,
         figsize  = (12, 9),
         channels = channels,
         plot_func = plot_raw_spectral,
-        xtitle = "Exposure time [s]",
+        xtitle = "Wavelength [nm]",
         ytitle = f"Signal",
         ylabel = "good",
         x  = wavelength,
         y  = signal,
         # Optional arguments tpo be handled by the plotting function
+        filters=[ 
+            {'label':'OG570', 'wave': 570, 'style': '--'}, 
+            {'label':'RG830', 'wave': 830, 'style': '-.'},
+        ] # where filters were changesd
     )
 
 def complete_spectrum(args):
@@ -143,18 +176,18 @@ def add_args(parser):
     parser_draft = subparser.add_parser('draft', help='Draft spectrum')
     parser_good  = subparser.add_parser('complete', help='Complete, reduced spectrum')
 
-    parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
-    parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
-    parser.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
-    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
-    parser.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
+    parser_draft.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser_draft.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
+    parser_draft.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_draft.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_draft.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_draft.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
+    parser_draft.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
-    parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
-    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
+    parser_draft.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    parser_draft.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser_draft.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
 
 # ================
 # MAIN ENTRY POINT
