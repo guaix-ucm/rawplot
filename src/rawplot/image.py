@@ -141,13 +141,15 @@ def image_pixels(args):
         stddev = std
     )
 
+COMMAND_TABLE = {
+    'pixels': image_pixels,
+    'histo': image_histo, 
+}
 
 def image(args):
     command =  args.command
-    if  command == 'pixels':
-        image_pixels(args)
-    else:
-        image_histo(args)
+    func = COMMAND_TABLE[command]
+    func(args)
 
 
 # ===================================

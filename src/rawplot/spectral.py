@@ -91,7 +91,7 @@ def get_wavelengths(file_list, channels):
             data.append(item)
     result = np.array([item['wave'] for item in data])
     result = np.tile(result, M)
-    log.info("Result Array Shape is %s", result.shape)
+    log.info("Wavelengthss array shape is %s", result.shape)
     return result
 
 # -----------------------
@@ -99,11 +99,13 @@ def get_wavelengths(file_list, channels):
 # -----------------------
 
 
-def raw_spectral(args):
-    log.info(" === LINEARITY PLOT === ")
+def draft_spectrum(args):
+    log.info(" === DRAFT SPECTRUM PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     title = make_plot_title_from("Draft Spectral Response plot",metadata, roi)
     wavelength = get_wavelengths(file_list, channels)
+    exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
+    log.info("Exptime array shape is %s", exptime.shape)
     mpl_main_plot_loop(
         title    = title,
         figsize  = (12, 9),
@@ -117,11 +119,30 @@ def raw_spectral(args):
         # Optional arguments tpo be handled by the plotting function
     )
 
+def complete_spectrum(args):
+    log.info(" === COMPLETE SPECTRUM PLOT === ")
+
+COMMAND_TABLE = {
+    'draft': draft_spectrum,
+    'complete': complete_spectrum, 
+}
+
+def spectral(args):
+    command =  args.command
+    func = COMMAND_TABLE[command]
+    func(args)
+
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
 # ===================================
 
 def add_args(parser):
+
+    subparser = parser.add_subparsers(dest='command')
+
+    parser_draft = subparser.add_parser('draft', help='Draft spectrum')
+    parser_good  = subparser.add_parser('complete', help='Complete, reduced spectrum')
+
     parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
     parser.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
@@ -140,7 +161,7 @@ def add_args(parser):
 # ================
 
 def main():
-    execute(main_func=raw_spectral, 
+    execute(main_func=spectral, 
         add_args_func=add_args, 
         name=__name__, 
         version=__version__,
