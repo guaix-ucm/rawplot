@@ -19,11 +19,10 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import ticker
 
 from lica.cli import execute
-from lica.validators import vfile, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
+from lica.validators import vfile, vfloat01
+from lica.raw.loader import ImageLoaderFactory
 
 
 # ------------------------

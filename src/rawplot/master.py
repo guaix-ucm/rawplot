@@ -27,7 +27,7 @@ from astropy.io import fits
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
+from lica.validators import vdir, vfile, vfloat, vfloat01
 from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI, CHANNELS
 
 
@@ -85,7 +85,7 @@ def output_path(output_dir, prefix, metadata, roi, tag):
     width = metadata['width']
     height = metadata['height']
     channels = metadata['channels'].replace(' ', '_')
-    imagetyp = metadata['imagetyp'].lower()
+    imagetyp = metadata['imagetyp'].lower().replace(' ', '_')
     filename = f"{prefix}_{imagetyp}_{tag}.fit"
     return os.path.join(output_dir, filename)
 
