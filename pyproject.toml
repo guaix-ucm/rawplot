@@ -59,7 +59,7 @@ rawplot-plan = "rawplot.plan:main"
 rawplot-master = "rawplot.master:main"
 rawplot-ptc = "rawplot.ptc:main"
 rawplot-imarith = "rawplot.imarith:main"
-
+rawplot-spectral = "rawplot.spectral:main"
 
 [tool.setuptools]
 #script-files = ["scripts/photo.sh",]
