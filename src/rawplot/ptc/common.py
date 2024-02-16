@@ -20,8 +20,6 @@ import fractions
 import numpy as np
 
 from sklearn.linear_model import  TheilSenRegressor, LinearRegression
-
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
 from lica.raw.analyzer.image import ImagePairStatistics
 
 # ------------------------

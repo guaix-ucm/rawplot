@@ -10,9 +10,6 @@
 # System wide imports
 # -------------------
 
-import os
-import glob
-import math
 import logging
 
 # ---------------------
@@ -20,9 +17,7 @@ import logging
 # ---------------------
 
 import numpy as np
-
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
+from lica.validators import vdir, vfloat, vfloat01, vflopath
 
 # ------------------------
 # Own modules and packages
@@ -30,8 +25,8 @@ from lica.raw.loader import ImageLoaderFactory,  NormRoi
 
 from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
-from .common import signal_and_noise_variances, estimate, vfit, float_or_none, is_estimate
+from ..util.common import common_list_info, make_plot_title_from, assert_physical
+from .common import signal_and_noise_variances
 
 # ----------------
 # Module constants
@@ -58,8 +53,8 @@ def snr_parser_arguments(parser):
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
-    parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] or "estimate" (default: %(default)s)')
-    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] or "estimate" (default: %(default)s)')
+    parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfloat01, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
     parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')

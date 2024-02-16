@@ -10,7 +10,6 @@
 # System wide imports
 # -------------------
 
-import math
 import logging
 
 # ---------------------

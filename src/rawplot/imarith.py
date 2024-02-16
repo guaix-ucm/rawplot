@@ -11,12 +11,7 @@
 # -------------------
 
 import os
-import sys
-import glob
-import math
 import logging
-import functools
-import itertools
 
 # ---------------------
 # Thrid-party libraries
@@ -28,7 +23,7 @@ from astropy.io import fits
 from lica.cli import execute
 from lica.misc import file_paths
 from lica.validators import vdir, vfile, vfloat, vflopath
-
+from lica.raw.loader import ImageLoaderFactory,  FULL_FRAME_NROI, CHANNELS
 
 # ------------------------
 # Own modules and packages
@@ -92,12 +87,45 @@ def arith_sub(args):
     hdu_res.writeto(res_path, overwrite=True)
     log.info("Created result image on: %s", res_path)
 
+
+def arith_rgb(args):
+    res_path = output_file(args)
+    factory = ImageLoaderFactory()
+    red_image = factory.image_from(args.red, FULL_FRAME_NROI, CHANNELS)
+    blue_image = factory.image_from(args.blue, FULL_FRAME_NROI, CHANNELS)
+    green_image = factory.image_from(args.green, FULL_FRAME_NROI, CHANNELS)
+    red_pixels = red_image.load()
+    green_pixels = green_image.load()
+    blue_pixels = blue_image.load()
+    metadata = green_image.metadata()
+    # We compose the new composite image
+    # from the different color planes
+    # in each image
+    R = CHANNELS.index('R')
+    B = CHANNELS.index('B')
+    Gr = CHANNELS.index('Gr')
+    Gb =  CHANNELS.index('Gb')
+    result_seq = [None, None, None, None]
+    result_seq[R] = red_pixels[R]
+    result_seq[B] = blue_pixels[B]
+    result_seq[Gr] = green_pixels[Gr]
+    result_seq[Gb] = green_pixels[Gb]
+    result_array = np.stack(result_seq)
+    # Copying metadata from the Green image
+    hdu_res = fits.PrimaryHDU(result_array)
+    for key, item in metadata.items():
+        hdu_res.header[key] = str(item)
+    hdu_res.header['exptime'] = float(metadata['exposure'])
+    hdu_res.writeto(res_path, overwrite=True)
+    log.info("Created result image on: %s", res_path)
+
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
 # ===================================
 
 COMMAND_TABLE = {
     'sub': arith_sub,
+    'rgb': arith_rgb,
 }
 
 def arith(args):
@@ -113,6 +141,13 @@ def add_args(parser):
     parser_sub.add_argument('second', type=vflopath, help='Scalar value or 3D FITS Cube image to be substracted')
     parser_sub.add_argument('-o', '--output-file', type=str, help='Optional output file name for the resulting 3D FITS cube image')
     parser_sub.add_argument('-hi', '--history', type=str, help='Optional HISTORY FITS card to add to resulting image')
+
+    parser_rgb = subparser.add_parser('rgb', help='Combine R Gr, Gb and B channels from 3 different images into the same 3D FITS cube')
+    parser_rgb.add_argument('-r','--red', type=vfile, required=True, help='Red channel image')
+    parser_rgb.add_argument('-g','--green', type=vfile, required=True, help='Green channels image')
+    parser_rgb.add_argument('-b','--blue', type=vfile, required=True, help='Blue channel image')
+    parser_rgb.add_argument('-o', '--output-file', type=str, help='Optional output file name for the resulting 3D FITS cube image')
+    
 
 # ================
 # MAIN ENTRY POINT

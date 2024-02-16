@@ -10,8 +10,6 @@
 # System wide imports
 # -------------------
 
-import os
-import glob
 import math
 import logging
 
@@ -20,9 +18,7 @@ import logging
 # ---------------------
 
 import numpy as np
-
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
+from lica.validators import vdir, vfloat, vfloat01, vflopath
 
 # ------------------------
 # Own modules and packages
@@ -32,6 +28,7 @@ from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances, fit
+
 # ----------------
 # Module constants
 # ----------------

@@ -10,30 +10,19 @@
 # System wide imports
 # -------------------
 
-import os
-import glob
-import math
 import logging
 
 # ---------------------
 # Thrid-party libraries
 # ---------------------
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import ticker
-
 from lica.cli import execute
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
-from lica.misc import file_paths
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from .._version import __version__
-from ..util.mpl.plot import plot_layout, axes_reshape
 from .table import ptc_curves
 from .noise_curves import noise_parser_arguments, noise_curve1, noise_curve2, noise_curve3, noise_curve4
 from .variance_curves import variance_parser_arguments, variance_curve1

@@ -10,23 +10,15 @@
 # System wide imports
 # -------------------
 
-import os
-import glob
-import math
 import logging
 
 # ---------------------
 # Thrid-party libraries
 # ---------------------
 
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import ticker
 
 from lica.cli import execute
-from lica.validators import vdir, vfile, vfloat, vfloat01, valid_channels
-from lica.raw.loader import ImageLoaderFactory,  NormRoi
-from lica.misc import file_paths
 
 # ------------------------
 # Own modules and packages
@@ -37,8 +29,6 @@ from .._version import __version__
 # ----------------
 # Module constants
 # ----------------
-
-SQRT_2 = math.sqrt(2)
 
 COLUMN_LABELS = ["Curve", "Plot", "Units"]
 
