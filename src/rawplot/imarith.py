@@ -98,6 +98,7 @@ def arith_rgb(args):
     green_pixels = green_image.load()
     blue_pixels = blue_image.load()
     metadata = green_image.metadata()
+    assert green_image.metadata()['exposure'] == red_image.metadata()['exposure'] == blue_image.metadata()['exposure'], "Image exposure times are different in R, G & B color planes"
     # We compose the new composite image
     # from the different color planes
     # in each image
