@@ -11,6 +11,7 @@
 # -------------------
 
 import re
+import math
 import logging
 
 # ---------------------
@@ -25,6 +26,7 @@ from lica.misc import file_paths
 from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
 from lica.raw.loader import ImageLoaderFactory
 from lica.raw.analyzer.image import ImageStatistics
+from lica.csv import read_csv
 
 # ------------------------
 # Own modules and packages
@@ -40,6 +42,11 @@ from .util.common import common_list_info, make_plot_title_from, assert_physical
 
 WAVELENGTH_REG_EXP = re.compile(r'(\w+)_(\d+)nm_g(\d+)_(\d+)_(\d+)_(\w+).jpg')
 
+# Photodiode readings header columns
+WAVELENGTH_CSV_HEADER = 'wavelength (nm)'
+CURRENT_CSV_HEADER = 'current (A)'
+READ_NOISE_CSV_HEADER = 'read noise (A)'
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -49,6 +56,25 @@ log = logging.getLogger(__name__)
 # ------------------
 # Auxiliary fnctions
 # ------------------
+
+def mpl_photodiode_plot_loop(title, figsize, x, y, xtitle, ytitle,  **kwargs):
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
+    fig.suptitle(title)
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(f"{ytitle}")
+    filters = kwargs.get('filters', None)
+    if filters is not None:
+        for filt in filters:
+            axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
+    ylogscale = kwargs.get('ylogscale', False)
+    if ylogscale:
+        axes.set_yscale('log', base=10)
+    axes.grid(True,  which='major', color='silver', linestyle='solid')
+    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.plot(x, y,  marker='o', linewidth=1)
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
 
 def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel, **kwargs):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
@@ -122,13 +148,22 @@ def get_wavelengths(file_list, channels):
     log.info("Wavelengthss array shape is %s", result.shape)
     return result
 
+def csv_to_arrays(csv_path):
+     response = read_csv(csv_path)
+     wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
+     current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
+     read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
+     log.info("Read photodiode %d readings", wavelength.shape[0])
+     return wavelength, current, read_noise
+
+
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
 
 def draft_spectrum(args):
-    log.info(" === DRAFT SPECTRUM PLOT === ")
+    log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     title = make_plot_title_from("Draft Spectral Response plot",metadata, roi)
     wavelength = get_wavelengths(file_list, channels)
@@ -147,16 +182,46 @@ def draft_spectrum(args):
         # Optional arguments tpo be handled by the plotting function
         filters=[ 
             {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
-            {'label':'from OG570 to RG830', 'wave': 830, 'style': '-.'},
+            {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
         ] # where filters were changesd
     )
 
 def complete_spectrum(args):
-    log.info(" === COMPLETE SPECTRUM PLOT === ")
+    log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+
+def photodiode_spectrum(args):
+    log.info(" === PHOTODIODE SPECTRAL RESPONSET PLOT === ")
+    wavelength, current, read_noise = csv_to_arrays(args.csv_file)
+    if args.spectral_response:
+        title = "Photodiode Signal vs Wavelength"
+        y = current
+        ytitle = "Current [A]"
+        ylogscale = False
+    else:
+        title='Photodiode SNR vs Wavelength'
+        y = current / read_noise
+        ytitle = "SNR"
+        ylogscale = True
+    mpl_photodiode_plot_loop(
+        title=title,
+        figsize  = (12, 9),
+        xtitle = "Wavelength [nm]",
+        ytitle = ytitle,
+        x  = wavelength,
+        y  = y,
+        # Optional arguments tpo be handled by the plotting function
+        ylogscale = ylogscale,
+        filters = [ 
+                {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
+                {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
+        ] # where filters were changesd
+    )
+
 
 COMMAND_TABLE = {
     'draft': draft_spectrum,
     'complete': complete_spectrum, 
+    'photodiode': photodiode_spectrum
 }
 
 def spectral(args):
@@ -174,6 +239,7 @@ def add_args(parser):
 
     parser_draft = subparser.add_parser('draft', help='Draft spectrum')
     parser_good  = subparser.add_parser('complete', help='Complete, reduced spectrum')
+    parser_photo = subparser.add_parser('photodiode', help='Reference photodiode spectral response')
 
     parser_draft.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_draft.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
@@ -187,6 +253,11 @@ def add_args(parser):
     parser_draft.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser_draft.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_draft.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
+
+    parser_photo.add_argument('-cv', '--csv-file', type=vfile, required=True, help='CSV file with photdiode readings')
+    locgex1 = parser_photo.add_mutually_exclusive_group(required=True)
+    locgex1.add_argument('-s', '--spectral-response', action='store_true', help='Plot Photodiode raw spectral response')
+    locgex1.add_argument('-n', '--signal-to-noise', action='store_true', help='Plot SIgnal to noise ratio')
 
 # ================
 # MAIN ENTRY POINT
