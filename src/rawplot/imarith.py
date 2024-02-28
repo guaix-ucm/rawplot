@@ -35,6 +35,12 @@ from ._version import __version__
 # Module constants
 # ----------------
 
+# Colors as array indexes
+R = CHANNELS.index('R')
+B = CHANNELS.index('B')
+Gr = CHANNELS.index('Gr')
+Gb =  CHANNELS.index('Gb')
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -102,10 +108,7 @@ def arith_rgb(args):
     # We compose the new composite image
     # from the different color planes
     # in each image
-    R = CHANNELS.index('R')
-    B = CHANNELS.index('B')
-    Gr = CHANNELS.index('Gr')
-    Gb =  CHANNELS.index('Gb')
+    
     result_seq = [None, None, None, None]
     result_seq[R] = red_pixels[R]
     result_seq[B] = blue_pixels[B]
