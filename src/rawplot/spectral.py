@@ -153,7 +153,7 @@ def csv_to_arrays(csv_path):
      wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
      current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
      read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
-     log.info("Read photodiode %d readings", wavelength.shape[0])
+     log.info("Got photodiode %d readings", wavelength.shape[0])
      return wavelength, current, read_noise
 
 
@@ -188,6 +188,35 @@ def draft_spectrum(args):
 
 def complete_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    wavelength, current, read_noise = csv_to_arrays(args.csv_file)
+    current = current / np.max(current) # Normalize photodiode current
+    title = make_plot_title_from("Draft Spectral Response plot",metadata, roi)
+    wavelength = np.tile(wavelength,len(channels)).reshape(len(channels),-1)
+    #current = np.tile(current,len(channels)).reshape(len(channels),-1)
+    log.info("wavelength ARRAY has %s", wavelength.shape)
+    exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
+    #  Normalize each channel
+    for i, ch in enumerate(channels):
+        signal = signal / np.max(signal[i])
+
+    log.info("Exptime array shape is %s", exptime.shape)
+    mpl_spectra_plot_loop(
+        title    = title,
+        figsize  = (12, 9),
+        channels = channels,
+        plot_func = plot_raw_spectral,
+        xtitle = "Wavelength [nm]",
+        ytitle = f"Signal",
+        ylabel = "good",
+        x  = wavelength,
+        y  = signal / current,
+        # Optional arguments tpo be handled by the plotting function
+        filters=[ 
+            {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
+            {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
+        ] # where filters were changesd
+    )
 
 def photodiode_spectrum(args):
     log.info(" === PHOTODIODE SPECTRAL RESPONSET PLOT === ")
@@ -253,6 +282,20 @@ def add_args(parser):
     parser_draft.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser_draft.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_draft.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
+
+    parser_good.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
+    parser_good.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
+    parser_good.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_good.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_good.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_good.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
+    parser_good.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
+                    choices=('R', 'Gr', 'Gb', 'G', 'B'),
+                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_good.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    parser_good.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser_good.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
+    parser_good.add_argument('-cv', '--csv-file', type=vfile, required=True, help='CSV file with photdiode readings')
 
     parser_photo.add_argument('-cv', '--csv-file', type=vfile, required=True, help='CSV file with photdiode readings')
     locgex1 = parser_photo.add_mutually_exclusive_group(required=True)
