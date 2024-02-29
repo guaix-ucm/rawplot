@@ -73,3 +73,6 @@ write_to = "src/rawplot/_version.py"
 # you do NOT need to include the following line.
 namespaces = true
 where = ["src"]
+
+[tool.setuptools.package-data]
+"rawplot.resources" = ["*.csv"]
