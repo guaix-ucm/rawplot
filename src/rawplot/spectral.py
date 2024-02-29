@@ -11,8 +11,11 @@
 # -------------------
 
 import re
+import csv
 import math
 import logging
+
+from importlib.resources import files
 
 # ---------------------
 # Thrid-party libraries
@@ -40,6 +43,7 @@ from .util.common import common_list_info, make_plot_title_from, assert_physical
 # Module constants
 # ----------------
 
+PHOTODIODE_QE_DATA    = files('rawplot.resources').joinpath('OSI-11-01-004_10D.csv')
 WAVELENGTH_REG_EXP = re.compile(r'(\w+)_(\d+)nm_g(\d+)_(\d+)_(\d+)_(\w+).jpg')
 
 # Photodiode readings header columns
@@ -56,6 +60,20 @@ log = logging.getLogger(__name__)
 # ------------------
 # Auxiliary fnctions
 # ------------------
+
+def photodiode_qe_data(step_size):
+    '''Read the QE data embedded in a resource CSV file'''
+    assert step_size == 1 or step_size == 5, "Step size must be 1 or 5"
+    log.info("Reading OSI Photodiode Quantum Efficiency data for %d nm", step_size)
+    with PHOTODIODE_QE_DATA.open('r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        qe_data = { int(row['wavelength (nm)']): float(row['Quantum Efficiency']) for row in reader}
+    if step_size == 5:
+        # Down sampling to 5 nm
+        qe_data = { key: val for key, val in qe_data.items() if key % 5 == 0}
+    qe_data = np.array(tuple(qe_data[key] for key in sorted(qe_data.keys())))
+    log.info(qe_data.shape)
+    return qe_data
 
 def mpl_photodiode_plot_loop(title, figsize, x, y, xtitle, ytitle,  **kwargs):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
@@ -113,8 +131,6 @@ def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
         color = 'green'
     axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1, label=channels[i])
    
-
-
 def signal_from(file_list, n_roi, channels, bias, dark, every=2):
     file_list = file_list[::every]
     N = len(file_list)
@@ -188,6 +204,7 @@ def draft_spectrum(args):
 
 def complete_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+    qe_data = photodiode_qe_data(5)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     wavelength, current, read_noise = csv_to_arrays(args.csv_file)
     current = current / np.max(current) # Normalize photodiode current
@@ -197,8 +214,8 @@ def complete_spectrum(args):
     log.info("wavelength ARRAY has %s", wavelength.shape)
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
     #  Normalize each channel
-    for i, ch in enumerate(channels):
-        signal = signal / np.max(signal[i])
+    #for i, ch in enumerate(channels):
+    #    signal = signal / np.max(signal[i])
 
     log.info("Exptime array shape is %s", exptime.shape)
     mpl_spectra_plot_loop(
@@ -210,13 +227,15 @@ def complete_spectrum(args):
         ytitle = f"Signal",
         ylabel = "good",
         x  = wavelength,
-        y  = signal / current,
+        y  = qe_data * signal / current,
         # Optional arguments tpo be handled by the plotting function
         filters=[ 
             {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
             {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
         ] # where filters were changesd
     )
+
+
 
 def photodiode_spectrum(args):
     log.info(" === PHOTODIODE SPECTRAL RESPONSET PLOT === ")
