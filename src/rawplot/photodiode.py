@@ -59,70 +59,18 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def photodiode_qe_data(step_size):
-    '''Read the QE data embedded in a resource CSV file'''
-    assert step_size == 1 or step_size == 5, "Step size must be 1 or 5"
-    log.info("Reading OSI Photodiode Quantum Efficiency data for %d nm", step_size)
-    with PHOTODIODE_QE_DATA.open('r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        #qe_data = { int(row['Wavelength (nm)']): float(row['Quantum Efficiency']) for row in reader}
-        qe_data = { int(row['Wavelength (nm)']): float(row['Interpolated Responsivity (A/W)']) for row in reader}
-    if step_size == 5:
-        # Down sampling to 5 nm
-        qe_data = { key: val for key, val in qe_data.items() if key % 5 == 0}
-    qe_data = np.array(tuple(qe_data[key] for key in sorted(qe_data.keys())))
-    log.info(qe_data.shape)
-    return qe_data
-
-def mpl_photodiode_plot_loop(title, figsize, x, y, xtitle, ytitle,  **kwargs):
+def mpl_photodiode_plot_loop(title, figsize, wavelength, responsivity, qe, xtitle, ytitle):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle}")
-    filters = kwargs.get('filters', None)
-    if filters is not None:
-        for filt in filters:
-            axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
-    ylogscale = kwargs.get('ylogscale', False)
-    if ylogscale:
-        axes.set_yscale('log', base=10)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.plot(x, y,  marker='o', linewidth=1)
+    axes.plot(wavelength, responsivity,  marker='o', linewidth=0, label='Responsivity')
+    axes.plot(wavelength, qe,  marker='o', linewidth=0, label='QE')
     axes.minorticks_on()
     axes.legend()
     plt.show()
-
-
-def plot_raw_spectral(axes, i, x, y, channels, **kwargs):
-    wavelength = x[i]
-    signal = y[i]
-    if channels[i] == 'R':
-        color = 'red'
-        marker = 'o'
-    elif  channels[i] == 'B':
-        color = 'blue'
-        marker = 'o'
-    elif  channels[i] == 'Gr':
-        color = (0, 0.5, 0)
-        marker = '1'
-    elif  channels[i] == 'Gb':
-        color = (0, 0.25, 0)
-        marker = '2'
-    else:
-        color = 'green'
-    axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1, label=channels[i])
-   
-
-
-def csv_to_arrays(csv_path):
-     response = read_csv(csv_path)
-     wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
-     current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
-     read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
-     log.info("Got photodiode %d readings", wavelength.shape[0])
-     return wavelength, current, read_noise
-
 
 def photodiode_export(model, resolution, path):
     log.info("Exporting model %s, resolution %d nm to file %s", model, resolution, path)
@@ -137,12 +85,17 @@ def photodiode_load(model, resolution):
     '''Return dictionaries whose keys are the wavelengths'''
     f = files('rawplot.resources').joinpath(model + '.csv')
     with f.open('r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        qe = { int(row['Wavelength (nm)']): float(row['Quantum Efficiency']) for row in reader}
-        responsivity = { int(row['Wavelength (nm)']): float(row['Interpolated Responsivity (A/W)']) for row in reader}
+        reader = csv.DictReader(csvfile, delimiter=';')
+        responsivity = dict()
+        qe = dict()
+        for row in reader:
+            responsivity[int(row['Wavelength (nm)'])] = float(row['Interpolated Responsivity (A/W)'])
+            qe[int(row['Wavelength (nm)'])] = float(row['Quantum Efficiency'])
     # resample dictionary if necessary
+    log.info(responsivity)
     responsivity = { key: val for key, val in responsivity.items() if key % resolution == 0}
     qe = { key: val for key, val in qe.items() if key % resolution == 0}
+    log.info(responsivity)
     return responsivity, qe
     
 # -----------------------
@@ -153,10 +106,25 @@ def export(args):
     log.info(" === PHOTODIODE RESPONSIVITY & QE EXPORT === ")
     photodiode_export(args.model, args.resolution, args.csv_file)
 
-
-
 def plot(args):
     log.info(" === PHOTODIODE RESPONSIVITY & QE PLOT === ")
+    responsivity, qe = photodiode_load(args.model, args.resolution)
+    wavelength = np.array([key for key,value in responsivity.items()])
+    responsivity = np.array([value for key, value in responsivity.items()])
+    qe = np.array([value for key, value in qe.items()])
+
+    log.info("wavelength shape is %s", wavelength.shape)
+    log.info("responivity shape is %s", responsivity.shape)
+    log.info("QE shape is %s", qe.shape)
+    mpl_photodiode_plot_loop(
+        title = f"{args.model} characteristics", 
+        figsize =(12,9), 
+        wavelength = wavelength, 
+        responsivity = responsivity, 
+        qe = qe, 
+        xtitle = "Wavelengnth [nm]", 
+        ytitle = "Responivity [A/W] & Quantum Efficiency"
+    )
 
 
 COMMAND_TABLE = {
@@ -178,11 +146,12 @@ def add_args(parser):
     subparser = parser.add_subparsers(dest='command')
 
     parser_plot = subparser.add_parser('plot', help='Plot Responsivity & Quantum Efficiency')
-    parser_expo  = subparser.add_parser('export', help='Export Responsivity & Quantum Efficiency to CSV file')
+    parser_expo = subparser.add_parser('export', help='Export Responsivity & Quantum Efficiency to CSV file')
 
-    parser_plot.add_argument('-m','--model', default=OSI_PHOTODIODE,
-                    choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+    parser_plot.add_argument('-m','--model', default=OSI_PHOTODIODE, choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
                     help='Photodiode model. (default: %(default)s)')
+    parser_plot.add_argument('-r','--resolution', type=int, default=5, choices=(1,5), 
+                    help='Wavelength resolution (nm). (default: %(default)s nm)')
   
     parser_expo.add_argument('-m','--model', default=OSI_PHOTODIODE, choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
                     help='Photodiode model. (default: %(default)s)')
