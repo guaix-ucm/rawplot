@@ -67,7 +67,8 @@ def photodiode_qe_data(step_size):
     log.info("Reading OSI Photodiode Quantum Efficiency data for %d nm", step_size)
     with PHOTODIODE_QE_DATA.open('r') as csvfile:
         reader = csv.DictReader(csvfile)
-        qe_data = { int(row['wavelength (nm)']): float(row['Quantum Efficiency']) for row in reader}
+        #qe_data = { int(row['Wavelength (nm)']): float(row['Quantum Efficiency']) for row in reader}
+        qe_data = { int(row['Wavelength (nm)']): float(row['Interpolated Responsivity (A/W)']) for row in reader}
     if step_size == 5:
         # Down sampling to 5 nm
         qe_data = { key: val for key, val in qe_data.items() if key % 5 == 0}
