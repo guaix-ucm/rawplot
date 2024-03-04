@@ -44,10 +44,7 @@ from .util.common import common_list_info, make_plot_title_from, assert_physical
 # ----------------
 
 OSI_PHOTODIODE       = 'OSI-11-01-004-10D'
-HAMAMATSU_PHOTODIODE = 'Ham-S2281-01'
-
-PHOTODIODE_QE_DATA    = files('rawplot.resources').joinpath('OSI-11-01-004_10D.csv')
-WAVELENGTH_REG_EXP = re.compile(r'(\w+)_(\d+)nm_g(\d+)_(\d+)_(\d+)_(\w+).jpg')
+HAMAMATSU_PHOTODIODE = 'Ham-S2281-04'
 
 # -----------------------
 # Module global variables
@@ -91,11 +88,9 @@ def photodiode_load(model, resolution):
         for row in reader:
             responsivity[int(row['Wavelength (nm)'])] = float(row['Interpolated Responsivity (A/W)'])
             qe[int(row['Wavelength (nm)'])] = float(row['Quantum Efficiency'])
-    # resample dictionary if necessary
-    log.info(responsivity)
+    # resample dictionaries if necessary
     responsivity = { key: val for key, val in responsivity.items() if key % resolution == 0}
     qe = { key: val for key, val in qe.items() if key % resolution == 0}
-    log.info(responsivity)
     return responsivity, qe
     
 # -----------------------
@@ -112,10 +107,6 @@ def plot(args):
     wavelength = np.array([key for key,value in responsivity.items()])
     responsivity = np.array([value for key, value in responsivity.items()])
     qe = np.array([value for key, value in qe.items()])
-
-    log.info("wavelength shape is %s", wavelength.shape)
-    log.info("responivity shape is %s", responsivity.shape)
-    log.info("QE shape is %s", qe.shape)
     mpl_photodiode_plot_loop(
         title = f"{args.model} characteristics", 
         figsize =(12,9), 
