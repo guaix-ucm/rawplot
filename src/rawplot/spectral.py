@@ -86,7 +86,7 @@ def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, chann
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
-    axes.set_ylabel(f"{ytitle} [DN]")
+    axes.set_ylabel(ytitle)
     filters = kwargs.get('filters', None)
     for i in range(len(channels)):
         plot_func(axes, i, x, y, channels, **kwargs)
@@ -178,7 +178,7 @@ def raw_spectrum(args):
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Signal",
+        ytitle = f"Signal [DN]",
         ylabel = "good",
         x  = wavelength,
         y  = signal,
@@ -208,7 +208,7 @@ def corrected_spectrum(args):
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Signal",
+        ytitle = f"Signal (normalized)",
         ylabel = "good",
         x  = wavelength,
         y  = signal,
