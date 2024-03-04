@@ -197,7 +197,7 @@ def corrected_spectrum(args):
     wavelength, current, read_noise = photodiode_readings_to_arrays(args.csv_file)
     qe = np.array([qe[w] for w in wavelength]) # Only use those wavelenghts actually used in the CSV sequence
     current = current / np.max(current) # Normalize photodiode current
-    title = make_plot_title_from("Draft Spectral Response plot",metadata, roi)
+    title = make_plot_title_from("Corrected Spectral Response plot", metadata, roi)
     wavelength = np.tile(wavelength,len(channels)).reshape(len(channels),-1)
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
     signal = qe * signal / current
