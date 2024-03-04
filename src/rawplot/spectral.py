@@ -182,7 +182,7 @@ def raw_spectrum(args):
         ylabel = "good",
         x  = wavelength,
         y  = signal,
-        # Optional arguments tpo be handled by the plotting function
+        # Optional arguments to be handled by the plotting function
         filters=[ 
             {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
             {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
@@ -212,7 +212,7 @@ def corrected_spectrum(args):
         ylabel = "good",
         x  = wavelength,
         y  = signal,
-        # Optional arguments tpo be handled by the plotting function
+        # Optional arguments to be handled by the plotting function
         filters=[ 
             {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
             {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
@@ -247,7 +247,7 @@ def photodiode_spectrum(args):
         ytitle = ytitle,
         x  = wavelength,
         y  = y,
-        # Optional arguments tpo be handled by the plotting function
+        # Optional arguments to be handled by the plotting function
         ylogscale = ylogscale,
         filters = [ 
                 {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
