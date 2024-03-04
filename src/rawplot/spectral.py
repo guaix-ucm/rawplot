@@ -280,7 +280,7 @@ def add_args(parser):
     parser_raw = subparser.add_parser('raw', help='Raw spectrum')
     parser_corr  = subparser.add_parser('corrected', help='Correced spectrum')
     parser_diode = subparser.add_parser('photodiode', help='Photodiode readings')
-
+    # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_raw.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
     parser_raw.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
@@ -293,7 +293,7 @@ def add_args(parser):
     parser_raw.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
     parser_raw.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_raw.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
-
+    # ---------------------------------------------------------------------------------------------------------------
     parser_corr.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
     parser_corr.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
     parser_corr.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
@@ -311,7 +311,7 @@ def add_args(parser):
                     help='Photodiode model. (default: %(default)s)')
     parser_corr.add_argument('-r','--resolution', type=int, default=5, choices=(1,5), 
                     help='Wavelength resolution (nm). (default: %(default)s nm)')
-
+    # ---------------------------------------------------------------------------------------------------------------
     parser_diode.add_argument('-cv', '--csv-file', type=vfile, required=True, help='CSV file with photdiode readings')
     dioex1 = parser_diode.add_mutually_exclusive_group(required=True)
     dioex1.add_argument('-w', '--raw-readings', action='store_true', help='Plot Photodiode raw readings in A')
