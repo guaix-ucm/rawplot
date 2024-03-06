@@ -134,7 +134,7 @@ def signal_from(file_list, n_roi, channels, bias, dark, every=2):
         log.info("[%d/%d] \u03BC signal for image %s = %s", i, N, analyzer.name(), signal)
     return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1)
 
-def get_wavelengths(file_list, channels):
+def get_used_wavelengths(file_list, channels):
     M = len(channels)
     data = list()
     for file in file_list:
@@ -157,7 +157,7 @@ def photodiode_readings_to_arrays(csv_path):
      wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
      current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
      read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
-     log.info("Got photodiode %d readings", wavelength.shape[0])
+     log.info("Got %d photodiode readings", wavelength.shape[0])
      return wavelength, current, read_noise
 
 
@@ -169,9 +169,8 @@ def raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     title = make_plot_title_from("Draft Spectral Response plot",metadata, roi)
-    wavelength = get_wavelengths(file_list, channels)
+    wavelength = get_used_wavelengths(file_list, channels)
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
-    log.info("Exptime array shape is %s", exptime.shape)
     mpl_spectra_plot_loop(
         title    = title,
         figsize  = (12, 9),

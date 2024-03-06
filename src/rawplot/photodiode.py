@@ -86,9 +86,9 @@ def photodiode_load(model, resolution):
         responsivity = dict()
         qe = dict()
         for row in reader:
-            responsivity[int(row['Wavelength (nm)'])] = float(row['Interpolated Responsivity (A/W)'])
+            responsivity[int(row['Wavelength (nm)'])] = float(row['Responsivity (A/W)'])
             qe[int(row['Wavelength (nm)'])] = float(row['Quantum Efficiency'])
-    # resample dictionaries if necessary
+    # resample dictionaries if necessary for 5 nm resolution
     responsivity = { key: val for key, val in responsivity.items() if key % resolution == 0}
     qe = { key: val for key, val in qe.items() if key % resolution == 0}
     return responsivity, qe
@@ -114,7 +114,7 @@ def plot(args):
         responsivity = responsivity, 
         qe = qe, 
         xtitle = "Wavelengnth [nm]", 
-        ytitle = "Responivity [A/W] & Quantum Efficiency"
+        ytitle = "Responsivity [A/W] & Quantum Efficiency"
     )
 
 
@@ -160,5 +160,5 @@ def main():
         add_args_func=add_args, 
         name=__name__, 
         version=__version__,
-        description="Draft plot of sensor spectral response"
+        description="LICA reference photodiodes characteristics"
     )
