@@ -116,12 +116,12 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
     slope = fitted['slope']
     score = fitted['score']
     intercept = fitted['intercept']
-    label = rf"$S(t)$ (model)"
+    label = rf"$S(t)$ (fitted)"
     P0 = (0, intercept) 
     P1 = ( -intercept/slope)
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$S(t)$ (fitted)")
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$S(t)$ (to fit)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
-    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t+{intercept:0.2f}$"))
+    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t{intercept:+0.2f}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.3, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
 
