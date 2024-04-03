@@ -68,7 +68,9 @@ def common_info(args):
     log.info("Normalized ROI is %s", n_roi)
     factory =  ImageLoaderFactory()
     file_path = args.input_file
-    image0 = factory.image_from(file_path, n_roi, channels)
+    simulated = args.sim_dark is not None
+    log.info("simulated is %s", simulated)
+    image0 = factory.image_from(file_path, n_roi, channels, simulated=simulated, dark_current=args.sim_dark)
     roi = image0.roi()
     metadata = image0.metadata()
     log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])

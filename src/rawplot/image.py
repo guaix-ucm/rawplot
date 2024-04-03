@@ -119,7 +119,8 @@ def image_histo(args):
 
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata = common_info(args)
-    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels).load()
+    simulated = args.sim_dark is not None
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, simulated=simulated, dark_current=args.sim_dark).load()
     analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
