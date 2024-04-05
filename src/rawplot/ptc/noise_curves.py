@@ -201,6 +201,7 @@ def noise_curve2(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
     shot_read_noise = np.sqrt(shot_read_var)
@@ -242,6 +243,7 @@ def noise_curve3(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     shot_noise = np.sqrt(shot_var)
@@ -276,7 +278,8 @@ def noise_curve4(args):
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
-        bias = args.bias, 
+        bias = args.bias,
+        dark = args.dark, 
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     fpn_noise = np.sqrt(fpn_var)
