@@ -177,6 +177,9 @@ def add_args(parser):
     parser_pixels.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_pixels.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
+    parser_pixels.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
+    parser_pixels.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
+
 
     # -------------------------
     # Histogram command parsing
@@ -193,7 +196,8 @@ def add_args(parser):
     parser_histo.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_histo.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
-    parser_histo.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
+    parser_histo.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
+    parser_histo.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
 
 # ================
 # MAIN ENTRY POINT
