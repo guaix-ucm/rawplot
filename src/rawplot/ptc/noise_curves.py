@@ -76,7 +76,7 @@ def plot_fitted_box(axes, fitted):
     label = fitted['label']
     fitted_y = fitted['y']
     fitted_x = fitted['x']
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=1, label=f"{label} (selected)")
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=f"{label} (selected)")
     text = "\n".join( (f"{label}", fr"$\mu = {mean:0.2e}$", fr"$\sigma = {std:0.2e}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.4, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
