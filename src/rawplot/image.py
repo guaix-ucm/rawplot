@@ -88,10 +88,10 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
 # -----------------------
 
 def image_histo(args):
-    file_path, roi, n_roi, channels, metadata = common_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
-    analyzer = ImageStatistics(file_path, n_roi, channels, args.bias, args.dark)
+    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -117,22 +117,24 @@ def image_histo(args):
     )
 
 
+
 def image_pixels(args):
-    file_path, roi, n_roi, channels, metadata = common_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
     simulated = args.sim_dark is not None or args.sim_read_noise is not None
-    img = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
+    # The pixels we need to display are those of the whole image, not the ROI
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
         simulated=simulated, 
         read_noise=args.sim_read_noise,
         dark_current=args.sim_dark
-    )
-    log.info(img._select_by_channels)
-    pixels = img.load()
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias, dark=args.dark)
+    ).load() 
+    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
+    metadata = image0.metadata()
+    roi = image0 = image0.roi()
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,

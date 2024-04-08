@@ -57,13 +57,8 @@ def plot_hv(axes, xh, xv, H, V, title, log2):
     axes.minorticks_on()
     axes.legend()
 
-def averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, start, read_noise, dark_current):
-    simulated = dark_current is not None or read_noise is not None
-    pixels = ImageLoaderFactory().image_from(file_path, n_roi, channels, 
-        simulated=simulated, 
-        dark_current=dark_current,
-        read_noise=read_noise
-    ).load()
+def averaged_energy_spectrum(loader, start):
+    pixels = loader.load()
     Z, ROWS, COLS = pixels.shape
     # To remove the DC component it is more effective
     # to take the mean from the image itself rather than
@@ -94,9 +89,8 @@ def averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, start, r
 
 def hv(args):
     log2 = args.log2
-    file_path, roi, n_roi, channels, metadata = common_info(args)
-    simulated = args.sim_dark is None
-    xh, xv, H, V = averaged_energy_spectrum(file_path, roi, n_roi, channels, metadata, args.start, args.sim_read_noise, args.sim_dark)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
+    xh, xv, H, V = averaged_energy_spectrum(image0, args.start)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=(12, 9), layout='tight')
