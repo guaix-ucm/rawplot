@@ -40,7 +40,7 @@ def signal_and_noise_variances_from(file_list, n_roi, channels, bias, dark):
     signal_list = list()      # Only from the first images of the pairs
     fpn_corrected_noise_list = list()
     for i, (path_a, path_b) in enumerate(file_pairs, start=1):
-        analyzer = ImagePairStatistics(path_a, path_b, n_roi, channels, bias, dark)
+        analyzer = ImagePairStatistics.from_path(path_a, path_b, n_roi, channels, bias, dark)
         analyzer.run()
         signal = analyzer.mean()
         total_noise_var = analyzer.variance()

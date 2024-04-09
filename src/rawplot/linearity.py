@@ -99,7 +99,7 @@ def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, dark, 
     noise_list = list()
     exptime_list = list()
     for i, path in enumerate(file_list, start=1):
-        analyzer = ImageStatistics(path, n_roi, channels, bias, dark)
+        analyzer = ImageStatistics.from_path(path, n_roi, channels, bias, dark)
         analyzer.run()
         signal = analyzer.mean()
         signal_list.append(signal)

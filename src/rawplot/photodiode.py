@@ -25,11 +25,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lica.cli import execute
-from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
-from lica.raw.loader import ImageLoaderFactory
-from lica.raw.analyzer.image import ImageStatistics
-from lica.csv import read_csv
 
 # ------------------------
 # Own modules and packages

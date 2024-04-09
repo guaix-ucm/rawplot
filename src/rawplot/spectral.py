@@ -23,9 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lica.cli import execute
-from lica.misc import file_paths
 from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
-from lica.raw.loader import ImageLoaderFactory
 from lica.raw.analyzer.image import ImageStatistics
 from lica.csv import read_csv
 
@@ -125,7 +123,7 @@ def signal_from(file_list, n_roi, channels, bias, dark, every=2):
     signal_list = list()
     exptime_list = list()
     for i, path in enumerate(file_list, start=1):
-        analyzer = ImageStatistics(path, n_roi, channels, bias, dark)
+        analyzer = ImageStatistics.from_path(path, n_roi, channels, bias, dark)
         analyzer.run()
         signal = analyzer.mean()
         signal_list.append(signal)
