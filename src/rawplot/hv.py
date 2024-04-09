@@ -122,7 +122,6 @@ def hv_fftw(args):
             if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
                 axes[row][col].set_axis_off()
                 break
-            plot_hv(axes[row][col], xh, xv, H[i], V[i], channels[i], log2)
             plot_hv(
                 axes         = axes[row][col], 
                 x_horizontal = xh, 
