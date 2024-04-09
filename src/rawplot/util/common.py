@@ -68,13 +68,14 @@ def common_info(args):
     log.info("Normalized ROI is %s", n_roi)
     factory =  ImageLoaderFactory()
     file_path = args.input_file
-    simulated = args.sim_dark is not None
-    log.info("simulated is %s", simulated)
-    image0 = factory.image_from(file_path, n_roi, channels, simulated=simulated, dark_current=args.sim_dark)
+    simulated = args.sim_dark is not None or args.sim_read_noise is not None
+    log.info("Simulated Dark Frame image is %s", simulated)
+    image0 = factory.image_from(file_path, n_roi, channels, simulated=simulated, 
+        dark_current=args.sim_dark, read_noise=args.sim_read_noise)
     roi = image0.roi()
     metadata = image0.metadata()
     log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
-    return file_path, roi, n_roi, channels, metadata
+    return file_path, roi, n_roi, channels, metadata, simulated, image0
 
 def make_plot_title_from(title, metadata, roi):
     title = f"{title}\n" \

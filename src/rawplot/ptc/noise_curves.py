@@ -76,7 +76,7 @@ def plot_fitted_box(axes, fitted):
     label = fitted['label']
     fitted_y = fitted['y']
     fitted_x = fitted['x']
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=1, label=f"{label} (selected)")
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=f"{label} (selected)")
     text = "\n".join( (f"{label}", fr"$\mu = {mean:0.2e}$", fr"$\sigma = {std:0.2e}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.4, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
@@ -201,6 +201,7 @@ def noise_curve2(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     )
     shot_read_noise = np.sqrt(shot_read_var)
@@ -242,6 +243,7 @@ def noise_curve3(args):
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
+        dark = args.dark,
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     shot_noise = np.sqrt(shot_var)
@@ -276,7 +278,8 @@ def noise_curve4(args):
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
-        bias = args.bias, 
+        bias = args.bias,
+        dark = args.dark, 
         read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
     )
     fpn_noise = np.sqrt(fpn_var)

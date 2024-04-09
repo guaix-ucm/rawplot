@@ -88,10 +88,10 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
 # -----------------------
 
 def image_histo(args):
-    file_path, roi, n_roi, channels, metadata = common_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
-    analyzer = ImageStatistics(file_path, n_roi, channels, args.bias, args.dark)
+    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
@@ -117,16 +117,24 @@ def image_histo(args):
     )
 
 
+
 def image_pixels(args):
-    file_path, roi, n_roi, channels, metadata = common_info(args)
-    simulated = args.sim_dark is not None
-    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, simulated=simulated, dark_current=args.sim_dark).load()
-    analyzer = ImageStatistics(file_path, n_roi, channels, bias=args.bias, dark=args.dark)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
+    simulated = args.sim_dark is not None or args.sim_read_noise is not None
+    # The pixels we need to display are those of the whole image, not the ROI
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
+        simulated=simulated, 
+        read_noise=args.sim_read_noise,
+        dark_current=args.sim_dark
+    ).load() 
+    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
+    metadata = image0.metadata()
+    roi = image0 = image0.roi()
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,
@@ -176,7 +184,9 @@ def add_args(parser):
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser_pixels.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_pixels.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
-    parser_pixels.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
+    parser_pixels.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
+    parser_pixels.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
+
 
     # -------------------------
     # Histogram command parsing
@@ -193,7 +203,8 @@ def add_args(parser):
     parser_histo.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_histo.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
-    parser_histo.add_argument('--sim-dark', type=float,  help='Simulate dark frame with given dark current')
+    parser_histo.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
+    parser_histo.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
 
 # ================
 # MAIN ENTRY POINT
