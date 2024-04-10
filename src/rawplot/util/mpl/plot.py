@@ -51,9 +51,9 @@ def axes_reshape(axes, channels):
         return axes.reshape(1,2)
     return axes
 
-def mpl_main_image_loop(title, figsize, pixels, plot_func, channels, roi, **kwargs):
+def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
@@ -67,9 +67,9 @@ def mpl_main_image_loop(title, figsize, pixels, plot_func, channels, roi, **kwar
             plot_func(axes[row][col], i,  pixels[i], channels[i], roi, cmap[i], edge_color[i], **kwargs)
     plt.show()
 
-def mpl_main_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel=None, **kwargs):
+def mpl_main_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel=None, **kwargs):
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, figsize=figsize, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):

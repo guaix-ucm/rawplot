@@ -57,8 +57,8 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def mpl_photodiode_plot_loop(title, figsize, x, y, xtitle, ytitle,  **kwargs):
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
+def mpl_photodiode_plot_loop(title, x, y, xtitle, ytitle,  **kwargs):
+    fig, axes = plt.subplots(nrows=1, ncols=1, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle}")
@@ -80,8 +80,8 @@ def mpl_photodiode_plot_loop(title, figsize, x, y, xtitle, ytitle,  **kwargs):
     axes.legend()
     plt.show()
 
-def mpl_spectra_plot_loop(title, figsize, x, y, xtitle, ytitle, plot_func, channels, ylabel, **kwargs):
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
+def mpl_spectra_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel, **kwargs):
+    fig, axes = plt.subplots(nrows=1, ncols=1, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(ytitle)
@@ -171,7 +171,6 @@ def raw_spectrum(args):
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
     mpl_spectra_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
@@ -201,7 +200,6 @@ def corrected_spectrum(args):
     signal = signal / np.max(signal) # Normalize signal to its absolute maxímun for all channels
     mpl_spectra_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
@@ -235,7 +233,6 @@ def photodiode_spectrum(args):
         ylogscale = True
     mpl_photodiode_plot_loop(
         title=title,
-        figsize  = (12, 9),
         xtitle = "Wavelength [nm]",
         ytitle = ytitle,
         x  = wavelength,

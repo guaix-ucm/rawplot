@@ -18,6 +18,7 @@ import fractions
 # ---------------------
 
 import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -33,6 +34,9 @@ from lica.raw.analyzer.image import ImageStatistics
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
 from .util.common import common_info, make_plot_title_from
+
+# Load global style sheets
+plt.style.use("rawplot.resources.rawplot")
 
 # -----------------------
 # Module global variables
@@ -101,7 +105,6 @@ def image_histo(args):
     title = make_plot_title_from(f"{metadata['name']} (decimated {dcm})", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_histo,
         xtitle = "Pixel value [DN]",
         ytitle = "Pixel Count",
@@ -138,7 +141,6 @@ def image_pixels(args):
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,
-        figsize  = (12, 9),
         channels = channels,
         roi = roi,
         plot_func = plot_image,

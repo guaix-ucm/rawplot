@@ -51,8 +51,8 @@ log = logging.getLogger(__name__)
 # Auxiliary fnctions
 # ------------------
 
-def mpl_photodiode_plot_loop(title, figsize, wavelength, responsivity, qe, xtitle, ytitle):
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=figsize, layout='tight')
+def mpl_photodiode_plot_loop(title, wavelength, responsivity, qe, xtitle, ytitle):
+    fig, axes = plt.subplots(nrows=1, ncols=1, layout='tight')
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle}")
@@ -104,7 +104,6 @@ def plot(args):
     qe = np.array([value for key, value in qe.items()])
     mpl_photodiode_plot_loop(
         title = f"{args.model} characteristics", 
-        figsize =(12,9), 
         wavelength = wavelength, 
         responsivity = responsivity, 
         qe = qe, 

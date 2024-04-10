@@ -76,4 +76,4 @@ namespaces = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"rawplot.resources" = ["*.csv"]
+"rawplot.resources" = ["*.csv", "*.mplstyle"]

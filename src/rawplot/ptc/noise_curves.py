@@ -171,7 +171,6 @@ def noise_curve1(args):
     title = make_plot_title_from("Individual Noise Sources vs. Signal",metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_noise_vs_signal, # 2D (channel, data) Numpy array
         xtitle = "Signal",
         ytitle = "Noise",
@@ -218,7 +217,6 @@ def noise_curve2(args):
     title = make_plot_title_from(r"$\sigma_{SHOT+READ}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
         xtitle = "Signal",
         ytitle = "Noise",
@@ -254,7 +252,6 @@ def noise_curve3(args):
     title = make_plot_title_from(r"$\sigma_{SHOT}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
         xtitle = "Signal",
         ytitle = "Noise",
@@ -296,7 +293,6 @@ def noise_curve4(args):
     title = make_plot_title_from(r"$\sigma_{FPN}$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_noise_vs_signal,
         xtitle = "Signal",
         ytitle = "Noise",

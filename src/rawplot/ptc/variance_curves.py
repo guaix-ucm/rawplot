@@ -131,7 +131,6 @@ def variance_curve1(args):
     title = make_plot_title_from(r"$\sigma_{READ+SHOT}^2$ vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_variance_vs_signal,
         xtitle = f"Signal [DN]",
         ytitle = f"Noise Variance [DN]",

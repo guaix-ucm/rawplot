@@ -165,7 +165,6 @@ def linearity(args):
     fit_params = fit(good_exptime, good_signal, channels)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         channels = channels,
         plot_func = plot_linearity,
         xtitle = "Exposure time [s]",
