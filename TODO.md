@@ -4,3 +4,4 @@
 - Cross axial cut or marginal distribution ?
 - Contour plot with pre low pass filtering
 2. Histograms
+3. Matplotlib Styles
