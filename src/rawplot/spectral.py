@@ -53,6 +53,13 @@ READ_NOISE_CSV_HEADER = 'read noise (A)'
 
 log = logging.getLogger(__name__)
 
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
+
 # ------------------
 # Auxiliary fnctions
 # ------------------

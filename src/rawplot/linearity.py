@@ -17,8 +17,9 @@ import logging
 # ---------------------
 
 import numpy as np
-from sklearn.linear_model import  TheilSenRegressor, LinearRegression
+import matplotlib.pyplot as plt
 
+from sklearn.linear_model import  TheilSenRegressor, LinearRegression
 
 from lica.cli import execute
 from lica.misc import file_paths
@@ -43,6 +44,13 @@ from .util.common import common_list_info, make_plot_title_from, assert_physical
 # -----------------------
 
 log = logging.getLogger(__name__)
+
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
 
 # ------------------
 # Auxiliary fnctions

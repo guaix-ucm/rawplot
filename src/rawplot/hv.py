@@ -40,6 +40,13 @@ from .util.common import common_info, make_plot_title_from
 
 log = logging.getLogger(__name__)
 
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
+
 # ------------------
 # Auxiliary fnctions
 # ------------------

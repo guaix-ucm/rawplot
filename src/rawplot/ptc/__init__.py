@@ -16,6 +16,8 @@ import logging
 # Thrid-party libraries
 # ---------------------
 
+import matplotlib.pyplot as plt
+
 from lica.cli import execute
 
 # ------------------------
@@ -38,6 +40,13 @@ from .snr_curves import snr_parser_arguments, snr_curve1
 # -----------------------
 
 log = logging.getLogger(__name__)
+
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
 
 # ------------------
 # Auxiliary fnctions

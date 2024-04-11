@@ -47,6 +47,13 @@ HAMAMATSU_PHOTODIODE = 'Ham-S2281-04'
 
 log = logging.getLogger(__name__)
 
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
+
 # ------------------
 # Auxiliary fnctions
 # ------------------
