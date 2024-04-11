@@ -24,7 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat, vfloat01, vflopath
-from lica.raw.loader import ImageLoaderFactory,  FULL_FRAME_NROI
+from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
@@ -33,7 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
-from .util.common import common_info_with_sim, valid_channels, make_plot_title_from
+from .util.common import common_info_with_sim, common_single_info, make_plot_title_from, extended_roi
 
 
 # -----------------------
@@ -52,6 +52,8 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 # Auxiliary fnctions
 # ------------------
+
+
 
 def plot_histo(axes, i, x, y, xtitle, ytitle, ylabel, channel, **kwargs):
     median = kwargs['median'][i]
@@ -87,6 +89,30 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
     rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
                     linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
     axes.add_patch(rect)
+    divider = make_axes_locatable(axes)
+    cax = divider.append_axes('right', size='5%', pad=0.10)
+    axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
+
+def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
+    median = kwargs['median'][i]
+    mean = kwargs['mean'][i]
+    stddev = kwargs['stddev'][i]
+    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
+    axes.set_title(title)
+    im = axes.imshow(pixels, cmap=colormap)
+    # Create the Rectangle patch for the standard ROI   
+    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
+                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
+    axes.add_patch(rect)
+
+    # Create more Rectangle patches for optional extended ROIs
+    for key in ('extended_roi_x', 'extended_roi_y'):
+        extended_roi = kwargs.get(key)
+        if extended_roi:
+            rect = patches.Rectangle(extended_roi.xy(), extended_roi.width(), extended_roi.height(), 
+                        linewidth=1, linestyle=':', edgecolor=edgecolor, facecolor='none')
+            axes.add_patch(rect)
+
     divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='5%', pad=0.10)
     axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
@@ -134,7 +160,12 @@ def image_pixels(args):
         simulated=simulated, 
         read_noise=args.sim_read_noise,
         dark_current=args.sim_dark
-    ).load() 
+    ).load()
+    if args.extended_roi:
+        height, width = image0.shape()
+        extended_roi_x, extended_roi_y = extended_roi(roi, width, height)
+    else:
+         extended_roi_x, extended_roi_y = (None, None)
     analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
@@ -142,7 +173,7 @@ def image_pixels(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     metadata = image0.metadata()
-    roi = image0 = image0.roi()
+    roi = image0.roi()
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,
@@ -153,38 +184,15 @@ def image_pixels(args):
         # Extra arguments
         mean = aver,
         median = mdn,
-        stddev = std
+        stddev = std,
+        extended_roi_x = extended_roi_x,
+        extended_roi_y = extended_roi_y,
     )
 
+
 def image_optical(args):
-    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
-    simulated = args.sim_dark is not None or args.sim_read_noise is not None
-    # The pixels we need to display are those of the whole image, not the ROI
-    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
-        simulated=simulated, 
-        read_noise=args.sim_read_noise,
-        dark_current=args.sim_dark
-    ).load() 
-    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
-    analyzer.run()
-    aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
-    log.info("section %s average is %s", roi, aver)
-    log.info("section %s stddev is %s", roi, std)
-    log.info("section %s median is %s", roi, mdn)
-    metadata = image0.metadata()
-    roi = image0 = image0.roi()
-    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
-    mpl_main_image_loop(
-        title    = title,
-        channels = channels,
-        roi = roi,
-        plot_func = plot_image,
-        pixels    = pixels,
-        # Extra arguments
-        mean = aver,
-        median = mdn,
-        stddev = std
-    )
+    file_path, roi, n_roi, channels, metadata, image0 = common_single_info(args)
+
 
 COMMAND_TABLE = {
     'pixels': image_pixels,
@@ -221,6 +229,7 @@ def add_args(parser):
     parser_pixels.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_pixels.add_argument('--extended-roi', action='store_true', help='Plot X & Y extended ROIs')
     parser_pixels.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser_pixels.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')

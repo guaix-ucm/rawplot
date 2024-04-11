@@ -17,7 +17,7 @@ import logging
 # ---------------------
 
 from lica.validators import valid_channels
-from lica.raw.loader import ImageLoaderFactory, NormRoi
+from lica.raw.loader import ImageLoaderFactory, NormRoi, Roi
 from lica.misc import file_paths
 
 # ------------------------
@@ -46,6 +46,13 @@ def assert_range(args):
         args.from_value = args.to_value
         args.to_value = temp
 
+def extended_roi(roi, width, height):
+    log.info("ROI = %s. Centre is %s", roi, roi.centre())
+    roi_ext_x = Roi.extend_X(roi, width)
+    log.info("Extended X ROI = %s. Centre is %s", roi_ext_x, roi_ext_x.centre())
+    roi_ext_y = Roi.extend_Y(roi, height)
+    log.info("Extended Y ROI = %s. Centre is %s", roi_ext_y, roi_ext_y.centre())
+    return roi_ext_x, roi_ext_y
 
 def common_list_info(args):
     channels = valid_channels(args.channels)
@@ -76,6 +83,21 @@ def common_info_with_sim(args):
     metadata = image0.metadata()
     log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
     return file_path, roi, n_roi, channels, metadata, simulated, image0
+
+def common_single_info(args):
+    channels = valid_channels(args.channels)
+    assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
+    log.info("Working with %d channels: %s", len(channels), channels)
+    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
+    log.info("Normalized ROI is %s", n_roi)
+    factory =  ImageLoaderFactory()
+    file_path = args.input_file
+    image0 = factory.image_from(file_path, n_roi, channels, simulated=False, 
+        dark_current=None, read_noise=None)
+    roi = image0.roi()
+    metadata = image0.metadata()
+    log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
+    return file_path, roi, n_roi, channels, metadata, image0
 
 def make_plot_title_from(title, metadata, roi):
     title = f"{title}\n" \
