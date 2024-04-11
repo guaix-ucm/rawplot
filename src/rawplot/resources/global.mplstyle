@@ -1,0 +1,9 @@
+# =============================
+# Matplotlib Global Style Sheet
+# =============================
+
+# Figure in inches
+figure.figsize : 12, 9
+
+# X & Y axis label size
+axes.labelsize: large

@@ -144,7 +144,6 @@ def snr_curve1(args):
     title = make_plot_title_from("SNR (Total Noise) vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
-        figsize  = (12, 9),
         plot_func = plot_noise_vs_signal, # 2D (channel, data) Numpy array
         xtitle = "Signal",
         ytitle = "SNR",

@@ -35,14 +35,19 @@ from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
 from .util.common import common_info, make_plot_title_from
 
-# Load global style sheets
-plt.style.use("rawplot.resources.rawplot")
 
 # -----------------------
 # Module global variables
 # -----------------------
 
 log = logging.getLogger(__name__)
+
+# -----------------
+# Matplotlib styles
+# -----------------
+
+# Load global style sheets
+plt.style.use("rawplot.resources.global")
 
 # ------------------
 # Auxiliary fnctions
