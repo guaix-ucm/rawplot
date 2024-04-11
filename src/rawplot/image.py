@@ -33,7 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
-from .util.common import common_info_with_sim, common_single_info, make_plot_title_from, extended_roi
+from .util.common import common_info_with_sim, make_plot_title_from, extended_roi
 
 
 # -----------------------
@@ -191,7 +191,26 @@ def image_pixels(args):
 
 
 def image_optical(args):
-    file_path, roi, n_roi, channels, metadata, image0 = common_single_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
+    simulated = args.sim_dark is not None or args.sim_read_noise is not None
+    # The pixels we need to display are those of the whole image, not the ROI
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
+        simulated=simulated, 
+        read_noise=args.sim_read_noise,
+        dark_current=args.sim_dark
+    ).load()
+
+    height, width = image0.shape()
+    roi_x, roi_y = extended_roi(roi, width, height)
+   
+    # produce the Horizontal aggregate from 0...ncols
+    pixels_x = pixels[:,roi_x.y0:roi_x.y1, roi_x.x0:roi_x.x1]
+    H = np.mean(pixels_x, axis=1)  
+    # produce the Vertical aggregate from 0...ncols
+    pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
+    V = np.mean(pixels_y, axis=2)
+    
+    # assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
 
 
 COMMAND_TABLE = {
@@ -265,6 +284,11 @@ def add_args(parser):
     parser_optical.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_optical.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
+    parser_optical.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
+    parser_optical.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
+    parser_optical.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
+
 
 
 # ================

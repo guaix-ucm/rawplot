@@ -84,20 +84,6 @@ def common_info_with_sim(args):
     log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
     return file_path, roi, n_roi, channels, metadata, simulated, image0
 
-def common_single_info(args):
-    channels = valid_channels(args.channels)
-    assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
-    log.info("Working with %d channels: %s", len(channels), channels)
-    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
-    log.info("Normalized ROI is %s", n_roi)
-    factory =  ImageLoaderFactory()
-    file_path = args.input_file
-    image0 = factory.image_from(file_path, n_roi, channels, simulated=False, 
-        dark_current=None, read_noise=None)
-    roi = image0.roi()
-    metadata = image0.metadata()
-    log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
-    return file_path, roi, n_roi, channels, metadata, image0
 
 def make_plot_title_from(title, metadata, roi):
     title = f"{title}\n" \
