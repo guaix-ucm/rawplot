@@ -61,7 +61,7 @@ def common_list_info(args):
     log.info("Common ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
     return file_list, roi, n_roi, channels, metadata
 
-def common_info(args):
+def common_info_with_sim(args):
     channels = valid_channels(args.channels)
     log.info("Working with %d channels: %s", len(channels), channels)
     n_roi = NormRoi(args.x0, args.y0, args.width, args.height)

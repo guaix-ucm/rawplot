@@ -33,7 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
-from .util.common import common_info, make_plot_title_from
+from .util.common import common_info_with_sim, valid_channels, make_plot_title_from
 
 
 # -----------------------
@@ -97,7 +97,7 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
 # -----------------------
 
 def image_histo(args):
-    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
     decimate = args.every
     dcm = fractions.Fraction(1, decimate)
     analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
@@ -127,7 +127,37 @@ def image_histo(args):
 
 
 def image_pixels(args):
-    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info(args)
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
+    simulated = args.sim_dark is not None or args.sim_read_noise is not None
+    # The pixels we need to display are those of the whole image, not the ROI
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
+        simulated=simulated, 
+        read_noise=args.sim_read_noise,
+        dark_current=args.sim_dark
+    ).load() 
+    analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
+    analyzer.run()
+    aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
+    log.info("section %s average is %s", roi, aver)
+    log.info("section %s stddev is %s", roi, std)
+    log.info("section %s median is %s", roi, mdn)
+    metadata = image0.metadata()
+    roi = image0 = image0.roi()
+    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
+    mpl_main_image_loop(
+        title    = title,
+        channels = channels,
+        roi = roi,
+        plot_func = plot_image,
+        pixels    = pixels,
+        # Extra arguments
+        mean = aver,
+        median = mdn,
+        stddev = std
+    )
+
+def image_optical(args):
+    file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
     simulated = args.sim_dark is not None or args.sim_read_noise is not None
     # The pixels we need to display are those of the whole image, not the ROI
     pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
@@ -159,6 +189,7 @@ def image_pixels(args):
 COMMAND_TABLE = {
     'pixels': image_pixels,
     'histo': image_histo, 
+    'optical': image_optical,
 }
 
 def image(args):
@@ -177,6 +208,7 @@ def add_args(parser):
 
     parser_pixels = subparser.add_parser('pixels', help='Display image pixels')
     parser_histo  = subparser.add_parser('histo', help='Display image histogram')
+    parser_optical = subparser.add_parser('optical', help='Display image aggregate X & Y axes for optical misalighment analysis')
 
     # -----------------------
     # Pixels command parsing
@@ -212,6 +244,19 @@ def add_args(parser):
     parser_histo.add_argument('--y-log',  action='store_true', help='Logaritmic scale for pixel counts')
     parser_histo.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
     parser_histo.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
+
+    # -----------------------
+    # Optical command parsing
+    # -----------------------
+    parser_optical.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
+    parser_optical.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_optical.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_optical.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_optical.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
+    parser_optical.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
+                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+
 
 # ================
 # MAIN ENTRY POINT
