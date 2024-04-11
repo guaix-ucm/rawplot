@@ -120,7 +120,7 @@ def hv_fftw(args):
     xh, xv, H, V = averaged_energy_spectrum(image0, args.start)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
@@ -149,7 +149,7 @@ def hv_spatial(args):
     xh, xv, H, V = averaged_spatial_distribution(image0)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):

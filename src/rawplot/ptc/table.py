@@ -59,7 +59,7 @@ log = logging.getLogger(__name__)
 
 def ptc_curves(args):
     log.info("Displaying PTC charts")
-    fig, ax = plt.subplots(nrows=1, ncols=1,  figsize=(7, 3), layout='tight')
+    fig, ax = plt.subplots(nrows=1, ncols=1,  figsize=(7, 3))
     fig.suptitle("Available Photon Transfer Curves")
     ax.axis("tight")
     ax.axis("off")

@@ -59,7 +59,7 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 
 def mpl_photodiode_plot_loop(title, wavelength, responsivity, qe, xtitle, ytitle):
-    fig, axes = plt.subplots(nrows=1, ncols=1, layout='tight')
+    fig, axes = plt.subplots(nrows=1, ncols=1)
     fig.suptitle(title)
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle}")

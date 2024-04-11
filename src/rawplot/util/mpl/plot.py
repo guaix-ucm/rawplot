@@ -53,7 +53,7 @@ def axes_reshape(axes, channels):
 
 def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):
@@ -69,7 +69,7 @@ def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
 
 def mpl_main_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel=None, **kwargs):
     display_rows, display_cols = plot_layout(channels)
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols, layout='tight')
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
     axes = axes_reshape(axes, channels)
     for row in range(0,display_rows):

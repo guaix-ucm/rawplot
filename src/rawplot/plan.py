@@ -162,7 +162,7 @@ def plan(args):
         export_to_csv(args.csv_file, T)
     num_seq = range(1, len(T)+1)
     title = f"{args.command.title()} exposure plan"
-    fig, axes = plt.subplots(nrows=1, ncols=1,  layout='tight')
+    fig, axes = plt.subplots(nrows=1, ncols=1)
     plot_plan(fig, axes, title, subtitle, num_seq, T)
     plt.show()
 
