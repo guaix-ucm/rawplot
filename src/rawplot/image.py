@@ -206,11 +206,22 @@ def image_optical(args):
     # produce the Horizontal aggregate from 0...ncols
     pixels_x = pixels[:,roi_x.y0:roi_x.y1, roi_x.x0:roi_x.x1]
     H = np.mean(pixels_x, axis=1)  
-    # produce the Vertical aggregate from 0...ncols
+    Z, N = H.shape
+    X = np.tile(np.arange(0, N),(Z,1))
+    
+    # produce the Vertical aggregate from 0...rows
     pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
     V = np.mean(pixels_y, axis=2)
+    Z, M = V.shape
+    Y = np.tile(np.arange(0, M),(Z,1)) 
     
-    # Queda calcular el centroide de estas distribuciones marginales
+    # Calculate the center fo gravity 
+    # of these marginal distrubutions H & V
+    xc = np.sum(X*H, axis=1)/np.sum(H, axis=1)
+    yc = np.sum(Y*V, axis=1)/np.sum(V, axis=1)
+    log.info("Centroid Xc = %s",xc)
+    log.info("Centroid Yc = %s",yc)
+
 
     # assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
 
