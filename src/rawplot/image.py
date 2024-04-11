@@ -210,6 +210,8 @@ def image_optical(args):
     pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
     V = np.mean(pixels_y, axis=2)
     
+    # Queda calcular el centroide de estas distribuciones marginales
+
     # assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
 
 
