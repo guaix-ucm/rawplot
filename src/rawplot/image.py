@@ -32,7 +32,7 @@ from lica.raw.analyzer.image import ImageStatistics
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
+from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, mpl_main_pairs_plot_loop
 from .util.common import common_info_with_sim, make_plot_title_from, extended_roi
 
 
@@ -54,6 +54,17 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 
 
+def plot_radial(axes, i, j, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
+    title = fr'{channels[i]}'
+    axes.set_title(title)
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(ytitle)
+    axes.grid(True,  which='major', color='silver', linestyle='solid')
+    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    #axes.legend()
+
+  
 
 def plot_histo(axes, i, x, y, xtitle, ytitle, ylabel, channel, **kwargs):
     median = kwargs['median'][i]
@@ -85,26 +96,10 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
     title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=colormap)
-    # Create a Rectangle patch
-    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
-                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
-    axes.add_patch(rect)
-    divider = make_axes_locatable(axes)
-    cax = divider.append_axes('right', size='5%', pad=0.10)
-    axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
-
-def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
-    median = kwargs['median'][i]
-    mean = kwargs['mean'][i]
-    stddev = kwargs['stddev'][i]
-    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
-    axes.set_title(title)
-    im = axes.imshow(pixels, cmap=colormap)
     # Create the Rectangle patch for the standard ROI   
     rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
                     linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
     axes.add_patch(rect)
-
     # Create more Rectangle patches for optional extended ROIs
     for key in ('extended_roi_x', 'extended_roi_y'):
         extended_roi = kwargs.get(key)
@@ -112,7 +107,6 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
             rect = patches.Rectangle(extended_roi.xy(), extended_roi.width(), extended_roi.height(), 
                         linewidth=1, linestyle=':', edgecolor=edgecolor, facecolor='none')
             axes.add_patch(rect)
-
     divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='5%', pad=0.10)
     axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
@@ -221,9 +215,27 @@ def image_optical(args):
     yc = np.sum(Y*V, axis=1)/np.sum(V, axis=1)
     log.info("Centroid Xc = %s",xc)
     log.info("Centroid Yc = %s",yc)
+    centroid = (xc, yc)
+    # Caluclate the optical center for all channels
+    ocx = np.tile(np.array([width / 2]),(Z,1))
+    ocy = np.tile(np.array([height / 2]),(Z,1))
+    
+    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
 
-
-    # assert len(channels) == 1, f"No more than one color channel is allowed. Used: {channels}"
+    mpl_main_pairs_plot_loop(
+        title    = title,
+        plot_func = plot_radial,
+        xtitle = "Pixel coordinates",
+        ytitle = "Mean Pixel value [DN]",
+        x     = (X, Y),
+        y     = (H, V),
+        ylabel = "good",
+        channels = channels,
+        # Extra arguments
+        centroid = (xc, yc),
+        optical_center = (ocx, ocy),
+    )
+ 
 
 
 COMMAND_TABLE = {

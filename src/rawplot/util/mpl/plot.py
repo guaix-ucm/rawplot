@@ -15,6 +15,7 @@
 # Matplotlib related imports
 # --------------------------
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 # ---------
@@ -24,6 +25,9 @@ import matplotlib.pyplot as plt
 CMAP = { 'R': "hot", 'G': "summer", 'Gr': "summer", 'Gb': "summer", 'B': "winter"}
 EDGE_COLOR = { 'R': "y", 'G': "b", 'Gr': "b", 'Gb': "b", 'B': "r"}
 LAYOUT = { 1: (1,1), 2: (1,2), 3: (2,2), 4: (2,2)}
+
+import logging
+log = logging.getLogger(__name__)
 
 # ------------------------
 # Module utility functions
@@ -46,9 +50,9 @@ def plot_layout(channels):
 def axes_reshape(axes, channels):
     '''Reshape Axes to be 2D arrays for 1x1 and 1x2 layout situations'''
     if len(channels) == 1:
-        return [[axes]]
+        return np.array([axes]).reshape(-1,1)
     if len(channels) == 2:
-        return axes.reshape(1,2)
+        return axes.reshape(-1,2)
     return axes
 
 def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
@@ -79,4 +83,28 @@ def mpl_main_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel=
                 axes[row][col].set_axis_off()
                 break
             plot_func(axes[row][col], i, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
+    plt.show()
+
+
+def mpl_main_pairs_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels,  ylabel=None, **kwargs):
+    MAP = { 1: (0,1), 2: (0,1,0,1), 3: (0,1,0,1,2,3,2,3), 4: (0,1,0,1,2,3,2,3)}
+    def kk(nchannels):
+        for i in MAP[nchannels]:
+            yield i 
+    display_rows, display_cols = plot_layout(channels)
+    # We double display rows to plot radial plots separately
+    display_rows = 2 * display_rows
+    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
+    fig.suptitle(title)
+    axes = axes_reshape(axes, channels)
+    N = len(channels)
+    for row in range(0,display_rows):
+        for col in range(0,display_cols):
+            i = kk(N)
+            j = (2*row + col) % 2
+            log.info("Axes shape = %s, row = %d, col = %d, i = %d, j = %d", axes.shape, row, col)
+            if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
+                axes[row][col].set_axis_off()
+                break
+            plot_func(axes[row][col], i, j, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
     plt.show()
