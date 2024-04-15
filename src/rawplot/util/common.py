@@ -91,3 +91,9 @@ def make_plot_title_from(title, metadata, roi):
             f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
             f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
     return title
+
+def make_plot_no_roi_title_from(title, metadata):
+    title = f"{title}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n" \
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n"
+    return title

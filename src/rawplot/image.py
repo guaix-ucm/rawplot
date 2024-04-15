@@ -33,7 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, mpl_main_pairs_plot_loop
-from .util.common import common_info_with_sim, make_plot_title_from, extended_roi
+from .util.common import common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from, extended_roi
 
 
 # -----------------------
@@ -54,15 +54,28 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 
 
-def plot_radial(axes, i, j, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    title = fr'{channels[i]}'
-    axes.set_title(title)
+def plot_radial(axes, i, is_H, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
+    centroid = kwargs['centroid']
+    geom_center = kwargs['geom_center']
+    x_roi = kwargs['roi_x']
+    y_roi = kwargs['roi_y']
     axes.set_xlabel(xtitle)
     axes.set_ylabel(ytitle)
+    if is_H:
+        title = f'{channels[i]}. Aggregate of {x_roi.height()} central columns along {x_roi.width()} rows'
+        axes.plot(x[0][i], y[0][i], label="H")
+        axes.axvline(centroid[0][i], linestyle='--', label="opti.")
+        axes.axvline(geom_center[0][i], linestyle=':', color='tab:orange', label="geom.")
+    else:
+        title = f'{channels[i]}. Aggregate of {y_roi.width()} central rows along {y_roi.height()} columns'
+        axes.plot(x[1][i], y[1][i], label = "V")
+        axes.axvline(centroid[1][i], linestyle='--', label="opti.")
+        axes.axvline(geom_center[1][i], linestyle=':', color='tab:orange', label="geom.")
+    axes.set_title(title)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
-    #axes.legend()
+    axes.legend()
 
   
 
@@ -216,24 +229,26 @@ def image_optical(args):
     log.info("Centroid Xc = %s",xc)
     log.info("Centroid Yc = %s",yc)
     centroid = (xc, yc)
-    # Caluclate the optical center for all channels
+    # Caluclate the geometrical center for all channels
     ocx = np.tile(np.array([width / 2]),(Z,1))
     ocy = np.tile(np.array([height / 2]),(Z,1))
     
-    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
+    title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
 
     mpl_main_pairs_plot_loop(
         title    = title,
         plot_func = plot_radial,
         xtitle = "Pixel coordinates",
-        ytitle = "Mean Pixel value [DN]",
+        ytitle = "Mean PV",
         x     = (X, Y),
         y     = (H, V),
         ylabel = "good",
         channels = channels,
         # Extra arguments
         centroid = (xc, yc),
-        optical_center = (ocx, ocy),
+        geom_center = (ocx, ocy),
+        roi_x = roi_x,
+        roi_y = roi_y,
     )
  
 
