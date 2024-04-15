@@ -35,6 +35,11 @@ from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, mpl_main_pairs_plot_loop
 from .util.common import common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from, extended_roi
 
+# ----------------
+# Module constants
+# ----------------
+
+NORM_OFFSET_X = 0.25
 
 # -----------------------
 # Module global variables
@@ -63,9 +68,10 @@ def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     axes.set_ylabel(ytitle)
     axes.plot(x[0][i], y[0][i], label="H")
     axes.plot(x[1][i], y[1][i], label = "V")
-    axes.axvline(centroid[0][i], linestyle='--', label="opti.")
-    axes.axvline(centroid[1][i], linestyle='--', label="opti.")
-    axes.axvline(geom_center[0][i], linestyle=':', color='tab:orange', label="geom.")
+    axes.axvline(centroid[0][i], linestyle='--', label="H opti.")
+    axes.axvline(centroid[1][i], linestyle='--', label="V opti.")
+    axes.axvline(geom_center[0][i], linestyle=':', color='tab:orange', label="H geom.")
+    axes.axvline(geom_center[1][i], linestyle=':', color='tab:orange', label="V geom.")
     title = f'{channels[i]}. Aggregate of {x_roi.height()} central columns along {x_roi.width()} rows'
     axes.set_title(title)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
@@ -249,7 +255,7 @@ def image_optical(args):
   
     # Normalize pixel coordinates as well
     Y = np.tile(np.arange(0, M),(Z,1)) 
-    Y = Y / np.max(Y, axis=1).reshape(Z,-1)
+    Y = Y / np.max(Y, axis=1).reshape(Z,-1) + NORM_OFFSET_X
     
     # Calculate the center fo gravity 
     # of these marginal distrubutions H & V
@@ -259,16 +265,16 @@ def image_optical(args):
     log.info("Centroid Yc = %s",yc)
     centroid = (xc, yc)
     # Caluclate the geometrical center for all channels
-    ocx = np.tile(np.array([1 / 2]),(Z,1))
-    ocy = np.tile(np.array([1 / 2]),(Z,1))
+    ocx = np.tile(np.array([0.5]),(Z,1))
+    ocy = np.tile(np.array([0.5+NORM_OFFSET_X]),(Z,1))
     
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
 
     mpl_main_plot_loop(
         title    = title,
         plot_func = plot_radial,
-        xtitle = "Pixel coordinates",
-        ytitle = "Mean PV",
+        xtitle = "Normalized coord.",
+        ytitle = "Normalized PV",
         x     = (X, Y),
         y     = (H, V),
         ylabel = "good",
