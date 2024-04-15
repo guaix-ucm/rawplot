@@ -54,7 +54,26 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 
 
-def plot_radial(axes, i, is_H, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
+def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
+    centroid = kwargs['centroid']
+    geom_center = kwargs['geom_center']
+    x_roi = kwargs['roi_x']
+    y_roi = kwargs['roi_y']
+    axes.set_xlabel(xtitle)
+    axes.set_ylabel(ytitle)
+    axes.plot(x[0][i], y[0][i], label="H")
+    axes.plot(x[1][i], y[1][i], label = "V")
+    axes.axvline(centroid[0][i], linestyle='--', label="opti.")
+    axes.axvline(centroid[1][i], linestyle='--', label="opti.")
+    axes.axvline(geom_center[0][i], linestyle=':', color='tab:orange', label="geom.")
+    title = f'{channels[i]}. Aggregate of {x_roi.height()} central columns along {x_roi.width()} rows'
+    axes.set_title(title)
+    axes.grid(True,  which='major', color='silver', linestyle='solid')
+    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+
+def plot_radial2(axes, i, is_H, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     centroid = kwargs['centroid']
     geom_center = kwargs['geom_center']
     x_roi = kwargs['roi_x']
@@ -76,6 +95,7 @@ def plot_radial(axes, i, is_H, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
     axes.legend()
+
 
   
 
@@ -207,20 +227,29 @@ def image_optical(args):
         dark_current=args.sim_dark
     ).load()
 
+    Z, M, N = pixels.shape
     height, width = image0.shape()
     roi_x, roi_y = extended_roi(roi, width, height)
+    bias = np.array(image0.black_levels()).reshape(Z,-1)
    
-    # produce the Horizontal aggregate from 0...ncols
+    # produce the Horizontal aggregate from 0...N ncols
     pixels_x = pixels[:,roi_x.y0:roi_x.y1, roi_x.x0:roi_x.x1]
-    H = np.mean(pixels_x, axis=1)  
-    Z, N = H.shape
+    H = np.mean(pixels_x, axis=1) - bias
+    log.info("H shape = %s", H.shape)
+    H = H / np.max(H, axis=1).reshape(Z,-1) 
+ 
+    # Normalize pixel coordinates as well
     X = np.tile(np.arange(0, N),(Z,1))
+    X = X / np.max(X, axis=1).reshape(Z,-1)
     
-    # produce the Vertical aggregate from 0...rows
+    # produce the Vertical aggregate from 0...M rows
     pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
-    V = np.mean(pixels_y, axis=2)
-    Z, M = V.shape
+    V = np.mean(pixels_y, axis=2) - bias
+    V = V / np.max(V, axis=1).reshape(Z,-1)
+  
+    # Normalize pixel coordinates as well
     Y = np.tile(np.arange(0, M),(Z,1)) 
+    Y = Y / np.max(Y, axis=1).reshape(Z,-1)
     
     # Calculate the center fo gravity 
     # of these marginal distrubutions H & V
@@ -230,12 +259,12 @@ def image_optical(args):
     log.info("Centroid Yc = %s",yc)
     centroid = (xc, yc)
     # Caluclate the geometrical center for all channels
-    ocx = np.tile(np.array([width / 2]),(Z,1))
-    ocy = np.tile(np.array([height / 2]),(Z,1))
+    ocx = np.tile(np.array([1 / 2]),(Z,1))
+    ocy = np.tile(np.array([1 / 2]),(Z,1))
     
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
 
-    mpl_main_pairs_plot_loop(
+    mpl_main_plot_loop(
         title    = title,
         plot_func = plot_radial,
         xtitle = "Pixel coordinates",
