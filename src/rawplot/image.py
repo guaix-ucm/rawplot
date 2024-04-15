@@ -39,7 +39,7 @@ from .util.common import common_info_with_sim, make_plot_title_from, make_plot_n
 # Module constants
 # ----------------
 
-NORM_OFFSET_X = 0.25
+NORM_OFFSET_X = 0.3
 
 # -----------------------
 # Module global variables
