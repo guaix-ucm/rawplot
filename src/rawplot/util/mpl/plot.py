@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 # ---------
 # Constants
 # ---------
+
+# For colormaps, see: https://matplotlib.org/stable/users/explain/colors/colormaps.html
+
 IMAGE_CMAP = { 'R': "hot", 'G': "summer", 'Gr': "summer", 'Gb': "summer", 'B': "winter"}
 CONTOUR_CMAP = { 'R': "prism", 'G': "prism", 'Gr': "prism", 'Gb': "flag", 'B': "flag"}
 EDGE_COLOR = { 'R': "y", 'G': "b", 'Gr': "b", 'Gb': "b", 'B': "r"}
