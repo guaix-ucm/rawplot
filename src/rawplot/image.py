@@ -12,6 +12,7 @@
 
 import logging
 import fractions
+import functools
 
 # ---------------------
 # Thrid-party libraries
@@ -23,9 +24,11 @@ import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from lica.cli import execute
-from lica.validators import vfile, vfloat, vfloat01, vflopath
+from lica.validators import vfile, vfloat, vfloat01, vflopath, voddint
 from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI
 from lica.raw.analyzer.image import ImageStatistics
+
+from astropy.convolution import convolve, Box2DKernel
 
 # ------------------------
 # Own modules and packages
@@ -33,7 +36,7 @@ from lica.raw.analyzer.image import ImageStatistics
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop
-from .util.common import common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from, extended_roi
+from .util.common import common_info, common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from, extended_roi
 
 # ----------------
 # Module constants
@@ -53,9 +56,11 @@ log = logging.getLogger(__name__)
 plt.style.use("rawplot.resources.global")
 
 # ------------------
-# Auxiliary fnctions
+# Auxiliary functions
 # ------------------
 
+
+voddint_3_11 = functools.partial(voddint, 3, 11)
 
 def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     centroid = kwargs['centroid']
@@ -108,6 +113,34 @@ def plot_image(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
     title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=colormap)
+    # Create the Rectangle patch for the standard ROI   
+    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
+                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
+    axes.add_patch(rect)
+    # Create more Rectangle patches for optional extended ROIs
+    for key in ('extended_roi_x', 'extended_roi_y'):
+        extended_roi = kwargs.get(key)
+        if extended_roi:
+            rect = patches.Rectangle(extended_roi.xy(), extended_roi.width(), extended_roi.height(), 
+                        linewidth=1, linestyle=':', edgecolor=edgecolor, facecolor='none')
+            axes.add_patch(rect)
+    divider = make_axes_locatable(axes)
+    cax = divider.append_axes('right', size='5%', pad=0.10)
+    axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
+
+def plot_contour(axes, i, pixels, channel, roi, colormap, edgecolor, **kwargs):
+    levels =  kwargs['levels']
+    median = kwargs['median'][i]
+    mean = kwargs['mean'][i]
+    stddev = kwargs['stddev'][i]
+    labels =  kwargs['labels']
+    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
+    axes.set_title(title)
+    im = axes.imshow(pixels, cmap=colormap)
+    # Create the contour
+    CS = axes.contour(pixels, levels=levels)
+    if labels:
+        axes.clabel(CS, inline=True, fontsize=16)
     # Create the Rectangle patch for the standard ROI   
     rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
                     linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
@@ -256,10 +289,51 @@ def image_optical(args):
     )
  
 
-def image_contour(args):
-    pass
- 
 
+
+def image_contour(args):
+    file_path, roi, n_roi, channels, metadata, _, image0 = common_info(args)
+    # The pixels we need to display are those of the whole image, not the ROI
+    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
+        simulated=False,
+    ).load()
+
+    Z, M, N = pixels.shape
+    analyzer = ImageStatistics.attach(image0)
+    analyzer.run()
+    aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
+    log.info("section %s average is %s", roi, aver)
+    log.info("section %s stddev is %s", roi, std)
+    log.info("section %s median is %s", roi, mdn)
+    metadata = image0.metadata()
+    roi = image0.roi()
+    # Optionally Smooths input image with a 2D kernel
+    if args.filter:
+        size = args.filter
+        kernel = Box2DKernel(size, mode='center')
+        log.info('Smoothing image with a %dx%d box 2D kernel',size,size)
+        filtered = [convolve(pixels[i], kernel, boundary='extend') for i in range(0,Z)]
+        pixels = np.stack(filtered, axis=0)
+    max_pv = np.max(pixels, axis=(1,2)).reshape(Z,1,1)
+    
+    # Normalize PV
+    pixels = pixels / max_pv
+    levels = np.round(np.linspace(0,1,num=args.levels,endpoint=False), decimals=2)
+
+    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
+    mpl_main_image_loop(
+        title    = title,
+        channels = channels,
+        roi = roi,
+        plot_func = plot_contour,
+        pixels    = pixels,
+        # Extra arguments
+        levels    = levels,
+        labels = args.labels,
+        mean = aver,
+        median = mdn,
+        stddev = std,
+    )
 
 COMMAND_TABLE = {
     'pixels': image_pixels,
@@ -343,6 +417,7 @@ def add_args(parser):
     # Contour command parsing
     # -----------------------
     parser_contour.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
+    parser_contour.add_argument('-l', '--levels', metavar='<N>', type=int,  default=8, help='Contour levels to apply')
     parser_contour.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_contour.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_contour.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
@@ -350,6 +425,10 @@ def add_args(parser):
     parser_contour.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
                     choices=['R', 'Gr', 'Gb', 'G', 'B'],
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+    parser_contour.add_argument('--filter', metavar='<N>', type=voddint_3_11,  help='Apply a 2D Box filter to contour image of size N')
+    parser_contour.add_argument('--labels',  action='store_true', help='Show Contour labels')
+ 
+
    
 
 # ================

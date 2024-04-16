@@ -68,6 +68,21 @@ def common_list_info(args):
     log.info("Common ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
     return file_list, roi, n_roi, channels, metadata
 
+def common_info(args):
+    channels = valid_channels(args.channels)
+    log.info("Working with %d channels: %s", len(channels), channels)
+    n_roi = NormRoi(args.x0, args.y0, args.width, args.height)
+    log.info("Normalized ROI is %s", n_roi)
+    factory =  ImageLoaderFactory()
+    file_path = args.input_file
+    simulated = False
+    log.info("Simulated Dark Frame image is %s", simulated)
+    image0 = factory.image_from(file_path, n_roi, channels, simulated=simulated)
+    roi = image0.roi()
+    metadata = image0.metadata()
+    log.info("ROI %s and metadata taken from %s", metadata['roi'], metadata['name'])
+    return file_path, roi, n_roi, channels, metadata, False, image0
+
 def common_info_with_sim(args):
     channels = valid_channels(args.channels)
     log.info("Working with %d channels: %s", len(channels), channels)
