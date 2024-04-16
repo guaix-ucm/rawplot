@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 # ------------------------
 # Module utility functions
 # ------------------------
+
 def plot_font(channels):
     N = len(channels)
     if N == 1:

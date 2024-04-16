@@ -21,7 +21,10 @@ import functools
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.lines as lines
+
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat, vfloat01, vflopath, voddint
@@ -154,7 +157,9 @@ def plot_contour(axes, i, pixels, channels, roi, **kwargs):
             axes.add_patch(rect)
     divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='5%', pad=0.10)
-    axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
+    fig = axes.get_figure()
+    fig.colorbar(im, cax=cax, orientation='vertical')
+   
 
 
 # -----------------------
