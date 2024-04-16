@@ -85,36 +85,3 @@ def mpl_main_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel=
                 break
             plot_func(axes[row][col], i, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
     plt.show()
-
-
-PLOT_PAIRS_MAP = { 
-    1: { (0,0): 0, (1,0): 0}  ,
-    2: { (0,0): 0, (1,0): 0, (0,1): 1, (1,1): 1}, 
-    3: { (0,0): 0, (1,0): 0, (0,1): 1, (1,1): 1, (2,0): 2, (2,1): 2} ,
-    4: { (0,0): 0, (1,0): 0, (0,1): 1, (1,1): 1, (2,0): 2, (2,1): 3, (3,0): 2, (3,1): 3}
-}
-
-def get_channel_from_num_channels(N, row, col):
-    return PLOT_PAIRS_MAP[N][(row,col)]
-
-def mpl_main_pairs_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels,  ylabel=None, **kwargs):
-    N = len(channels)
-    display_rows, display_cols = plot_layout(channels)
-    get_channel_from = functools.partial(get_channel_from_num_channels, N)
-
-    # We double display rows to plot radial plots separately
-    display_rows = 2 * display_rows
-    fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
-    fig.suptitle(title)
-    axes = axes_reshape(axes, channels)
-   
-    for row in range(0,display_rows):
-        for col in range(0,display_cols):
-            i = get_channel_from(row,col)
-            is_h = (row % 2) == 0
-            log.info("Axes shape = %s, row = %d, col = %d, i = %d", axes.shape, row, col, i)
-            if len(channels) == 3 and col == 1 and (row == 2 or row == 3) : # Skip the empty slots in 2x2 layout with 3 items
-                axes[row][col].set_axis_off()
-                break
-            plot_func(axes[row][col], i, is_h, x, y, xtitle, ytitle, ylabel, channels, **kwargs)
-    plt.show()
