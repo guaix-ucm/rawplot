@@ -42,6 +42,9 @@ from .util.common import common_info, common_info_with_sim, make_plot_title_from
 # Module constants
 # ----------------
 
+MIN_CONTOUR_LEVEL = 0.0
+MAX_CONTOUR_LEVEL = 0.8
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -111,7 +114,7 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
     stddev = kwargs['stddev'][i]
     img_cmap = plot_image_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
-    title = fr'{channel}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
+    title = fr'{channels[i]}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=img_cmap)
     # Create the Rectangle patch for the standard ROI   
@@ -131,24 +134,17 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
 
 def plot_contour(axes, i, pixels, channels, roi, **kwargs):
     levels =  kwargs['levels']
-    median = kwargs['median'][i]
-    mean = kwargs['mean'][i]
-    stddev = kwargs['stddev'][i]
     labels =  kwargs['labels']
     img_cmap = plot_image_cmap(channels)[i]
     ctr_cmap = plot_contour_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
-    title = fr'{channels[i]}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
+    title = fr'{channels[i]}: Normalized contour levels'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=img_cmap)
     # Create the contour
     CS = axes.contour(pixels, levels=levels, norm='linear', cmap=ctr_cmap)
     if labels:
         axes.clabel(CS, inline=True, fontsize=16)
-    # Create the Rectangle patch for the standard ROI   
-    rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
-                    linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
-    axes.add_patch(rect)
     # Create more Rectangle patches for optional extended ROIs
     for key in ('extended_roi_x', 'extended_roi_y'):
         extended_roi = kwargs.get(key)
@@ -300,7 +296,7 @@ def image_contour(args):
         simulated=False,
     ).load()
     # calculate contour levels
-    levels = np.round(np.linspace(0.0, 0.8, num=args.levels, endpoint=True), decimals=2)
+    levels = np.round(np.linspace(MIN_CONTOUR_LEVEL, MAX_CONTOUR_LEVEL, num=args.levels, endpoint=True), decimals=2)
     # ROI statistics over the original values
     Z, M, N = pixels.shape
     bias = np.array(image0.black_levels()).reshape(Z,-1)
@@ -311,7 +307,7 @@ def image_contour(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     metadata = image0.metadata()
-    roi = image0.roi()
+  
     # Optionally smooths input image with a 2D kernel
     if args.filter:
         size = args.filter
@@ -322,19 +318,16 @@ def image_contour(args):
     # Normalize PV
     pixels = (pixels - bias) / np.max(pixels, axis=(1,2)).reshape(Z,1,1)
     
-    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
+    title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_image_loop(
         title     = title,
         channels  = channels,
-        roi       = roi,
         plot_func = plot_contour,
+        roi = roi,
         pixels    = pixels,
         # Extra arguments
         levels    = levels,
         labels    = args.labels,
-        mean      = aver,
-        median    = mdn,
-        stddev    = std,
     )
 
 COMMAND_TABLE = {

@@ -17,6 +17,7 @@ import functools
 # --------------------------
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # ---------
@@ -36,6 +37,14 @@ log = logging.getLogger(__name__)
 # ------------------------
 # Module utility functions
 # ------------------------
+def plot_font(channels):
+    N = len(channels)
+    if N == 1:
+        mpl.rcParams['font.size'] = 20
+    elif N == 2:
+        mpl.rcParams['font.size'] = 12
+    else:
+        mpl.rcParams['font.size'] = 12
 
 def plot_contour_cmap(channels):
     '''Plot image color map of channels to display'''
@@ -63,6 +72,7 @@ def axes_reshape(axes, channels):
     return axes
 
 def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
+    plot_font(channels)
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
@@ -79,6 +89,7 @@ def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
     plt.show()
 
 def mpl_main_plot_loop(title, x, y, xtitle, ytitle, plot_func, channels, ylabel=None, **kwargs):
+    plot_font(channels)
     display_rows, display_cols = plot_layout(channels)
     fig, axes = plt.subplots(nrows=display_rows, ncols=display_cols)
     fig.suptitle(title)
