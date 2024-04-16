@@ -39,8 +39,6 @@ from .util.common import common_info_with_sim, make_plot_title_from, make_plot_n
 # Module constants
 # ----------------
 
-NORM_OFFSET_X = 0.3
-
 # -----------------------
 # Module global variables
 # -----------------------
@@ -209,8 +207,7 @@ def image_optical(args):
     ).load()
 
     Z, M, N = pixels.shape
-    height, width = image0.shape()
-    roi_x, roi_y = extended_roi(roi, width, height)
+    roi_x, roi_y = extended_roi(roi, N, M)
     bias = np.array(image0.black_levels()).reshape(Z,-1)
     offset_x = abs(N-M)
    
@@ -220,18 +217,16 @@ def image_optical(args):
     log.info("H shape = %s", H.shape)
     H = H / np.max(H, axis=1).reshape(Z,-1) 
  
-    
+    # H abscissae in pixels
     X = np.tile(np.arange(0, N),(Z,1))
-    #X = X / np.max(X, axis=1).reshape(Z,-1)
     
     # produce the Vertical aggregate from 0...M rows
     pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
     V = np.mean(pixels_y, axis=2) - bias
     V = V / np.max(V, axis=1).reshape(Z,-1)
   
-    # Normalize pixel coordinates as well
+     # V abscissae in pixels, shifted
     Y = np.tile(np.arange(0, M),(Z,1))  + offset_x
-    #Y = Y / np.max(Y, axis=1).reshape(Z,-1) + NORM_OFFSET_X
     
     # Calculate the center fo gravity 
     # of these marginal distrubutions H & V
@@ -243,9 +238,7 @@ def image_optical(args):
     # Calculate the geometrical center for all channels
     ocx = np.tile(np.array(N/2),(Z,1))
     ocy = np.tile(np.array([M/2+offset_x]),(Z,1))
-    
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
-
     mpl_main_plot_loop(
         title    = title,
         plot_func = plot_radial,
@@ -263,11 +256,16 @@ def image_optical(args):
     )
  
 
+def image_contour(args):
+    pass
+ 
+
 
 COMMAND_TABLE = {
     'pixels': image_pixels,
     'histo': image_histo, 
     'optical': image_optical,
+    'contour': image_contour,
 }
 
 def image(args):
@@ -286,7 +284,8 @@ def add_args(parser):
 
     parser_pixels = subparser.add_parser('pixels', help='Display image pixels')
     parser_histo  = subparser.add_parser('histo', help='Display image histogram')
-    parser_optical = subparser.add_parser('optical', help='Display image aggregate X & Y axes for optical misalighment analysis')
+    parser_optical = subparser.add_parser('optical', help='Display X & Y axes for optical misaligment analysis')
+    parser_contour = subparser.add_parser('contour', help='Display contour graph for optical analysis')
 
     # -----------------------
     # Pixels command parsing
@@ -340,7 +339,18 @@ def add_args(parser):
     parser_optical.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
     parser_optical.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
 
-
+    # -----------------------
+    # Contour command parsing
+    # -----------------------
+    parser_contour.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
+    parser_contour.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
+    parser_contour.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
+    parser_contour.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
+    parser_contour.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s)')
+    parser_contour.add_argument('-c','--channels', default=['R', 'Gr', 'Gb','B'], nargs='+',
+                    choices=['R', 'Gr', 'Gb', 'G', 'B'],
+                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
+   
 
 # ================
 # MAIN ENTRY POINT
