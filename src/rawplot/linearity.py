@@ -131,7 +131,7 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
     axes.axline(P0, slope=slope, linestyle=':', label=label)
     text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t{intercept:+0.2f}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    axes.text(0.3, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
+    axes.text(0.5, 0.2, text, transform=axes.transAxes, va='top', bbox=props)
 
 
 def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
