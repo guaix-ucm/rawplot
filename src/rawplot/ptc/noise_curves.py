@@ -69,18 +69,22 @@ def p_fpn_estimator(x, y):
 def rdnoise_estimator(x, y):
     return y
 
+def plot_fitted_line(axes, fitted):
+    label = fitted['label']
+    fitted_y = fitted['y']
+    fitted_x = fitted['x']
+    p_fpn = fitted['mean']
+    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=f"{label} (selected)")
+    axes.axline( (1, p_fpn), (1/p_fpn, 1), linestyle='--', label=r"$\sigma_{FPN}, m=1$")
+
 def plot_fitted_box(axes, fitted):
     '''All graphical elements for a fitting line'''
     mean = fitted['mean']
     std = fitted['std']
     label = fitted['label']
-    fitted_y = fitted['y']
-    fitted_x = fitted['x']
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=f"{label} (selected)")
     text = "\n".join( (f"{label}", fr"$\mu = {mean:0.2e}$", fr"$\sigma = {std:0.2e}$"))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.4, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
-
 
 def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     '''For Curves 1 to 8'''
@@ -99,6 +103,7 @@ def plot_noise_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwar
     fitted = kwargs.get('fitted', None)
     if fitted is not None:
         plot_fitted_box(axes, fitted[i])
+        plot_fitted_line(axes, fitted[i])
     # Optional theoretical model lines
     read_noise = kwargs.get('read', None)
     if read_noise is not None:
@@ -305,5 +310,5 @@ def noise_curve4(args):
         p_fpn = float_or_none(args.p_fpn),
         phys = args.physical_units,
         log2 = args.log2,
-        fitted = fit_params
+        fitted = fit_params,
     )
