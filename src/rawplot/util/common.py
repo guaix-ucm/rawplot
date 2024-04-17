@@ -48,21 +48,6 @@ def assert_range(args):
         args.from_value = args.to_value
         args.to_value = temp
 
-def extended_roi(roi, width, height):
-    log.info("ROI = %s. Centre is %s", roi, roi.centre())
-    roi_ext_x = Roi.extend_X(roi, width)
-    log.info("Extended X ROI = %s. Centre is %s", roi_ext_x, roi_ext_x.centre())
-    roi_ext_y = Roi.extend_Y(roi, height)
-    log.info("Extended Y ROI = %s. Centre is %s", roi_ext_y, roi_ext_y.centre())
-    return roi_ext_x, roi_ext_y
-
-def geom_center(pixels, channels):
-    # We don't take into account the real Bayer grid offset yet ....
-    Z, M, N = pixels.shape
-    gcx = np.tile(np.array(N/2),(Z,1))
-    gcy = np.tile(np.array(M/2),(Z,1))
-    return gcx, gcy
-
 def common_list_info(args):
     channels = valid_channels(args.channels)
     log.info("Working with %d channels: %s", len(channels), channels)
@@ -121,3 +106,50 @@ def make_plot_no_roi_title_from(title, metadata):
             f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n" \
             f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n"
     return title
+
+def extended_roi(roi, width, height):
+    log.info("ROI = %s. Centre is %s", roi, roi.centre())
+    roi_ext_x = Roi.extend_X(roi, width)
+    log.info("Extended X ROI = %s. Centre is %s", roi_ext_x, roi_ext_x.centre())
+    roi_ext_y = Roi.extend_Y(roi, height)
+    log.info("Extended Y ROI = %s. Centre is %s", roi_ext_y, roi_ext_y.centre())
+    return roi_ext_x, roi_ext_y
+
+def geom_center(pixels, channels):
+    # We don't take into account the real Bayer grid offset yet ....
+    Z, M, N = pixels.shape
+    gcx = np.tile(np.array(N/2),(Z,1))
+    gcy = np.tile(np.array(M/2),(Z,1))
+    return gcx, gcy
+
+def marginal_distributions(pixels, roi, black_levels=None):
+    Z, M, N = pixels.shape
+    roi_x, roi_y = extended_roi(roi, N, M)
+    if black_levels:
+        bias = np.array(black_levels).reshape(Z,-1)
+    else:
+        bias = np.zeros(Z).reshape(Z,-1)
+    # produce the Horizontal aggregate from 0...N ncols
+    pixels_x = pixels[:,roi_x.y0:roi_x.y1, roi_x.x0:roi_x.x1]
+    H = np.mean(pixels_x, axis=1) - bias
+    log.info("H shape = %s", H.shape)
+    H = H / np.max(H, axis=1).reshape(Z,-1)
+    # H abscissae in pixels
+    X = np.tile(np.arange(0, N),(Z,1))
+    # produce the Vertical aggregate from 0...M rows
+    pixels_y = pixels[:,roi_y.y0:roi_y.y1, roi_y.x0:roi_y.x1]
+    V = np.mean(pixels_y, axis=2) - bias
+    log.info("V shape = %s", V.shape)
+    V = V / np.max(V, axis=1).reshape(Z,-1)
+    # V abscissae in pixels
+    Y = np.tile(np.arange(0, M),(Z,1))
+    return (X, H), (Y, V)
+
+def centroid(marginal_X, marginal_Y):
+    X, H = marginal_X
+    Y, V = marginal_Y
+    xc = np.sum(X*H, axis=1)/np.sum(H, axis=1)
+    yc = np.sum(Y*V, axis=1)/np.sum(V, axis=1)
+    log.info("Centroid Xc = %s",xc)
+    log.info("Centroid Yc = %s",yc)
+    return xc, yc
