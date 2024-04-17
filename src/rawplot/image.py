@@ -115,6 +115,7 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
     median = kwargs['median'][i]
     mean = kwargs['mean'][i]
     stddev = kwargs['stddev'][i]
+    gcx, gcy = kwargs['geom_center']
     img_cmap = plot_image_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
     title = fr'{channels[i]}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
@@ -131,6 +132,7 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
             rect = patches.Rectangle(extended_roi.xy(), extended_roi.width(), extended_roi.height(), 
                         linewidth=1, linestyle=':', edgecolor=edgecolor, facecolor='none')
             axes.add_patch(rect)
+    axes.plot(gcx[i],gcy[i], marker='x', label='Center')
     divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='5%', pad=0.10)
     axes.get_figure().colorbar(im, cax=cax, orientation='vertical')
@@ -207,6 +209,7 @@ def image_pixels(args):
         read_noise=args.sim_read_noise,
         dark_current=args.sim_dark
     ).load()
+    Z, M, N = pixels.shape
     if args.extended_roi:
         height, width = image0.shape()
         extended_roi_x, extended_roi_y = extended_roi(roi, width, height)
@@ -218,6 +221,9 @@ def image_pixels(args):
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
+    # Calculate the geometrical center for all channels
+    gcx = np.tile(np.array([N/2]),(Z,1))
+    gcy = np.tile(np.array([M/2]),(Z,1))
     metadata = image0.metadata()
     roi = image0.roi()
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
@@ -231,6 +237,7 @@ def image_pixels(args):
         mean = aver,
         median = mdn,
         stddev = std,
+        geom_center = (gcx, gcy),
         extended_roi_x = extended_roi_x,
         extended_roi_y = extended_roi_y,
     )
@@ -330,8 +337,8 @@ def image_contour(args):
     # Normalize PV
     pixels = (pixels - bias) / np.max(pixels, axis=(1,2)).reshape(Z,1,1)
     # Calculate the geometrical center for all channels
-    ocx = np.tile(np.array([N/2]),(Z,1))
-    ocy = np.tile(np.array([M/2]),(Z,1))
+    gcx = np.tile(np.array([N/2]),(Z,1))
+    gcy = np.tile(np.array([M/2]),(Z,1))
     
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_image_loop(
@@ -343,7 +350,7 @@ def image_contour(args):
         # Extra arguments
         levels    = levels,
         labels    = args.labels,
-        geom_center = (ocx, ocy),
+        geom_center = (gcx, gcy),
     )
 
 COMMAND_TABLE = {
