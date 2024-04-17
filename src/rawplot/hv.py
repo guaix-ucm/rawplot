@@ -29,9 +29,7 @@ from lica.raw.loader import ImageLoaderFactory
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import plot_layout, axes_reshape
-
-from .util.mpl.plot import mpl_main_plot_loop
+from .util.mpl.plot import mpl_main_plot_loop, plot_layout, axes_reshape, stylesheet
 from .util.common import common_info_with_sim, make_plot_title_from
 
 # -----------------------
@@ -117,6 +115,7 @@ def averaged_spatial_distribution(loader):
 def hv_fftw(args):
     log2 = args.log2
     file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
+    stylesheet(channels)
     xh, xv, H, V = averaged_energy_spectrum(image0, args.start)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)
@@ -146,6 +145,7 @@ def hv_fftw(args):
 def hv_spatial(args):
     log2 = args.log2
     file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
+    stylesheet(channels)
     xh, xv, H, V = averaged_spatial_distribution(image0)
     title = make_plot_title_from(f"Image: {metadata['name']}", metadata, roi)
     display_rows, display_cols = plot_layout(channels)

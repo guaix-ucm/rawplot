@@ -2,13 +2,36 @@
 # Matplotlib Global Style Sheet
 # =============================
 
+# Default RC values at
+# https://matplotlib.org/stable/users/explain/customizing.html#the-default-matplotlibrc-file
+
+# The following provides reasonable defaults for a single Axes figure
+# to be exported as PNG and embedded in papers/publications.
+# For 1x2 or 2x2 layouts, the stylesheets are changed at runtime.
+
+# ----- #
+# FONTS #
+# ----- #
+
+font.size: 18
+
+# ------ #
+# FIGURE #
+# ------ #
+
 # Figure in inches
 figure.figsize : 12, 9
-
+figure.titlesize: medium
 # When True, automatically adjust subplot parameters to make the plot fit the figure using `tight_layout`
 figure.autolayout: True
 
-font.size: 20
+# ---- #
+# AXES #
+# ---- #
 
 # X & Y axis label size
 axes.labelsize: large
+
+# Axes title
+axes.titlesize: large
+
