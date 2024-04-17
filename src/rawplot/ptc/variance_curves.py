@@ -81,7 +81,7 @@ def plot_fitted(axes, fitted):
         text_b = rf"$\sigma_{{READ}} = ?$"
     text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$g = {1/slope:0.2f}\quad [e^{{-}}/DN$]", text_b))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    axes.text(0.4, 0.95, text, transform=axes.transAxes, va='top', bbox=props)
+    axes.text(0.5, 0.30, text, transform=axes.transAxes, va='top', bbox=props)
 
 
 

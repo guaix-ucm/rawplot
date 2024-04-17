@@ -16,6 +16,7 @@ import logging
 # Thrid-party libraries
 # ---------------------
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from lica.cli import execute
@@ -59,7 +60,14 @@ log = logging.getLogger(__name__)
 
 def ptc_curves(args):
     log.info("Displaying PTC charts")
-    fig, ax = plt.subplots(nrows=1, ncols=1,  figsize=(7, 3))
+    mpl.rcParams.update({
+            'figure.figsize': (7, 3),
+            'font.size': 11,
+            'figure.titlesize': 'medium',
+            'axes.labelsize': 'large',
+    })
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
     fig.suptitle("Available Photon Transfer Curves")
     ax.axis("tight")
     ax.axis("off")
