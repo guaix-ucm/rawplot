@@ -68,6 +68,13 @@ plt.style.use("rawplot.resources.global")
 
 voddint_3_11 = functools.partial(voddint, 3, 11)
 
+def geom_center(pixels, channels):
+    # We don't take into account the real Bayer grid offset yet ....
+    Z, M, N = pixels.shape
+    gcx = np.tile(np.array(N/2),(Z,1))
+    gcy = np.tile(np.array(M/2),(Z,1))
+    return gcx, gcy
+
 def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     xc, yc = kwargs['centroid']
     gcx, gcy = kwargs['geom_center']
@@ -79,8 +86,8 @@ def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     axes.plot(x[1][i], y[1][i], label = "V")
     axes.axvline(xc[i], linestyle='--', label="H opti.")
     axes.axvline(yc[i], linestyle='--', label="V opti.")
-    axes.axvline(gxc[i], linestyle=':', color='tab:orange', label="H geom.")
-    axes.axvline(gyc[i], linestyle=':', color='tab:orange', label="V geom.")
+    axes.axvline(gcx[i], linestyle=':', color='tab:orange', label="H geom.")
+    axes.axvline(gcy[i], linestyle=':', color='tab:orange', label="V geom.")
     title = f'{channels[i]}: Aggregate of central {y_roi.width()} rows (H), {x_roi.height()} cols (V)'
     axes.set_title(title)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
@@ -222,8 +229,7 @@ def image_pixels(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     # Calculate the geometrical center for all channels
-    gcx = np.tile(np.array([N/2]),(Z,1))
-    gcy = np.tile(np.array([M/2]),(Z,1))
+    gcx, gcy = geom_center(pixels, channels)
     metadata = image0.metadata()
     roi = image0.roi()
     title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
@@ -283,8 +289,8 @@ def image_optical(args):
     log.info("Centroid Yc = %s",yc)
     centroid = (xc, yc)
     # Calculate the geometrical center for all channels
-    gcx = np.tile(np.array(N/2),(Z,1))
-    gcy = np.tile(np.array(M/2+offset_x),(Z,1))
+    gcx, gcy = geom_center(pixels, channels)
+    gcy += offset_x
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_plot_loop(
         title    = title,
@@ -309,6 +315,7 @@ def image_contour(args):
     pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
         simulated=False,
     ).load()
+
     # calculate contour levels
     if args.levels is None:
          levels = PREDEFINED_CONTOUR_LEVELS
@@ -336,10 +343,8 @@ def image_contour(args):
         pixels = np.stack(filtered, axis=0)
     # Normalize PV
     pixels = (pixels - bias) / np.max(pixels, axis=(1,2)).reshape(Z,1,1)
-    # Calculate the geometrical center for all channels
-    gcx = np.tile(np.array([N/2]),(Z,1))
-    gcy = np.tile(np.array([M/2]),(Z,1))
-    
+    gcx, gcy = geom_center(pixels, channels)
+
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_image_loop(
         title     = title,
