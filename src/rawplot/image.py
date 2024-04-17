@@ -45,8 +45,9 @@ from .util.common import common_info, common_info_with_sim, make_plot_title_from
 # Module constants
 # ----------------
 
-MIN_CONTOUR_LEVEL = 0.0
-MAX_CONTOUR_LEVEL = 0.8
+MIN_CONTOUR_LEVEL = 0.05
+MAX_CONTOUR_LEVEL = 0.80
+PREDEFINED_CONTOUR_LEVELS = (0.05, 0.15, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80)
 
 # -----------------------
 # Module global variables
@@ -65,22 +66,21 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary functions
 # ------------------
 
-
 voddint_3_11 = functools.partial(voddint, 3, 11)
 
 def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    centroid = kwargs['centroid']
-    geom_center = kwargs['geom_center']
+    xc, yc = kwargs['centroid']
+    gcx, gcy = kwargs['geom_center']
     x_roi = kwargs['roi_x']
     y_roi = kwargs['roi_y']
     axes.set_xlabel(xtitle)
     axes.set_ylabel(ytitle)
     axes.plot(x[0][i], y[0][i], label="H")
     axes.plot(x[1][i], y[1][i], label = "V")
-    axes.axvline(centroid[0][i], linestyle='--', label="H opti.")
-    axes.axvline(centroid[1][i], linestyle='--', label="V opti.")
-    axes.axvline(geom_center[0][i], linestyle=':', color='tab:orange', label="H geom.")
-    axes.axvline(geom_center[1][i], linestyle=':', color='tab:orange', label="V geom.")
+    axes.axvline(xc[i], linestyle='--', label="H opti.")
+    axes.axvline(yc[i], linestyle='--', label="V opti.")
+    axes.axvline(gxc[i], linestyle=':', color='tab:orange', label="H geom.")
+    axes.axvline(gyc[i], linestyle=':', color='tab:orange', label="V geom.")
     title = f'{channels[i]}: Aggregate of central {y_roi.width()} rows (H), {x_roi.height()} cols (V)'
     axes.set_title(title)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
@@ -138,6 +138,7 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
 def plot_contour(axes, i, pixels, channels, roi, **kwargs):
     levels =  kwargs['levels']
     labels =  kwargs['labels']
+    gcx, gcy = kwargs['geom_center']
     img_cmap = plot_image_cmap(channels)[i]
     ctr_cmap = plot_contour_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
@@ -155,6 +156,7 @@ def plot_contour(axes, i, pixels, channels, roi, **kwargs):
             rect = patches.Rectangle(extended_roi.xy(), extended_roi.width(), extended_roi.height(), 
                         linewidth=1, linestyle=':', edgecolor=edgecolor, facecolor='none')
             axes.add_patch(rect)
+    axes.plot(gcx[i],gcy[i], marker='x', label='Center')
     divider = make_axes_locatable(axes)
     cax = divider.append_axes('right', size='5%', pad=0.10)
     fig = axes.get_figure()
@@ -264,7 +266,7 @@ def image_optical(args):
     V = V / np.max(V, axis=1).reshape(Z,-1)
   
      # V abscissae in pixels, shifted
-    Y = np.tile(np.arange(0, M),(Z,1))  + offset_x
+    Y = np.tile(np.arange(0, M),(Z,1)) + offset_x
     
     # Calculate the center fo gravity 
     # of these marginal distrubutions H & V
@@ -274,8 +276,8 @@ def image_optical(args):
     log.info("Centroid Yc = %s",yc)
     centroid = (xc, yc)
     # Calculate the geometrical center for all channels
-    ocx = np.tile(np.array(N/2),(Z,1))
-    ocy = np.tile(np.array([M/2+offset_x]),(Z,1))
+    gcx = np.tile(np.array(N/2),(Z,1))
+    gcy = np.tile(np.array(M/2+offset_x),(Z,1))
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_plot_loop(
         title    = title,
@@ -288,7 +290,7 @@ def image_optical(args):
         channels = channels,
         # Extra arguments
         centroid = (xc, yc),
-        geom_center = (ocx, ocy),
+        geom_center = (gcx, gcy),
         roi_x = roi_x,
         roi_y = roi_y,
     )
@@ -301,7 +303,12 @@ def image_contour(args):
         simulated=False,
     ).load()
     # calculate contour levels
-    levels = np.round(np.linspace(MIN_CONTOUR_LEVEL, MAX_CONTOUR_LEVEL, num=args.levels, endpoint=True), decimals=2)
+    if args.levels is None:
+         levels = PREDEFINED_CONTOUR_LEVELS
+    else:
+        levels = np.round(np.linspace(MIN_CONTOUR_LEVEL, MAX_CONTOUR_LEVEL, num=args.levels, endpoint=True), decimals=2)
+    log.info(levels)
+   
     # ROI statistics over the original values
     Z, M, N = pixels.shape
     bias = np.array(image0.black_levels()).reshape(Z,-1)
@@ -312,7 +319,7 @@ def image_contour(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     metadata = image0.metadata()
-  
+ 
     # Optionally smooths input image with a 2D kernel
     if args.filter:
         size = args.filter
@@ -322,6 +329,9 @@ def image_contour(args):
         pixels = np.stack(filtered, axis=0)
     # Normalize PV
     pixels = (pixels - bias) / np.max(pixels, axis=(1,2)).reshape(Z,1,1)
+    # Calculate the geometrical center for all channels
+    ocx = np.tile(np.array([N/2]),(Z,1))
+    ocy = np.tile(np.array([M/2]),(Z,1))
     
     title = make_plot_no_roi_title_from(f"{metadata['name']}", metadata)
     mpl_main_image_loop(
@@ -333,6 +343,7 @@ def image_contour(args):
         # Extra arguments
         levels    = levels,
         labels    = args.labels,
+        geom_center = (ocx, ocy),
     )
 
 COMMAND_TABLE = {
@@ -417,7 +428,7 @@ def add_args(parser):
     # Contour command parsing
     # -----------------------
     parser_contour.add_argument('-i', '--input-file', type=vfile, required=True, help='Input RAW file')
-    parser_contour.add_argument('-l', '--levels', metavar='<N>', type=int,  default=8, help='Contour levels to apply')
+    parser_contour.add_argument('-l', '--levels', metavar='<N>', type=int,  help='Contour levels to apply')
     parser_contour.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
     parser_contour.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
     parser_contour.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
