@@ -146,7 +146,7 @@ def plot_contour(axes, i, pixels, channels, roi, **kwargs):
     img_cmap = plot_image_cmap(channels)[i]
     ctr_cmap = plot_contour_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
-    title = fr'{channels[i]}: Normalized contour levels'
+    title = fr'{channels[i]}: Contour levels (norm.)'
     axes.set_title(title)
     im = axes.imshow(pixels, cmap=img_cmap)
     # Create the contour
@@ -288,16 +288,10 @@ def image_contour(args):
          levels = PREDEFINED_CONTOUR_LEVELS
     else:
         levels = np.round(np.linspace(MIN_CONTOUR_LEVEL, MAX_CONTOUR_LEVEL, num=args.levels, endpoint=True), decimals=2)
-    log.info(levels)
+    log.info("Contour levels = %s",levels)
     # ROI statistics over the original values
     Z, M, N = pixels.shape
     bias = np.array(image0.black_levels()).reshape(Z,-1)
-    analyzer = ImageStatistics.attach(image0)
-    analyzer.run()
-    aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
-    log.info("section %s average is %s", roi, aver)
-    log.info("section %s stddev is %s", roi, std)
-    log.info("section %s median is %s", roi, mdn)
     metadata = image0.metadata()
     # Optionally smooths input image with a 2D kernel
     if args.filter:
