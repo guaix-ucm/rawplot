@@ -39,7 +39,8 @@ from astropy.convolution import convolve, Box2DKernel
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, plot_contour_cmap, plot_image_cmap, plot_edge_color
-from .util.common import common_info, common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from, extended_roi
+from .util.common import common_info, common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from
+from .util.common import extended_roi, geom_center
 
 # ----------------
 # Module constants
@@ -68,12 +69,7 @@ plt.style.use("rawplot.resources.global")
 
 voddint_3_11 = functools.partial(voddint, 3, 11)
 
-def geom_center(pixels, channels):
-    # We don't take into account the real Bayer grid offset yet ....
-    Z, M, N = pixels.shape
-    gcx = np.tile(np.array(N/2),(Z,1))
-    gcy = np.tile(np.array(M/2),(Z,1))
-    return gcx, gcy
+
 
 def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     xc, yc = kwargs['centroid']

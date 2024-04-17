@@ -16,6 +16,8 @@ import logging
 # Thrid-party libraries
 # ---------------------
 
+import numpy as np
+
 from lica.validators import valid_channels
 from lica.raw.loader import ImageLoaderFactory, NormRoi, Roi
 from lica.misc import file_paths
@@ -53,6 +55,13 @@ def extended_roi(roi, width, height):
     roi_ext_y = Roi.extend_Y(roi, height)
     log.info("Extended Y ROI = %s. Centre is %s", roi_ext_y, roi_ext_y.centre())
     return roi_ext_x, roi_ext_y
+
+def geom_center(pixels, channels):
+    # We don't take into account the real Bayer grid offset yet ....
+    Z, M, N = pixels.shape
+    gcx = np.tile(np.array(N/2),(Z,1))
+    gcy = np.tile(np.array(M/2),(Z,1))
+    return gcx, gcy
 
 def common_list_info(args):
     channels = valid_channels(args.channels)
