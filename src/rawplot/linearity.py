@@ -148,6 +148,8 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
+    title = f'Channel {channels[i]}'
+    axes.set_title(title)
     axes.grid(True,  which='major', color='silver', linestyle='solid')
     axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
     axes.minorticks_on()
