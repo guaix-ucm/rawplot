@@ -146,13 +146,14 @@ def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    read_noise = args.read_noise if type(args.read_noise) == float else 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
         dark = args.dark,
-        read_noise = args.read_noise if type(args.read_noise) == float else 0.0
+        read_noise = read_noise
     )
     total_noise = np.sqrt(total_var)
     shot_noise = np.sqrt(shot_var)
@@ -199,14 +200,14 @@ def noise_curve2(args):
     log.info(" === NOISE CHART 2: Shot plus Readout Noise vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    read_noise = args.read_noise if args.read_noise is not None else 0.0
+    read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
         dark = args.dark,
-        read_noise = args.read_noise if type(args.read_noise) == float else 0.0
+        read_noise = read_noise
     )
     shot_read_noise = np.sqrt(shot_read_var)
     if args.gain and args.physical_units:
@@ -241,13 +242,14 @@ def noise_curve3(args):
     log.info(" === NOISE CHART 3: Shot Noise vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias, 
         dark = args.dark,
-        read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
+        read_noise = read_noise,
     )
     shot_noise = np.sqrt(shot_var)
     if args.gain and args.physical_units:
@@ -276,13 +278,14 @@ def noise_curve4(args):
     log.info(" === NOISE CHART 4: Fixed Pattern Noise vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 
         channels = channels, 
         bias = args.bias,
         dark = args.dark, 
-        read_noise = args.read_noise if type(args.read_noise) == float else 0.0,
+        read_noise = read_noise,
     )
     fpn_noise = np.sqrt(fpn_var)
     if args.gain and args.physical_units:
