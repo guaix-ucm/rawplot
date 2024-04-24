@@ -28,7 +28,7 @@ from .._version import __version__
 from .table import ptc_curves
 from .noise_curves import noise_parser_arguments, noise_curve1, noise_curve2, noise_curve3, noise_curve4
 from .variance_curves import variance_parser_arguments, variance_curve1
-from .snr_curves import snr_parser_arguments, snr_curve1
+from .snr_curves import snr_parser_arguments, snr_curve1, nsr_parser_arguments, nsr_curve
 
 # ----------------
 # Module constants
@@ -61,6 +61,7 @@ CURVES_TABLE = {
     'curve4': noise_curve4,
     'curve5': variance_curve1,
     'curve6': snr_curve1,
+    'nsr': nsr_curve,
 }
 
 
@@ -95,6 +96,9 @@ def add_args(parser):
 
     parser_curve6 = subparser.add_parser('curve6', help='SNR vs signal, [DN] or [e-]')
     snr_parser_arguments(parser_curve6)
+
+    parser_nsr = subparser.add_parser('nsr', help='Noise To Signal Ratio vs signal, [DN]')
+    nsr_parser_arguments(parser_nsr)
 
 # ================
 # MAIN ENTRY POINT
