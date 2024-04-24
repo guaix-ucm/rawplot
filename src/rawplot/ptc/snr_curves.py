@@ -54,7 +54,7 @@ def snr_parser_arguments(parser):
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('--p-fpn', type=vfloat01, metavar='<p>',  help='Fixed Pattern Noise Percentage factor: [0..1] (default: %(default)s)')
-    parser.add_argument('-rd','--read-noise', type=vfloat01, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [e-] physical units instead of [DN]. Requires --gain')
     parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')

@@ -25,7 +25,6 @@ from lica.cli import execute
 from lica.misc import file_paths
 from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
 from lica.raw.loader import ImageLoaderFactory
-from lica.raw.analyzer.image import ImageStatistics
 
 # ------------------------
 # Own modules and packages
@@ -34,6 +33,7 @@ from lica.raw.analyzer.image import ImageStatistics
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
 from .util.common import common_list_info, make_plot_title_from, assert_physical
+from .ptc.common import signal_and_noise_variances
 
 # ----------------
 # Module constants
@@ -69,18 +69,12 @@ def fit(exptime, signal, channels):
         fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_})
     return fit_params
 
-# The saturation analysis is made on the assumption that the measured noise
-# should be dominated by shot noise if the ROI is small
-# We are neglecting FPN, which would make the noise even larger anyway.
-# In any case, beyornd the saturation point, the noise decreases 
-# and this is what we are looking for.
-# So we compute the threshold noise / sqrt(signal)
-# and discard values below a certain threshold (0.5 seems a reasonable compromise)
-def saturation_analysis(exptime, signal, noise, channels, threshold):
-    estimated_poisson_noise = np.sqrt(signal)
-    ratio =  noise / estimated_poisson_noise
-    bad_mask = ratio < threshold
-    good_mask = ratio >= threshold
+# The saturation analysis is made based on a certain SNR thrersold
+# above which the SNR curve enters the saturation regime
+# This threshold must be estimated with PTC curve6
+def saturation_analysis(exptime, signal, snr, channels, threshold):
+    good_mask = snr < threshold
+    bad_mask = snr >= threshold
     good_exptime_list=list()
     good_signal_list=list()
     sat_exptime_list=list()
@@ -98,25 +92,6 @@ def saturation_analysis(exptime, signal, noise, channels, threshold):
         good_signal_list.append(good_signal)
         sat_signal_list.append(sat_signal)
     return good_exptime_list, good_signal_list, sat_exptime_list, sat_signal_list
-
-
-def signal_exptime_and_total_noise_from(file_list, n_roi, channels, bias, dark, every=2):
-    file_list = file_list[::every]
-    N = len(file_list)
-    signal_list = list()
-    noise_list = list()
-    exptime_list = list()
-    for i, path in enumerate(file_list, start=1):
-        analyzer = ImageStatistics.from_path(path, n_roi, channels, bias, dark)
-        analyzer.run()
-        signal = analyzer.mean()
-        signal_list.append(signal)
-        exptime = np.full_like(signal, analyzer.loader().exptime())
-        exptime_list.append(exptime)
-        noise = analyzer.std()
-        noise_list.append(noise)
-        log.info("[%d/%d] \u03C3\u00b2(total) for image %s = %s", i, N, analyzer.name(), noise)
-    return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1), np.stack(noise_list, axis=-1)
 
 
 def plot_fitted(axes, fitted, fitted_x, fitted_y):
@@ -159,14 +134,36 @@ def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
+def exptime_from(file_list, n_roi, channels, bias, dark):
+    file_list = file_list[::2]
+    N = len(file_list)
+    M = len(channels)
+    exptime_list = list()
+    factory = ImageLoaderFactory()
+    for i, path in enumerate(file_list, start=1):
+        image = factory.image_from(path, n_roi, channels, bias=bias, dark=dark)
+        exptime = image.exptime()
+        exptime_list.append(exptime)
+        log.info("[%d/%d] T for image %s = %s", i, N, image.name(), exptime)
+    return np.tile(exptime_list, M).reshape(M,-1)
 
 def linearity(args):
     log.info(" === LINEARITY PLOT === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    exptime, signal, noise = signal_exptime_and_total_noise_from(file_list, n_roi, channels, args.bias, args.dark)
-    log.info("estimated signal & noise for %s points", exptime.shape)
-    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, noise, channels, threshold=0.5)
+    exptime = exptime_from(file_list, n_roi, channels, args.bias, args.dark)
+    read_noise = args.read_noise or 0.0
+    signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
+        file_list = file_list, 
+        n_roi = n_roi, 
+        channels = channels, 
+        bias = args.bias, 
+        dark = args.dark,
+        read_noise = read_noise
+    )
+    total_noise = np.sqrt(total_var)
+    snr = signal / total_noise
+    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, snr, channels, args.snr)
     if args.gain and args.physical_units:
         signal = [args.gain * s for s in signal]
         good_signal = [args.gain * s for s in good_signal]
@@ -206,9 +203,11 @@ def add_args(parser):
                     choices=('R', 'Gr', 'Gb', 'G', 'B'),
                     help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
     parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
+    parser.add_argument('-sn', '--snr',  required=True, type=vfloat,  help='Threshold SNR to enter saturation regime. (default: %(default)s)')
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
+    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
     parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [-e] physical units instead of [DN]. Requires --gain')
 
 # ================
