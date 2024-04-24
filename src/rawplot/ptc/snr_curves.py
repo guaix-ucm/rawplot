@@ -135,8 +135,8 @@ def plot_nsr_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     if nsr2 is not None:
         axes.plot(x[i], nsr2[i], marker='o', linewidth=0, label="SHOT+READ")
-    if nsr2 is not None:
-        axes.plot(x[i], nnr[i], marker='o', linewidth=0, label="NNR")
+    if nnr is not None:
+        axes.plot(x[i], nnr[i], marker='o', linewidth=0, label="bad")
     # Additional data plots go here
     axes.axhline(threshold, linestyle='--', linewidth=1, label='Threshold')
     # Titles, scales and grids
