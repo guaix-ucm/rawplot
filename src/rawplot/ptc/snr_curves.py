@@ -73,7 +73,7 @@ def nsr_parser_arguments(parser):
     parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
     parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser.add_argument('--log2',  action='store_true', help='Display plot using log2 instead of log10 scale')
-    parser.add_argument('-th','--threshold', type=vfloat01, default=0.5, metavar='<TH>',  help='Threshold [DN] (default: %(default)s)')
+    parser.add_argument('-th','--threshold', type=vfloat, default=0.5, metavar='<TH>',  help='Threshold [DN] (default: %(default)s)')
    
 
 def model_snr(signal, read_noise, p_fpn, gain = 1.0):
@@ -128,13 +128,15 @@ def plot_snr_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs
 
 
 def plot_nsr_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-   
     threshold = kwargs['threshold']
     nsr2 = kwargs.get('nsr2')
+    nnr = kwargs.get('nnr')
     # Main data plot goes here
     axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
     if nsr2 is not None:
         axes.plot(x[i], nsr2[i], marker='o', linewidth=0, label="SHOT+READ")
+    if nsr2 is not None:
+        axes.plot(x[i], nnr[i], marker='o', linewidth=0, label="NNR")
     # Additional data plots go here
     axes.axhline(threshold, linestyle='--', linewidth=1, label='Threshold')
     # Titles, scales and grids
@@ -215,7 +217,7 @@ def nsr_curve(args):
         dark = args.dark,
         read_noise = read_noise
     )
-    nnr =  np.sqrt(shot_read_var) / np.sqrt(total_var)
+    nnr =   np.sqrt(total_var) / np.sqrt(signal) # Thiis is the metric 'linearity plot' uses.
     nsr1 =  np.sqrt(total_var) / signal
     nsr2 = np.sqrt(shot_read_var) / signal
     title = make_plot_title_from("Noise To Signal Ratio vs. Signal", metadata, roi)
@@ -230,6 +232,7 @@ def nsr_curve(args):
         channels = channels,
         # Optional arguments
         nsr2 = nsr2,
+        nnr = nnr,
         threshold = args.threshold,
         log2 = args.log2,
     )
