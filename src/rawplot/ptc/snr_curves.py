@@ -126,33 +126,6 @@ def plot_snr_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs
     if ylabel:
         axes.legend()
 
-
-def plot_nsr_vs_signal(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    threshold = kwargs['threshold']
-    nsr2 = kwargs.get('nsr2')
-    nnr = kwargs.get('nnr')
-    # Main data plot goes here
-    axes.plot(x[i], y[i], marker='o', linewidth=0, label=ylabel)
-    if nsr2 is not None:
-        axes.plot(x[i], nsr2[i], marker='o', linewidth=0, label="SHOT+READ")
-    if nnr is not None:
-        axes.plot(x[i], nnr[i], marker='o', linewidth=0, label="bad")
-    # Additional data plots go here
-    axes.axhline(threshold, linestyle='--', linewidth=1, label='Threshold')
-    # Titles, scales and grids
-    axes.set_title(f'channel {channels[i]}')
-    base = 2 if kwargs.get('log2', False) else 10
-    axes.set_xscale('log', base=base)
-    axes.set_yscale('log', base=base)
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    units = r"[DN]"
-    axes.set_xlabel(f"{xtitle} {units}")
-    axes.set_ylabel(f"{ytitle}")
-    if ylabel:
-        axes.legend()
-
 # ------------------------
 # AUXILIARY MAIN FUNCTIONS
 # ------------------------
@@ -183,7 +156,6 @@ def snr_curve1(args):
     else:
         model = model_snr(signal, args.read_noise, args.p_fpn, args.gain) if check_model(args) else None
     snr = signal / total_noise
-
     title = make_plot_title_from("SNR (Total Noise) vs. Signal", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
@@ -192,7 +164,7 @@ def snr_curve1(args):
         ytitle = "SNR",
         x     = signal,
         y     = snr,
-        ylabel = "data",
+        ylabel = r"$SNR_{TOTAL}$",
         channels = channels,
         # Optional arguments
         model = model,
@@ -202,38 +174,3 @@ def snr_curve1(args):
         read = args.read_noise,
         p_fpn = args.p_fpn,
     )
-
-
-
-def nsr_curve(args):
-    log.info(" === NSR CHART: Total NSR vs. Signal === ")
-    file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    read_noise = 0.0
-    signal, total_var, shot_read_var, _, _ = signal_and_noise_variances(
-        file_list = file_list, 
-        n_roi = n_roi, 
-        channels = channels, 
-        bias = args.bias, 
-        dark = args.dark,
-        read_noise = read_noise
-    )
-    nnr =   np.sqrt(total_var) / np.sqrt(signal) # Thiis is the metric 'linearity plot' uses.
-    nsr1 =  np.sqrt(total_var) / signal
-    nsr2 = np.sqrt(shot_read_var) / signal
-    title = make_plot_title_from("Noise To Signal Ratio vs. Signal", metadata, roi)
-    mpl_main_plot_loop(
-        title    = title,
-        plot_func = plot_nsr_vs_signal, # 2D (channel, data) Numpy array
-        xtitle = "Signal",
-        ytitle = "Noise to Signal Ratio",
-        x     = signal,
-        y     = nsr1,
-        ylabel = "Total NSR",
-        channels = channels,
-        # Optional arguments
-        nsr2 = nsr2,
-        nnr = nnr,
-        threshold = args.threshold,
-        log2 = args.log2,
-    )
-
