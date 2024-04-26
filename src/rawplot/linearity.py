@@ -144,7 +144,7 @@ def exptime_from(file_list, n_roi, channels, bias, dark):
         image = factory.image_from(path, n_roi, channels, bias=bias, dark=dark)
         exptime = image.exptime()
         exptime_list.append(exptime)
-        log.info("[%d/%d] T for image %s = %s", i, N, image.name(), exptime)
+        log.info("[%d/%d] %s exptime = %s secs.", i, N, image.name(), exptime)
     return np.tile(exptime_list, M).reshape(M,-1)
 
 def linearity(args):
