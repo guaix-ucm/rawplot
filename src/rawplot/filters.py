@@ -64,30 +64,6 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
-def mpl_photodiode_plot_loop(title, x, y, xtitle, ytitle,  **kwargs):
-    fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle(title)
-    axes.set_xlabel(xtitle)
-    axes.set_ylabel(f"{ytitle}")
-    filters = kwargs.get('filters', None)
-    if filters is not None:
-        for filt in filters:
-            axes.axvline(filt['wave'], linestyle=filt['style'], label=filt['label'])
-    ylogscale = kwargs.get('ylogscale', False)
-    if ylogscale:
-        axes.set_yscale('log', base=10)
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
-    axes.plot(x, y,  marker='o', linewidth=1, label='readings')
-    qe = kwargs.get('qe', None)
-    photodiode =  kwargs.get('photodiode', None)
-    if qe is not None:
-        axes.plot(x, qe,  marker='o', linewidth=0, label=f'{photodiode} QE') 
-    axes.minorticks_on()
-    axes.legend()
-    plt.show()
-
-
 def mpl_filters_plot_loop(title, x, y, xtitle, ytitle, plot_func, ylabels, **kwargs):
     fig, axes = plt.subplots(nrows=1, ncols=1)
     fig.suptitle(title)
@@ -145,16 +121,8 @@ def get_used_wavelengths(file_list, channels):
     log.info("Wavelengthss array shape is %s", result.shape)
     return result
 
-def photodiode_readings_to_arrays(csv_path):
-     response = read_csv(csv_path)
-     wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
-     current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
-     read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
-     log.info("Got %d photodiode readings", wavelength.shape[0])
-     return wavelength, current, read_noise
 
-
-def filter_readings_to_array(csv_path):
+def csv_readings_to_array(csv_path):
     log.info("reading CSV file %s", csv_path)
     with open(csv_path, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
@@ -163,38 +131,41 @@ def filter_readings_to_array(csv_path):
     signal = np.array(tuple(contents[key] for key in sorted(contents.keys())))
     return wavelength, signal
 
+def get_info_from(args):
+    accum = list()
+    labels = list()
+    if args.filter1:
+        wavelength, signal = csv_readings_to_array(args.filter1)
+        accum.append(signal)
+        labels.append(args.label1)
+    if args.filter2:
+        _, signal = csv_readings_to_array(args.filter2)
+        accum.append(signal)
+        labels.append(args.label2)
+    if args.filter3:
+        _, signal = csv_readings_to_array(args.filter3)
+        accum.append(signal)
+        labels.append(args.label3)
+    if args.filter4:
+        _, signal = csv_readings_to_array(args.filter4)
+        accum.append(signal)
+        labels.append(args.label4)
+    signal = np.vstack(accum)
+    if args.diode:
+        _, diode = csv_readings_to_array(args.diode)
+        model = args.model
+    else:
+        diode = None
+        model = None
+    return wavelength, signal, labels, diode, model
+
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
 def raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
-    accum = list()
-    labels = list()
-    if args.filter1:
-        wavelength, signal = filter_readings_to_array(args.filter1)
-        accum.append(signal)
-        labels.append(args.label1)
-    if args.filter2:
-        _, signal = filter_readings_to_array(args.filter2)
-        accum.append(signal)
-        labels.append(args.label2)
-    if args.filter3:
-        _, signal = filter_readings_to_array(args.filter3)
-        accum.append(signal)
-        labels.append(args.label3)
-    if args.filter4:
-        _, signal = filter_readings_to_array(args.filter4)
-        accum.append(signal)
-        labels.append(args.label4)
-    signal = np.vstack(accum)
-    if args.diode:
-        _, diode = filter_readings_to_array(args.diode)
-        model = args.model
-    else:
-        diode = None
-        model = None
-
+    wavelength, signal, labels, diode, model = get_info_from(args)
     mpl_filters_plot_loop(
         title    = f"Raw response for {args.title}",
         plot_func = plot_raw_spectral,
@@ -207,17 +178,34 @@ def raw_spectrum(args):
         diode = diode,
         model = model,
         filters=[ 
-            {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
-            {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
+            {'label':r'$BG38 \Rightarrow OG570$',  'wave': 570, 'style': '--'}, 
+            {'label':r'$OG570\Rightarrow RG830$', 'wave': 860, 'style': '-.'},
         ] # where filters were changesd
     )
 
     
 def corrected_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+    wavelength, signal, labels, diode, model = get_info_from(args)
     responsivity, qe = photodiode_load(args.model, args.resolution)
     log.info("Read %s reference responsivity values at %d nm resolution from %s", len(responsivity), args.resolution, args.model)
-
+    qe = np.array([qe[w] for w in wavelength]) # Only use those wavelenghts actually used in the CSV sequence
+    diode = diode / np.max(diode) # Normalize photodiode current
+    signal = qe * signal / diode
+    signal = signal / np.max(signal) # Normalize signal to its absolute maxímun for all channels
+    mpl_filters_plot_loop(
+        title    = f"Corrected response for {args.title}",
+        plot_func = plot_raw_spectral,
+        xtitle = "Wavelength [nm]",
+        ytitle = f"Normalized signal level",
+        ylabels = labels,
+        x  = wavelength,
+        y  = signal,
+        filters=[ 
+            {'label':r'$BG38 \Rightarrow OG570$',  'wave': 570, 'style': '--'}, 
+            {'label':r'$OG570\Rightarrow RG830$', 'wave': 860, 'style': '-.'},
+        ] # where filters were changesd
+    )
 
 
 COMMAND_TABLE = {
