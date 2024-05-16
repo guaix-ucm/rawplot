@@ -70,7 +70,6 @@ plt.style.use("rawplot.resources.global")
 voddint_3_11 = functools.partial(voddint, 3, 11)
 
 
-
 def plot_radial(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
     xc, yc = kwargs['centroid']
     gcx, gcy = kwargs['geom_center']
@@ -117,12 +116,21 @@ def plot_image(axes, i, pixels, channels, roi, **kwargs):
     median = kwargs['median'][i]
     mean = kwargs['mean'][i]
     stddev = kwargs['stddev'][i]
+    vstretch = kwargs['vstretch']
+    vmean = kwargs['vmean'][i]
+    vstd = kwargs['vstd'][i]
+    vmin = kwargs['vmin'][i]
+    vmax = kwargs['vmax'][i]
     gcx, gcy = kwargs['geom_center']
     img_cmap = plot_image_cmap(channels)[i]
     edgecolor = plot_edge_color(channels)[i]
     title = fr'{channels[i]}: median={median:.2f}, $\mu={mean:.2f}, \sigma={stddev:.2f}$'
     axes.set_title(title)
-    im = axes.imshow(pixels, cmap=img_cmap)
+    # we choose an statistical visualization or else the min max/data range
+    if vstretch:
+        vmax = vmean+3*vstd
+        vmin = vmean-1*vstd
+    im = axes.imshow(pixels, cmap=img_cmap, vmin=vmin, vmax=vmax)
     # Create the Rectangle patch for the standard ROI   
     rect = patches.Rectangle(roi.xy(), roi.width(), roi.height(), 
                     linewidth=1, linestyle='--', edgecolor=edgecolor, facecolor='none')
@@ -205,24 +213,26 @@ def image_histo(args):
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
     simulated = args.sim_dark is not None or args.sim_read_noise is not None
-    # The pixels we need to display are those of the whole image, not the ROI
-    pixels = ImageLoaderFactory().image_from(file_path, FULL_FRAME_NROI, channels, 
-        simulated=simulated, 
-        read_noise=args.sim_read_noise,
-        dark_current=args.sim_dark
-    ).load()
-    Z, M, N = pixels.shape
-    if args.extended_roi:
-        height, width = image0.shape()
-        extended_roi_x, extended_roi_y = extended_roi(roi, width, height)
-    else:
-         extended_roi_x, extended_roi_y = (None, None)
+    # Calculate boxed statistics first
     analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()
     aver, mdn, std = analyzer.mean() , analyzer.median(), analyzer.std()
     log.info("section %s average is %s", roi, aver)
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
+    # The pixels we need to display are those of the whole image, not the ROI
+    # for visualization purposes we also need whole image statistics
+    analyzer = ImageStatistics.from_path(file_path, FULL_FRAME_NROI, channels, args.bias, args.dark)
+    analyzer.run()
+    pixels = analyzer.pixels() # Bias substracted pizels
+    vmean, vstd, vmin, vmax = analyzer.mean() , analyzer.std(), analyzer.min(), analyzer.max()
+    #pixels = pixels - bias
+    Z, M, N = pixels.shape
+    if args.extended_roi:
+        height, width = image0.shape()
+        extended_roi_x, extended_roi_y = extended_roi(roi, width, height)
+    else:
+         extended_roi_x, extended_roi_y = (None, None)
     # Calculate the geometrical center for all channels
     gcx, gcy = geom_center(pixels, channels)
     metadata = image0.metadata()
@@ -241,6 +251,11 @@ def image_pixels(args):
         geom_center = (gcx, gcy),
         extended_roi_x = extended_roi_x,
         extended_roi_y = extended_roi_y,
+        vstretch = not args.no_stretch,
+        vmin=vmin,
+        vmax=vmax,
+        vmean=vmean,
+        vstd=vstd,
     )
 
 
@@ -358,7 +373,7 @@ def add_args(parser):
     parser_pixels.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
     parser_pixels.add_argument('--sim-dark', type=float,  help='Generate synthetic dark frame with given dark count rate [DN/sec]')
     parser_pixels.add_argument('--sim-read-noise', type=float,  help='Generate synthetic dark frame with given readout noise [DN]')
-
+    parser_pixels.add_argument('--no-stretch',  action='store_true', help='Do not apply a visualization stretch')
 
     # -------------------------
     # Histogram command parsing
