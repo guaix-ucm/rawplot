@@ -187,8 +187,8 @@ def raw_spectrum(args):
         y  = signal,
         # Optional arguments to be handled by the plotting function
         filters=[ 
-            {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
-            {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
+            {'label':r'$BG38 \Rightarrow OG570$',  'wave': 570, 'style': '--'}, 
+            {'label':r'$OG570\Rightarrow RG830$', 'wave': 860, 'style': '-.'},
         ] # where filters were changesd
     )
 
@@ -247,8 +247,8 @@ def photodiode_spectrum(args):
         # Optional arguments to be handled by the plotting function
         ylogscale = ylogscale,
         filters = [ 
-                {'label':'from BG38 to OG570',  'wave': 570, 'style': '--'}, 
-                {'label':'from OG570 to RG830', 'wave': 860, 'style': '-.'},
+                {'label':r'$BG38 \Rightarrow OG570$',  'wave': 570, 'style': '--'}, 
+                {'label':r'$OG570\Rightarrow RG830$', 'wave': 860, 'style': '-.'},
         ], # where filters were changesd
         qe = qe if args.normalized else None,
         photodiode = args.model if args.normalized else None,
