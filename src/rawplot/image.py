@@ -39,7 +39,7 @@ from astropy.convolution import convolve, Box2DKernel
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_image_loop, mpl_main_plot_loop, plot_contour_cmap, plot_image_cmap, plot_edge_color
-from .util.common import common_info, common_info_with_sim, make_plot_title_from, make_plot_no_roi_title_from
+from .util.common import common_info, common_info_with_sim, make_image_title_from, make_plot_no_roi_title_from
 from .util.common import extended_roi, geom_center, marginal_distributions, centroid
 
 # ----------------
@@ -191,7 +191,7 @@ def image_histo(args):
     log.info("section %s stddev is %s", roi, std)
     log.info("section %s median is %s", roi, mdn)
     pixels = analyzer.pixels()
-    title = make_plot_title_from(f"{metadata['name']} (decimated {dcm})", metadata, roi)
+    title = make_image_title_from(f"{metadata['name']} (decimated {dcm})", metadata, roi)
     mpl_main_plot_loop(
         title    = title,
         plot_func = plot_histo,
@@ -237,7 +237,7 @@ def image_pixels(args):
     gcx, gcy = geom_center(pixels, channels)
     metadata = image0.metadata()
     roi = image0.roi()
-    title = make_plot_title_from(f"{metadata['name']}", metadata, roi)
+    title = make_image_title_from(f"{metadata['name']}", metadata, roi)
     mpl_main_image_loop(
         title    = title,
         channels = channels,

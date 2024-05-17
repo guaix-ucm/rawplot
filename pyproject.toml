@@ -32,7 +32,7 @@ dependencies = [
     "PyQt5",
     "scikit-learn",
     "astropy",
-    "lica@git+https://github.com/guaix-ucm/lica#egg=main",
+    "lica@git+https://github.com/guaix-ucm/lica@datetime",
 ]
 
 

@@ -103,8 +103,15 @@ def make_plot_title_from(title, metadata, roi):
 
 def make_plot_no_roi_title_from(title, metadata):
     title = f"{title}\n" \
-            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Date: {metadata['datetime']}\n" \
             f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n"
+    return title
+
+def make_image_title_from(title, metadata, roi):
+    title = f"{title}\n" \
+            f"{metadata['maker']} {metadata['camera']}, ISO: {metadata['iso']}, Date: {metadata['datetime']}\n" \
+            f"Color Plane Size: {metadata['width']} cols x {metadata['height']} rows\n" \
+            f"ROI: {roi} {roi.width()} cols x {roi.height()} rows"
     return title
 
 def extended_roi(roi, width, height):
