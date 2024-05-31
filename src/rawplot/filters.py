@@ -172,6 +172,33 @@ def raw_spectrum(args):
         ] # where filters were changesd
     )
 
+def export_spectra(labels, wavelength, signal, mode, units, wave_last=False):
+    wave_exported = wavelength * 10 if units == 'angs' else wavelength
+
+    if mode == 'combined':
+        path = 'combined_' + "_".join(labels) + '.csv'
+        with open(path, 'w', newline='') as csvfile:
+             writer = csv.writer(csvfile, delimiter=';')
+             write.writerow(header)
+
+    else:
+        if not wave_last:
+            header = (f"Wavelength [{units}]", "Relative value")
+        else:
+            header = ("Relative value", f"Wavelength [{units}]")
+        for i, label in enumerate(labels):
+            path = label +  '.csv'
+            selected_signal = signal[i]
+            with open(path, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile, delimiter=';')
+                writer.writerow(header)
+                for j in range(wave_exported.shape[0]):
+                    if not wave_last:
+                        data = (wave_exported[j], f"{selected_signal[j]:e}")
+                    else:
+                        data = (f"{selected_signal[j]:e}", wave_exported[j])
+                    writer.writerow(data)
+
     
 def corrected_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
@@ -183,6 +210,15 @@ def corrected_spectrum(args):
     diode = diode / np.max(diode) # Normalize photodiode current
     signal = qe * signal / diode
     signal = signal / np.max(signal) # Normalize signal to its absolute maxímun for all channels
+    
+    if args.export:
+        log.info("exporting to CSV file(s)")
+        export_spectra(labels, wavelength, signal,  
+            mode = args.export,
+            units = args.units,
+            wave_last = args.wavelength_last
+        )
+
     mpl_filters_plot_loop(
         title    = f"Corrected response for {args.title}",
         plot_func = plot_filter_spectrum,
@@ -234,6 +270,13 @@ def add_args(parser):
                     help='Reference photodiode model. (default: %(default)s)')
     parser_corr.add_argument('-r','--resolution', type=int, default=5, choices=(1,5), 
                     help='Wavelength resolution (nm). (default: %(default)s nm)')
+    parser_corr.add_argument('-x','--export', type=str, choices=('combined','individual'),
+                    help='Export to CSV file(s)')
+    parser_corr.add_argument('-u','--units', type=str, choices=('nm','angs'), default='nm',
+                    help='Exported wavelength units. (default: %(default)s)')
+    parser_corr.add_argument('-wl','--wavelength-last', action='store_true',
+                    help='Wavelength is last in exported file')
+
     # ---------------------------------------------------------------------------------------------------------------
 
 # ================
