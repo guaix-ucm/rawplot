@@ -72,6 +72,7 @@ def mpl_filters_plot_loop(title, x, y, xtitle, ytitle, plot_func, ylabels, **kwa
     filters = kwargs.get('filters')
     diode = kwargs.get('diode')
     model = kwargs.get('model')
+    labels = kwargs.get('labels')
     Z, _ = y.shape 
     for i in range(Z):
         plot_func(axes, i, x, y, ylabels, **kwargs)
@@ -87,40 +88,27 @@ def mpl_filters_plot_loop(title, x, y, xtitle, ytitle, plot_func, ylabels, **kwa
     plt.show()
 
 
-def plot_raw_spectral(axes, i, x, y, ylabels, **kwargs):
+# This is incomplete for 5 filter banks
+def guess_color(label):
+    label = label.lower()
+    red = re.compile(r'red')
+    green = re.compile(r'green')
+    blue = re.compile(r'blue')
+    if red.search(label):
+        return 'red'
+    if green.search(label):
+        return 'green'
+    if blue.search(label):
+        return 'blue'
+    return 'magenta'
+
+def plot_filter_spectrum(axes, i, x, y, ylabels, **kwargs):
     wavelength = x
     signal = y[i]
     marker = 'o'
-    if i == 0:
-        color = 'red'
-    elif  i == 1:  # Green
-        color = 'green'  
-    elif  i == 2:
-        color = 'blue' 
-    else:
-        color = 'magenta' # Other filter
+    color = guess_color(ylabels[i])
     axes.plot(wavelength, signal,  marker=marker, color=color, linewidth=1, label=ylabels[i])
    
-
-
-def get_used_wavelengths(file_list, channels):
-    M = len(channels)
-    data = list()
-    for file in file_list:
-        matchobj = WAVELENGTH_REG_EXP.search(file)
-        if matchobj:
-            item = { key:  matchobj.group(i) for i, key in enumerate(('tag', 'wave', 'gain', 'seq', 'exptime', 'filter'), start=1)}
-            item['wave'] = int(item['wave'])
-            item['gain'] = int(item['gain'])
-            item['seq'] = int(item['seq'])
-            item['exptime'] = int(item['exptime'])
-            data.append(item)
-    log.info("Matched %d files", len(data))
-    result = np.array([item['wave'] for item in data])
-    result = np.tile(result, M).reshape(M,len(data))
-    log.info("Wavelengthss array shape is %s", result.shape)
-    return result
-
 
 def csv_readings_to_array(csv_path):
     log.info("reading CSV file %s", csv_path)
@@ -131,33 +119,32 @@ def csv_readings_to_array(csv_path):
     signal = np.array(tuple(contents[key] for key in sorted(contents.keys())))
     return wavelength, signal
 
+
+def validate_lists(args):
+    if len(args.filters) != len(args.labels):
+        raise ValueError("Number of labels must match number of filter files")
+    if len(args.filters) < 1:
+        raise ValueError("Missing filter CSV files")
+    if len(args.diodes) < 1:
+         raise ValueError("Missing calibration diode CSV files")
+
 def get_info_from(args):
     accum = list()
     labels = list()
-    if args.filter1:
-        wavelength, signal = csv_readings_to_array(args.filter1)
+    diodes = list()
+    for filt, label in zip(args.filters, args.labels):
+        wavelength, signal = csv_readings_to_array(filt)
         accum.append(signal)
-        labels.append(args.label1)
-    if args.filter2:
-        _, signal = csv_readings_to_array(args.filter2)
-        accum.append(signal)
-        labels.append(args.label2)
-    if args.filter3:
-        _, signal = csv_readings_to_array(args.filter3)
-        accum.append(signal)
-        labels.append(args.label3)
-    if args.filter4:
-        _, signal = csv_readings_to_array(args.filter4)
-        accum.append(signal)
-        labels.append(args.label4)
+        labels.append(label)
     signal = np.vstack(accum)
-    if args.diode:
-        _, diode = csv_readings_to_array(args.diode)
-        model = args.model
-    else:
-        diode = None
-        model = None
-    return wavelength, signal, labels, diode, model
+    for diode in args.diodes:
+        _, diode = csv_readings_to_array(diode)
+        diodes.append(diode)
+    #diode = np.vstack(diodes)
+    #log.info("Before: Diode shapes is %s", diode.shape)
+    diode = np.mean(np.vstack(diodes), axis=0)
+    log.info("Diode shapes is %s", diode.shape)
+    return wavelength, signal, labels, diode, args.model
 
 # -----------------------
 # AUXILIARY MAIN FUNCTION
@@ -165,10 +152,12 @@ def get_info_from(args):
 
 def raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
+    validate_lists(args)
     wavelength, signal, labels, diode, model = get_info_from(args)
+    
     mpl_filters_plot_loop(
         title    = f"Raw response for {args.title}",
-        plot_func = plot_raw_spectral,
+        plot_func = plot_filter_spectrum,
         xtitle = "Wavelength [nm]",
         ytitle = f"Signal [A]",
         ylabels = labels,
@@ -186,6 +175,7 @@ def raw_spectrum(args):
     
 def corrected_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+    validate_lists(args)
     wavelength, signal, labels, diode, model = get_info_from(args)
     responsivity, qe = photodiode_load(args.model, args.resolution)
     log.info("Read %s reference responsivity values at %d nm resolution from %s", len(responsivity), args.resolution, args.model)
@@ -195,7 +185,7 @@ def corrected_spectrum(args):
     signal = signal / np.max(signal) # Normalize signal to its absolute maxímun for all channels
     mpl_filters_plot_loop(
         title    = f"Corrected response for {args.title}",
-        plot_func = plot_raw_spectral,
+        plot_func = plot_filter_spectrum,
         xtitle = "Wavelength [nm]",
         ytitle = f"Normalized signal level",
         ylabels = labels,
@@ -230,28 +220,16 @@ def add_args(parser):
     parser_corr  = subparser.add_parser('corrected', help='Correced spectrum')
     # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument('-t', '--title', type=str, help='Filters set model (ie. "Astronomik L-RGB Type 2c"')
-    parser_raw.add_argument('-f1', '--filter1', required=True, type=vfile, help='Filter 1 readings CSV file')
-    parser_raw.add_argument('-l1', '--label1', required=True, type=str, help='Filter 1 plot label')
-    parser_raw.add_argument('-f2', '--filter2', type=vfile, help='Filter 2 readings CSV file')
-    parser_raw.add_argument('-l2', '--label2', type=str, help='Filter 2 plot label')
-    parser_raw.add_argument('-f3', '--filter3', type=vfile, help='Filter 3 readings CSV file')
-    parser_raw.add_argument('-l3', '--label3', type=str, help='Filter 3 plot label')
-    parser_raw.add_argument('-f4', '--filter4', type=vfile, help='Filter 4 readings CSV file')
-    parser_raw.add_argument('-l4', '--label4', type=str, help='Filter 4 plot label')
-    parser_raw.add_argument('-d', '--diode', type=vfile, help='reference photodiode readings CSV file')
+    parser_raw.add_argument('-f', '--filters', required=True, metavar='<CSV>', nargs='+', type=vfile, help='Filter CSV files')
+    parser_raw.add_argument('-l', '--labels', required=True, metavar='<LABEL>', nargs='+', type=str, help='CSV file labels')
+    parser_raw.add_argument('-d', '--diodes', required=True,  metavar='<CSV>', nargs='+', type=vfile, help='reference photodiode CSV files')
     parser_raw.add_argument('-m','--model', default=OSI_PHOTODIODE, choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
                     help='Reference photodiode model. (default: %(default)s)')
     # ---------------------------------------------------------------------------------------------------------------
     parser_corr.add_argument('-t', '--title', type=str, help='Filters set model (ie. "Astronomik L-RGB Type 2c"')
-    parser_corr.add_argument('-f1', '--filter1', required=True, type=vfile, help='Filter 1 readings CSV file')
-    parser_corr.add_argument('-l1', '--label1', required=True, type=str, help='Filter 1 plot label')
-    parser_corr.add_argument('-f2', '--filter2', type=vfile, help='Filter 2 readings CSV file')
-    parser_corr.add_argument('-l2', '--label2', type=str, help='Filter 2 plot label')
-    parser_corr.add_argument('-f3', '--filter3', type=vfile, help='Filter 3 readings CSV file')
-    parser_corr.add_argument('-l3', '--label3', type=str, help='Filter 3 plot label')
-    parser_corr.add_argument('-f4', '--filter4', type=vfile, help='Filter 4 readings CSV file')
-    parser_corr.add_argument('-l4', '--label4', type=str, help='Filter 4 plot label')
-    parser_corr.add_argument('-d', '--diode', type=vfile, required=True, help='reference photodiode readings CSV file')
+    parser_corr.add_argument('-f', '--filters', required=True, metavar='<CSV>', nargs='+', type=vfile, help='Filter CSV files')
+    parser_corr.add_argument('-l', '--labels', required=True, metavar='<LABEL>', nargs='+', type=str, help='CSV file labels')
+    parser_corr.add_argument('-d', '--diodes', required=True,  metavar='<CSV>', nargs='+', type=vfile, help='reference photodiode CSV files')
     parser_corr.add_argument('-m','--model', default=OSI_PHOTODIODE, choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
                     help='Reference photodiode model. (default: %(default)s)')
     parser_corr.add_argument('-r','--resolution', type=int, default=5, choices=(1,5), 
