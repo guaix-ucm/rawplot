@@ -174,13 +174,23 @@ def raw_spectrum(args):
 
 def export_spectra(labels, wavelength, signal, mode, units, wave_last=False):
     wave_exported = wavelength * 10 if units == 'angs' else wavelength
-
+    COLS = len(labels)
     if mode == 'combined':
+        if not wave_last:
+            header = [f"Wavelength [{units}]",] + labels
+        else:
+            header = labels + [f"Wavelength [{units}]"]
         path = 'combined_' + "_".join(labels) + '.csv'
         with open(path, 'w', newline='') as csvfile:
-             writer = csv.writer(csvfile, delimiter=';')
-             write.writerow(header)
-
+            writer = csv.writer(csvfile, delimiter=';')
+            writer.writerow(header)
+            for row in range(wave_exported.shape[0]):
+                data = [signal[lab][row] for lab in range(COLS)]
+                if not wave_last:
+                    data = [wave_exported[row]] + data
+                else:
+                    data = data + [wave_exported[row]]
+                writer.writerow(data)
     else:
         if not wave_last:
             header = (f"Wavelength [{units}]", "Relative value")
@@ -194,9 +204,9 @@ def export_spectra(labels, wavelength, signal, mode, units, wave_last=False):
                 writer.writerow(header)
                 for j in range(wave_exported.shape[0]):
                     if not wave_last:
-                        data = (wave_exported[j], f"{selected_signal[j]:e}")
+                        data = (wave_exported[j], selected_signal[j])
                     else:
-                        data = (f"{selected_signal[j]:e}", wave_exported[j])
+                        data = (selected_signal[j], wave_exported[j])
                     writer.writerow(data)
 
     
