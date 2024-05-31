@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 # Additional stuff
+*.csv
 *.db
 *.txt
 *.jpg
