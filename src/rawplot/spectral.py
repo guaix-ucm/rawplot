@@ -33,7 +33,7 @@ from lica.csv import read_csv
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, make_plot_title_from, assert_physical
+from .util.common import common_list_info, make_plot_title_from, assert_physical, export_spectra_to_csv
 from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 
 # ----------------
@@ -205,6 +205,16 @@ def corrected_spectrum(args):
     exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
     signal = qe * signal / current
     signal = signal / np.max(signal) # Normalize signal to its absolute maxímun for all channels
+    if args.export:
+        log.info("exporting to CSV file(s)")
+        export_spectra_to_csv(
+            labels = channels, 
+            wavelength = wavelength[0], 
+            signal = signal,  
+            mode = args.export,
+            units = args.units,
+            wave_last = args.wavelength_last
+        )
     mpl_spectra_plot_loop(
         title    = title,
         channels = channels,
@@ -308,6 +318,12 @@ def add_args(parser):
                     help='Photodiode model. (default: %(default)s)')
     parser_corr.add_argument('-r','--resolution', type=int, default=5, choices=(1,5), 
                     help='Wavelength resolution (nm). (default: %(default)s nm)')
+    parser_corr.add_argument('--export', type=str, choices=('combined','individual'),
+                    help='Export to CSV file(s)')
+    parser_corr.add_argument('-u','--units', type=str, choices=('nm','angs'), default='nm',
+                    help='Exported wavelength units. (default: %(default)s)')
+    parser_corr.add_argument('-wl','--wavelength-last', action='store_true',
+                    help='Wavelength is last column in exported file')
     # ---------------------------------------------------------------------------------------------------------------
     parser_diode.add_argument('-cv', '--csv-file', type=vfile, required=True, help='CSV file with photdiode readings')
     dioex1 = parser_diode.add_mutually_exclusive_group(required=True)

@@ -33,7 +33,7 @@ from lica.csv import read_csv
 
 from ._version import __version__
 from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, make_plot_title_from, assert_physical
+from .util.common import common_list_info, make_plot_title_from, assert_physical, export_spectra_to_csv
 from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 
 # ----------------
@@ -172,48 +172,13 @@ def raw_spectrum(args):
         ] # where filters were changesd
     )
 
-def export_spectra(labels, wavelength, signal, mode, units, wave_last=False):
-    wave_exported = wavelength * 10 if units == 'angs' else wavelength
-    COLS = len(labels)
-    if mode == 'combined':
-        if not wave_last:
-            header = [f"Wavelength [{units}]",] + labels
-        else:
-            header = labels + [f"Wavelength [{units}]"]
-        path = 'combined_' + "_".join(labels) + '.csv'
-        with open(path, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(header)
-            for row in range(wave_exported.shape[0]):
-                data = [signal[lab][row] for lab in range(COLS)]
-                if not wave_last:
-                    data = [wave_exported[row]] + data
-                else:
-                    data = data + [wave_exported[row]]
-                writer.writerow(data)
-    else:
-        if not wave_last:
-            header = (f"Wavelength [{units}]", "Relative value")
-        else:
-            header = ("Relative value", f"Wavelength [{units}]")
-        for i, label in enumerate(labels):
-            path = label +  '.csv'
-            selected_signal = signal[i]
-            with open(path, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=';')
-                writer.writerow(header)
-                for j in range(wave_exported.shape[0]):
-                    if not wave_last:
-                        data = (wave_exported[j], selected_signal[j])
-                    else:
-                        data = (selected_signal[j], wave_exported[j])
-                    writer.writerow(data)
 
     
 def corrected_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
     validate_lists(args)
     wavelength, signal, labels, diode, model = get_info_from(args)
+    log.info
     responsivity, qe = photodiode_load(args.model, args.resolution)
     log.info("Read %s reference responsivity values at %d nm resolution from %s", len(responsivity), args.resolution, args.model)
     qe = np.array([qe[w] for w in wavelength]) # Only use those wavelenghts actually used in the CSV sequence
@@ -223,7 +188,10 @@ def corrected_spectrum(args):
     
     if args.export:
         log.info("exporting to CSV file(s)")
-        export_spectra(labels, wavelength, signal,  
+        export_spectra_to_csv(
+            labels = labels, 
+            wavelength = wavelength, 
+            signal = signal,  
             mode = args.export,
             units = args.units,
             wave_last = args.wavelength_last
@@ -285,7 +253,7 @@ def add_args(parser):
     parser_corr.add_argument('-u','--units', type=str, choices=('nm','angs'), default='nm',
                     help='Exported wavelength units. (default: %(default)s)')
     parser_corr.add_argument('-wl','--wavelength-last', action='store_true',
-                    help='Wavelength is last in exported file')
+                    help='Wavelength is last column in exported file')
 
     # ---------------------------------------------------------------------------------------------------------------
 
