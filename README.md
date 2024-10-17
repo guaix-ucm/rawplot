@@ -7,7 +7,7 @@
 
  ## Installation
 
-It is haighly recommended to create a virtual environment and activate it, then install rawplot from PyPi
+It is highly recommended to create a virtual environment and activate it, then install rawplot from PyPi
 
 ```bash
 $ mkdir rawpplot
@@ -96,15 +96,6 @@ Only when an image file is open, this normalized ROI transforms into a physical 
 Examples of usage can be found in chapter 7 (Tools) of [GONet all sky camera calibration](https://doi.org/10.5281/zenodo.11183813) report along with the [dataset on which the usage examples are based](https://doi.org/10.5281/zenodo.11125041).
 
 The camera itself was a [Raspberry Pi HQ Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/), installed in a [GoNET project](https://www.researchgate.net/publication/351459667_The_GONet_Ground_Observing_Network_Camera_An_Inexpensive_Light_Pollution_Monitoring_System) device.
-
-
-![Raspberry Pi HQ camera flat image](doc/images/flat_image.png)
-
-![Raspberry Pi HQ camera flat image histogram](doc/images/flat_histo.png)
-
-![Raspberry Pi HQ Camera linearity plot](doc/images/linearity.png)
-
-![Raspberry Pi HQ HV Spectrogram](doc/images/hv.png)
 
 ## Photon Transfer Curves (PTC)
 
@@ -203,12 +194,17 @@ rawplot-imarith --console sub master_bias_frame_aver.fit 256
 
 # Some example charts produced
 
+## Flat field display in all image planes
 ![Raspberry Pi HQ Camera flat image](doc/image/flat_image.png)
 
+## Histogram of image above
 ![Raspberry Pi HQ Camera flat image histogram](doc/image/flat_histo.png)
 
+## Camera linearity
 ![Raspberry Pi HQ Camera linearity plot](doc/image/linearity.png)
 
+## HV Spectrogram
 ![Raspberry Pi HQ Camera HV Spectrogram](doc/image/hv.png)
 
+## ^Photon Transfer Curve
 ![Raspberry Pi HQ PTC Chart](doc/image/ptc.png)
