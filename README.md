@@ -200,14 +200,14 @@ rawplot-imarith --console sub master_bias_frame_aver.fit 256
 ## Histogram of image above
 ![Raspberry Pi HQ Camera flat image histogram](doc/image/flat_histo.png)
 
-## Camera linearity
+## Camera linearity in all channels
 ![Raspberry Pi HQ Camera linearity plot](doc/image/linearity.png)
 
-## HV Spectrogram
+## Green (Gr) HV Spectrogram
 ![Raspberry Pi HQ Camera HV Spectrogram](doc/image/hv.png)
 
-## Photon Transfer Curve
+## Green (Gr) Photon Transfer Curve
 ![Raspberry Pi HQ PTC Chart](doc/image/ptc.png)
 
-## Spectral Response
+## Camera Spectral Response
 ![Raspberry Pi HQ PTC Chart](doc/image/spectral_response.png)
