@@ -206,5 +206,8 @@ rawplot-imarith --console sub master_bias_frame_aver.fit 256
 ## HV Spectrogram
 ![Raspberry Pi HQ Camera HV Spectrogram](doc/image/hv.png)
 
-## ^Photon Transfer Curve
+## Photon Transfer Curve
 ![Raspberry Pi HQ PTC Chart](doc/image/ptc.png)
+
+## Spectral Response
+![Raspberry Pi HQ PTC Chart](doc/image/spectral_response.png)
