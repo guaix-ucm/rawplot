@@ -1,14 +1,11 @@
-[build-system]
-requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
 
 [project]
-name = "raw-plot"
+name = "rawplot"
 dynamic = ["version"]
 description = "Plotting tools to analyze and characterize RGB imagers using Bayer raw images"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "GPL-3.0-or-later"}
+license = {file = "LICENSE"}
 authors = [
     {name = "Rafael González", email = "rafael08@ucm.es"},
     {name = "Jaime Zamorano", email = "jzamoran@ucm.es"},
@@ -17,7 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License (GPL)",
@@ -26,25 +23,13 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Atmospheric Science',
 ]
 dependencies = [
-    "exifread",
-    "rawpy",
     "matplotlib",
     "PyQt5",
     "scikit-learn",
     "astropy",
-    "lica@git+https://github.com/guaix-ucm/lica@main",
+    "lica[raw]",
 ]
 
-
-# To run with pip install -e .[dev] or pip install -e .[test]
-[project.optional-dependencies]
-test = [
-    "pytest>=6",
-]
-dev = [
-   "pytest>=6",
-   "tox",
-]
 
 [project.urls]
 Homepage = "https://github.com/guaix-ucm/rawplot"
@@ -63,12 +48,21 @@ rawplot-spectral = "rawplot.spectral:main"
 rawplot-photodiode = "rawplot.photodiode:main"
 rawplot-filters = "rawplot.filters:main"
 
+[build-system]
+requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
 [tool.setuptools]
 #script-files = ["scripts/photo.sh",]
 
 # pyproject.toml
 [tool.setuptools_scm]
 write_to = "src/rawplot/_version.py"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]
 
 [tool.setuptools.packages.find]
 # scanning for namespace packages is true by default in pyproject.toml, so

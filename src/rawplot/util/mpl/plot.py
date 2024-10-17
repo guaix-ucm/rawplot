@@ -10,7 +10,6 @@
 # System wide imports
 # -------------------
 
-import functools
 
 # --------------------------
 # Matplotlib related imports
@@ -19,6 +18,7 @@ import functools
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import logging
 
 # ---------
 # Constants
@@ -31,7 +31,7 @@ CONTOUR_CMAP = { 'R': "prism", 'G': "prism", 'Gr': "prism", 'Gb': "flag", 'B': "
 EDGE_COLOR = { 'R': "y", 'G': "b", 'Gr': "b", 'Gb': "b", 'B': "r"}
 LAYOUT = { 1: (1,1), 2: (1,2), 3: (2,2), 4: (2,2)}
 
-import logging
+
 log = logging.getLogger(__name__)
 
 # ------------------------
@@ -84,8 +84,8 @@ def mpl_main_image_loop(title, pixels, plot_func, channels, roi, **kwargs):
             if len(channels) == 3 and row == 1 and col == 1: # Skip the empty slot in 2x2 layout with 3 items
                 axes[row][col].set_axis_off()
                 break
-            cmap = plot_image_cmap(channels)
-            edge_color = plot_edge_color(channels)
+            _ = plot_image_cmap(channels)
+            _ = plot_edge_color(channels)
             plot_func(axes[row][col], i,  pixels[i], channels, roi, **kwargs)
     plt.show()
 

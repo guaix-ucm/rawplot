@@ -10,9 +10,7 @@
 # System wide imports
 # -------------------
 
-import re
 import csv
-import math
 import logging
 
 from importlib.resources import files
@@ -31,8 +29,6 @@ from lica.cli import execute
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, make_plot_title_from, assert_physical
 
 # ----------------
 # Module constants

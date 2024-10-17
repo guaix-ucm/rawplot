@@ -19,13 +19,11 @@ import logging
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from lica.cli import execute
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
-from .._version import __version__
 
 # ----------------
 # Module constants

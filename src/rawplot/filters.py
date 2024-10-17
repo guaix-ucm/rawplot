@@ -12,7 +12,6 @@
 
 import re
 import csv
-import math
 import logging
 
 # ---------------------
@@ -23,17 +22,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lica.cli import execute
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
-from lica.raw.analyzer.image import ImageStatistics
-from lica.csv import read_csv
+from lica.validators import vfile
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, make_plot_title_from, assert_physical, export_spectra_to_csv
+from .util.common import export_spectra_to_csv
 from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 
 # ----------------
@@ -72,7 +68,7 @@ def mpl_filters_plot_loop(title, x, y, xtitle, ytitle, plot_func, ylabels, **kwa
     filters = kwargs.get('filters')
     diode = kwargs.get('diode')
     model = kwargs.get('model')
-    labels = kwargs.get('labels')
+    #labels = kwargs.get('labels')
     Z, _ = y.shape 
     for i in range(Z):
         plot_func(axes, i, x, y, ylabels, **kwargs)
@@ -159,7 +155,7 @@ def raw_spectrum(args):
         title    = f"Raw response for {args.title}",
         plot_func = plot_filter_spectrum,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Signal [A]",
+        ytitle = "Signal [A]",
         ylabels = labels,
         x  = wavelength,
         y  = signal,
@@ -201,7 +197,7 @@ def corrected_spectrum(args):
         title    = f"Corrected response for {args.title}",
         plot_func = plot_filter_spectrum,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Normalized signal level",
+        ytitle = "Normalized signal level",
         ylabels = labels,
         x  = wavelength,
         y  = signal,

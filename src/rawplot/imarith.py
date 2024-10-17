@@ -21,8 +21,7 @@ import numpy as np
 from astropy.io import fits
 
 from lica.cli import execute
-from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vflopath
+from lica.validators import vfile, vflopath
 from lica.raw.loader import ImageLoaderFactory,  FULL_FRAME_NROI, CHANNELS
 
 # ------------------------
@@ -69,7 +68,7 @@ def add_result_header(res_header, first_header, second, history):
     if history:
         res_header['HISTORY'] = history[:72]
     else:
-        data =  f"Substracted {second:0.2e}" if (type(second) == float) else f"Substracted {os.path.basename(second)[:60]}"
+        data =  f"Substracted {second:0.2e}" if type(second) is float else f"Substracted {os.path.basename(second)[:60]}"
         res_header['HISTORY'] = data
 
 def output_file(args):
@@ -83,7 +82,7 @@ def arith_sub(args):
     res_path = output_file(args)
     with fits.open(args.first) as hdu1:
         header = hdu1[0].header
-        if type(args.second) == float:
+        if type(args.second) is float:
             pixels =   hdu1[0].data - args.second
         else:
             with fits.open(args.second) as hdu2:

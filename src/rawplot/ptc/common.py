@@ -19,7 +19,7 @@ import fractions
 
 import numpy as np
 
-from sklearn.linear_model import  TheilSenRegressor, LinearRegression
+from sklearn.linear_model import  TheilSenRegressor
 from lica.raw.analyzer.image import ImagePairStatistics
 
 # ------------------------
@@ -104,7 +104,7 @@ def vfit(num_str):
     return float(fractions.Fraction(num_str))
 
 def float_or_none(x):
-    return x if type(x) == float else None
+    return x if type(x) is float else None
 
 def is_estimate(x):
-    return True if type(x) == str and x == 'estimate' else False
+    return True if type(x) is str and x == 'estimate' else False

@@ -4,26 +4,36 @@
 
  This is a child project of [AZOTEA](https://guaix.ucm.es/azoteaproject), an initiative to monitor light pollution through digital imagers. The AZOTEA initiative was started in EU funded project ACTION - Participatory science toolkit against pollution, Grant 824603.
 
+
  ## Installation
-1. Clone project from GitHub repository
-2. Create a virtual environment and activate it
+
+It is haighly recommended to create a virtual environment and activate it, then install rawplot from PyPi
 
 ```bash
-(main) ~/repos/own/stars4all/rawplot$ python3 -m venv .venv
-(main) ~/repos/own/stars4all/rawplot$ source .venv/bin/activate
-```
-3. Install it.
+$ mkdir rawpplot
+$ cd rawplot
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+(.venv) $ pip install rawplot
 
-```bash
-(.venv)  (main) ~/repos/own/stars4all/rawplot$ pip install -U pip
-(.venv)  (main) ~/repos/own/stars4all/rawplot$ pip install .
 ```
 # Usage
 
 The available commands list can be found in the `bin` virtual environment sub-folder.
 
  ```bash
- ls .venv/bin/raw-*
+ ls -1 .venv/bin/raw*
+ venv/bin/rawplot-filters
+.venv/bin/rawplot-hv
+.venv/bin/rawplot-image
+.venv/bin/rawplot-imarith
+.venv/bin/rawplot-linearity
+.venv/bin/rawplot-master
+.venv/bin/rawplot-photodiode
+.venv/bin/rawplot-plan
+.venv/bin/rawplot-ptc
+.venv/bin/rawplot-snr
+.venv/bin/rawplot-spectral
  ```
 
 ## Common options
@@ -47,7 +57,7 @@ All utilities share these command line options, mainly used for debugging purpos
 
 Since we are dealing with RAW images, we are dealing with 4 separate color planes (channels): `R Gr Gb B`. Most of the commands supports being run on all or a subset of these color planes.
 
-* `--channel` Specify which of the R, Gr, Gb, or B channels to handle by the command. Can be one or a combination of them. Some commands accept a G channel
+* `-c | --channel` Specify which of the R, Gr, Gb, or B channels to handle by the command. Can be one or a combination of them. Some commands accept a G channel
 (an average of Gr and Gb)
 
 Order in the command line is not important. They are internally reordered so that the display & processing order is (R, Gr, Gb, B)
@@ -66,11 +76,13 @@ Invalid Examples:
 --channel R A (A is not supported)
 --channel R G B Gb (this commbination is not supported)
 ```
+
 ### Region of Interest (ROI)
 
 A ROI is specified given its starting point `(x0, y0)` and dimensions `(width, height)`. To unifomingly address the different resolutions in camera formats, a normalized ROI is used as input, where both the starting point and dimensions are normalized between 0 and 1. In addition `x0+width <= 1.0` and `y0+height <= 1.0`. When the `(x0,y0)` starting point is not specified in the command line, the `(width,height)` dimensions are assumed with respect to the image center.
 
 The different ROI parameters on the command line can be specified as either as decimals or fractions for convenience.
+Width and height parameters can be specified with `-wi | --width` and `-he | --height`.
 
 Example:
 ```
@@ -81,67 +93,17 @@ Only when an image file is open, this normalized ROI transforms into a physical 
 
 # Commands
 
-Bref description of commands and results. The examples has been taken with the [Raspberry Pi HQ Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/), intalled in a [GoNET project](https://www.researchgate.net/publication/351459667_The_GONet_Ground_Observing_Network_Camera_An_Inexpensive_Light_Pollution_Monitoring_System) device.
+Examples of usage can be found in chapter 7 (Tools) of [GONet all sky camera calibration](https://doi.org/10.5281/zenodo.11183813) report along with the [dataset on which the usage examples are based](https://doi.org/10.5281/zenodo.11125041).
 
+The camera itself was a [Raspberry Pi HQ Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/), installed in a [GoNET project](https://www.researchgate.net/publication/351459667_The_GONet_Ground_Observing_Network_Camera_An_Inexpensive_Light_Pollution_Monitoring_System) device.
 
-## rawplot-plan
-
-Before analyzing camera images, the first thing to do is to take images. This utility helps to design an exposure plan, with a number of images of number of images and exposure time for each one. There are several strategies. For linearity study purposes, it may be worth to concentrate capture on both ends of the exposure range, so that we may have a more detailed view of non linearities.
-
-For instance, the `combistops` is based on the maximun DN produced by the camera (4095 for the Raspberry Pi HQ Camera). It performs up to $log_{2}(DN_{MAX})$ iterations with an specified points per iteration (defaults to 3).
-
-```bash
-rawplot-plan combistops -ti 1/1000 -tf 6 -m 4095
-```
-![Combi-Stops output](doc/images/combistops.png)
-
-## rawplot-image
-
-This utility displays a single image or histogram. useful to determine exposure levels and region of interest.
-
-```bash
-rawplot-image --console pixels -i images/20240117/linearity/flath_g1_001_3500000_a.jpg -wi 1/20 -he 1/16
-```
-
-As the image shows, this exposure is shows severe vignetting.
-For the linearity plot below, we chose a small ROI in the image center to quickly detect saturation. 
-Otherwise, vignetting bias the statistics.
-
-When using a larger ROI, this vignetting is shown as the Fixed Pattern Noise component 
-of the noise analysis as shown by the PTC graph below.
 
 ![Raspberry Pi HQ camera flat image](doc/images/flat_image.png)
 
-```bash
-rawplot-image --console histo -i images/20240117/linearity/flath_g1_001_3500000_a.jpg --every 100
-```
 ![Raspberry Pi HQ camera flat image histogram](doc/images/flat_histo.png)
-
-
-## rawplot-linearity
-
-Plots a linearity graph from a set of flat-field images. Also, tries to detect the sensor saturation point and fit a linear graph.
-
-```bash
-rawplot-linearity --console -i images/20240117/linearity/ -f flat* -wi 1/20 -he 1/16 --every 2
-```
-
-The example shows a linearity plot measured in a small subset of the image center. Since our flat field captures were taken in A, B pairs, we pick every two images on the *sorted* image list. Our directory also contains dark images so we specify a `flat*` glob filter.
-
-This plot was taken up to its entire range of exposure range (6 seconds)
 
 ![Raspberry Pi HQ Camera linearity plot](doc/images/linearity.png)
 
-## HV Spectrogram plot
-
-This plot is included here based on the excelent blog post [THE HV SPECTROGRAM](https://www.strollswithmydog.com/hv-spectrogram/) by Jack (aka AlmaPhoto)
-See the aforementioned post for more details.
-
-In the tests I made, the HV plots showed a strong peak at (0) that flattens the rest of the graph, even after removing the mean signal from the image itself. Hence, I have included the`--start` option. The results are in line with [Jack's analysis of the RaspberryPi HQ camera performance](https://www.strollswithmydog.com/pi-hq-cam-sensor-performance/).
-
-```bash
-rawplot-hv --console -i images/20240117/linearity/darkl_g1_001_0025005_a.jpg --start 3
-```
 ![Raspberry Pi HQ HV Spectrogram](doc/images/hv.png)
 
 ## Photon Transfer Curves (PTC)
@@ -177,86 +139,13 @@ Working with digital numbers [DN] - instead of electrons - equation above is rew
 \sigma_{TOTAL}^2 = \sigma_{READ}^2 + (S/g) + (P_{FPN}S)^2 \quad [DN]
 ```
 
-where $g$ is the detector gain constant, in $e^⁻/DN$.
-
-
-### PTC Noise and Variance Curves
-
-From the same dataset we used to determine the camera linearity, we generate PTC Curve #1, this time with a bigger ROI.
-For this technique to work, we require to have images taken *in pairs* at the same exposure time (i.e `(flatm_g1_047_0001450_a.jpg, 'flatm_g1_047_0001450_b.jpg')`.
-
-
-```bash
-rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr
-```
-
-![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1.png)
-
-With the ROI as large as this one, vignetting shows up and we can see the three main components of noise in this PTC analysis.
-
-The gain ($g$), readout noise ($\sigma_{READ}$) and fixed pattern noise factor ($P_{FPN}$) can be estimated by visual inspection, choosing a point in the appropiate sector from this plot curve and applying the corresponding formula:
-
-```math
-g = \frac{S}{\sigma_{SHOT}^2} \quad \quad P_{FPN} = \frac{\sigma_{FPN}}{S}
-```
-This visual inspection process can be aided by choosing several points in a selected signal range, applying the formula for each one and taking the average:
-
-```bash
-rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise estimate --from 0.1 --to 5
-```
-
-![Raspberry Pi HQ Camera Read Noise Estimation](doc/images/ptc_noise_curve1_read_noise.png)
-
-```bash
-rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --p-fpn estimate --from 100 --to 2500
-```
-![Raspberry Pi HQ Camera p-FPN Estimation](doc/images/ptc_noise_curve1_p_fpn.png)
-
-
-```bash
-rawplot-ptc --console curve5 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --fit --from 100 --to 2800
-```
-
-The gain ($g$) can be more accurately estimated by fitting a straigth line into the Readout + Shot Noise Variance vs Signal curve.
-
-
-![Raspberry Pi HQ Camera Gain Estimation](doc/images/ptc_variance_curve5.png)
-
-
-Finally, we can depict the three noise regions in this PTC, either in $[DN]$ or $[e^-]$.
-
-```bash
-rawplot-ptc --console curve1 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
-```
-
-![Raspberry Pi HQ Camera PTC Curve plot](doc/images/ptc_noise_curve1_full.png)
-
-
-### PTC Signal to Noise Curve
-
-Another way to display the camera performance is to directly display the Signal to Noise Ratio vs signal. If the `gain` ($g$) `read-noise` ($\sigma_{READ}$) and `p-fpn ` ($p_{FPN}$) parameters are given, a plot according model is also displayed, so that we can compare the actual SNR versus the expected SNR based on the model equation:
-
-```math
-SNR = \frac{S}{\sqrt{\sigma_{READ}^2 + (S/g) + (p_{FPN}S)^2}}
-```
-Where $S$, $\sigma_{READ}$ and $p_{FPN}$ are given in DN and $g$ in $e^{-}/DN$
-
-```bash
-rawplot-ptc --console curve6 -i images/20240117/linearity/ -f flat* -wi 1/5 -he 1/4 --channels Gr --read-noise 1.56 --p-fpn 6.38e-2 --gain 2.31
-```
-
-![Raspberry Pi HQ Camera PTC SNR Curve plot](doc/images/ptc_snr_total.png)
-
-Given the current values of $\sigma_{READ}$, $\sigma_{SHOT}$ and $\sigma_{FPN}$ in the model equation, the vertical lines in the plot above shows the boundaries where the $\sigma_{SHOT} \geq \sigma_{READ}$ noise and $\sigma_{FPN} \geq \sigma_{SHOT}$ noise.
-
 ## Miscellaneous Commands
 
 Convenicence commands to help processing an analysis of images using the above commands.
 
 ### rawplot-master
 
-Utility to make master bias, dark or flat frames from a series of RAW files.
-Produces a 3D FITS cube, one layer per color.
+Utility to make master bias, dark or flat frames from a series of RAW files. Produces a 3D FITS cube, one layer per color.
 
 
 ```bash
@@ -311,3 +200,15 @@ rawplot-imarith --console sub master_bias_frame_aver.fit 256
 2024-02-07 14:55:43,821 [INFO] ============== rawplot.imarith 0.9.1.dev4+gf89ffa4.d20240207 ==============
 2024-02-07 14:55:43,891 [INFO] Created result image on: master_bias_frame_aver_subs.fit
 ```
+
+# Some example charts produced
+
+![Raspberry Pi HQ Camera flat image](doc/image/flat_image.png)
+
+![Raspberry Pi HQ Camera flat image histogram](doc/image/flat_histo.png)
+
+![Raspberry Pi HQ Camera linearity plot](doc/image/linearity.png)
+
+![Raspberry Pi HQ Camera HV Spectrogram](doc/image/hv.png)
+
+![Raspberry Pi HQ PTC Chart](doc/image/ptc.png)

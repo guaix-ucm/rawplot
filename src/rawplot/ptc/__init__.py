@@ -76,7 +76,7 @@ def ptc(args):
 
 def add_args(parser):
     subparser = parser.add_subparsers(dest='command')
-    parser_charts = subparser.add_parser('curves', help='Plot available PTC curves in matplotlib')
+    _ = subparser.add_parser('curves', help='Plot available PTC curves in matplotlib')
 
     parser_curve1 = subparser.add_parser('curve1', help='Plot read, shot, FPN & total noise vs. signal, [DN] or [e-]')
     noise_parser_arguments(parser_curve1)

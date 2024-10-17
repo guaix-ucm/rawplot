@@ -21,7 +21,6 @@ import matplotlib.pyplot as plt
 
 from lica.cli import execute
 from lica.validators import vfile, vfloat01
-from lica.raw.loader import ImageLoaderFactory
 
 
 # ------------------------
@@ -29,7 +28,7 @@ from lica.raw.loader import ImageLoaderFactory
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_plot_loop, plot_layout, axes_reshape, stylesheet
+from .util.mpl.plot import plot_layout, axes_reshape, stylesheet
 from .util.common import common_info_with_sim, make_plot_title_from
 
 # -----------------------

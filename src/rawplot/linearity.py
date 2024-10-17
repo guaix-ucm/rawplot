@@ -19,11 +19,10 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import  TheilSenRegressor, LinearRegression
+from sklearn.linear_model import  TheilSenRegressor
 
 from lica.cli import execute
-from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
+from lica.validators import vdir, vfloat, vfloat01, vflopath
 from lica.raw.loader import ImageLoaderFactory
 
 # ------------------------
@@ -61,12 +60,12 @@ def fit(exptime, signal, channels):
     estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
     for i, ch in enumerate(channels):
         T = exptime[i].reshape(-1,1)
-        fitted = estimator.fit(T, signal[i])
+        fitted = estimator.fit(T, signal[i])  # noqa: F841
         score = estimator.score(T, signal[i])
         log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
         intercept = estimator.intercept_
         slope = estimator.coef_[0]
-        fit_params.append({'score': score, 'slope': estimator.coef_[0], 'intercept': estimator.intercept_})
+        fit_params.append({'score': score, 'slope': slope, 'intercept': intercept})
     return fit_params
 
 # The saturation analysis is made based on a certain SNR thrersold
@@ -99,9 +98,9 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
     slope = fitted['slope']
     score = fitted['score']
     intercept = fitted['intercept']
-    label = rf"$S(t)$ (fitted)"
+    label = r"$S(t)$ (fitted)"
     P0 = (0, intercept) 
-    P1 = ( -intercept/slope)
+    #P1 = ( -intercept/slope, 0)
     axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$S(t)$ (to fit)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
     text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t{intercept:+0.2f}$"))
@@ -110,8 +109,8 @@ def plot_fitted(axes, fitted, fitted_x, fitted_y):
 
 
 def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    exptime = x[i]
-    signal = y[i]
+    #exptime = x[i]
+    #signal = y[i]
     phys = kwargs.get('phys', False)
     units = r"$[e^{-}]$" if phys else "[DN]" 
     good_exptime = kwargs['good_exptime'][i]
@@ -175,7 +174,7 @@ def linearity(args):
         channels = channels,
         plot_func = plot_linearity,
         xtitle = "Exposure time [s]",
-        ytitle = f"Signal",
+        ytitle = "Signal",
         ylabel = "good",
         x  = exptime,
         y  = signal,

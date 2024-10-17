@@ -12,10 +12,7 @@
 
 import os
 import sys
-import glob
-import math
 import logging
-import functools
 import itertools
 
 # ---------------------
@@ -27,7 +24,7 @@ from astropy.io import fits
 
 from lica.cli import execute
 from lica.misc import file_paths
-from lica.validators import vdir, vfile, vfloat, vfloat01
+from lica.validators import vdir, vfloat
 from lica.raw.loader import ImageLoaderFactory, FULL_FRAME_NROI, CHANNELS
 
 
@@ -59,7 +56,7 @@ log = logging.getLogger(__name__)
 
 try:
     from itertools import batched
-except:
+except ModuleNotFoundError:
     def batched(iterable, n):
         if n < 1:
             raise ValueError('n must be at least one')
@@ -82,9 +79,6 @@ def fill_header(header, metadata, img, history=None):
 
 
 def output_path(output_dir, prefix, metadata, roi, tag):
-    width = metadata['width']
-    height = metadata['height']
-    channels = metadata['channels'].replace(' ', '_')
     imagetyp = metadata['imagetyp'].lower().replace(' ', '_')
     filename = f"{prefix}_{imagetyp}_{tag}.fit"
     return os.path.join(output_dir, filename)

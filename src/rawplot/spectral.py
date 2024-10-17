@@ -11,7 +11,6 @@
 # -------------------
 
 import re
-import csv
 import math
 import logging
 
@@ -32,8 +31,7 @@ from lica.csv import read_csv
 # ------------------------
 
 from ._version import __version__
-from .util.mpl.plot import mpl_main_plot_loop
-from .util.common import common_list_info, make_plot_title_from, assert_physical, export_spectra_to_csv
+from .util.common import common_list_info, make_plot_title_from, export_spectra_to_csv
 from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 
 # ----------------
@@ -181,7 +179,7 @@ def raw_spectrum(args):
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Signal [DN]",
+        ytitle = "Signal [DN]",
         ylabel = "good",
         x  = wavelength,
         y  = signal,
@@ -220,7 +218,7 @@ def corrected_spectrum(args):
         channels = channels,
         plot_func = plot_raw_spectral,
         xtitle = "Wavelength [nm]",
-        ytitle = f"Signal (normalized)",
+        ytitle = "Signal (normalized)",
         ylabel = "good",
         x  = wavelength,
         y  = signal,

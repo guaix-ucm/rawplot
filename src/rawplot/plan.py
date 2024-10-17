@@ -73,7 +73,7 @@ def stops_plan(ti, tf, max_dn, ppl, reverse):
     T = list()
     log.info("STOPS = %d",stops)
     if reverse:
-        nti = ti; ntf = ti + (tf-ti)/2
+        nti = ti; ntf = ti + (tf-ti)/2  # noqa: E702
         for level in range(0, stops):
             tseq = np.linspace(nti, ntf, num=ppl)
             nti = ntf
@@ -84,7 +84,7 @@ def stops_plan(ti, tf, max_dn, ppl, reverse):
                 # Discard the first point, as it was repeated with the previous iteration
                 T.extend(tseq.tolist()[1:]) 
     else:
-        ntf = tf; nti = tf - (tf-ti)/2
+        ntf = tf; nti = tf - (tf-ti)/2  # noqa: E702
         for level in range(0, stops):
             tseq = np.linspace(nti, ntf, num=ppl)
             ntf = nti

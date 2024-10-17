@@ -21,7 +21,6 @@ import functools
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.lines as lines
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -212,7 +211,7 @@ def image_histo(args):
 
 def image_pixels(args):
     file_path, roi, n_roi, channels, metadata, simulated, image0 = common_info_with_sim(args)
-    simulated = args.sim_dark is not None or args.sim_read_noise is not None
+    #simulated = args.sim_dark is not None or args.sim_read_noise is not None
     # Calculate boxed statistics first
     analyzer = ImageStatistics.attach(image0, bias=args.bias, dark=args.dark)
     analyzer.run()

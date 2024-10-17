@@ -24,7 +24,6 @@ from lica.validators import vdir, vfloat, vfloat01, vflopath
 # Own modules and packages
 # ------------------------
 
-from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
 from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
 from .common import signal_and_noise_variances, is_estimate, estimate, vfit, float_or_none
@@ -146,7 +145,7 @@ def noise_curve1(args):
     log.info(" === NOISE CHART 1: Individual Noise Sources vs. Signal === ")
     assert_physical(args)
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    read_noise = args.read_noise if type(args.read_noise) == float else 0.0
+    read_noise = args.read_noise if type(args.read_noise) is float else 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
         file_list = file_list, 
         n_roi = n_roi, 

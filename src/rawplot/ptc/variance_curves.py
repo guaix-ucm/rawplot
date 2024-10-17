@@ -17,16 +17,14 @@ import logging
 # Thrid-party libraries
 # ---------------------
 
-import numpy as np
 from lica.validators import vdir, vfloat, vfloat01, vflopath
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
-from .._version import __version__
 from ..util.mpl.plot import mpl_main_plot_loop
-from ..util.common import common_list_info, make_plot_title_from, assert_physical, assert_range
+from ..util.common import common_list_info, make_plot_title_from, assert_range
 from .common import signal_and_noise_variances, fit
 
 # ----------------
@@ -70,15 +68,15 @@ def plot_fitted(axes, fitted):
     intercept = fitted['intercept']
     fitted_x = fitted['x']
     fitted_y = fitted['y']
-    label = rf"$\sigma_{{READ+SHOT}}^2$ (model)"
+    label = r"$\sigma_{{READ+SHOT}}^2$ (model)"
     P0 = (0, intercept) 
-    P1 = ( -intercept/slope, 0)
+    #P1 = ( -intercept/slope, 0)
     axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$\sigma_{READ+SHOT}^2$ (fitted)")
     axes.axline(P0, slope=slope, linestyle=':', label=label)
     if intercept >= 0:
         text_b = rf"$\sigma_{{READ}} = {math.sqrt(intercept):0.2f}$ [DN]"
     else:
-        text_b = rf"$\sigma_{{READ}} = ?$"
+        text_b = r"$\sigma_{{READ}} = ?$"
     text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$g = {1/slope:0.2f}\quad [e^{{-}}/DN$]", text_b))
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     axes.text(0.5, 0.30, text, transform=axes.transAxes, va='top', bbox=props)
@@ -132,9 +130,9 @@ def variance_curve1(args):
     mpl_main_plot_loop(
         title    = title,
         plot_func = plot_variance_vs_signal,
-        xtitle = f"Signal [DN]",
-        ytitle = f"Noise Variance [DN]",
-        ylabel =r"$\sigma_{READ+SHOT}^2$",
+        xtitle = "Signal [DN]",
+        ytitle = "Noise Variance [DN]",
+        ylabel = r"$\sigma_{READ+SHOT}^2$",
         x  = signal,
         y  = shot_and_read_var,
         channels = channels,
