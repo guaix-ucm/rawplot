@@ -10,7 +10,7 @@
 It is highly recommended to create a virtual environment and activate it, then install rawplot from PyPi
 
 ```bash
-$ mkdir rawpplot
+$ mkdir rawplot
 $ cd rawplot
 $ python3 -m venv .venv
 $ source .venv/bin/activate
