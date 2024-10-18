@@ -6,7 +6,7 @@
 # see the AUTHORS file for authors
 # ----------------------------------------------------------------------
 
-#--------------------
+# --------------------
 # System wide imports
 # -------------------
 
@@ -19,7 +19,7 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import  TheilSenRegressor
+from sklearn.linear_model import TheilSenRegressor
 
 from lica.cli import execute
 from lica.validators import vdir, vfloat, vfloat01, vflopath
@@ -55,18 +55,27 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
+
 def fit(exptime, signal, channels):
     fit_params = list()
-    estimator = TheilSenRegressor(random_state=42,  fit_intercept=True)
+    estimator = TheilSenRegressor(random_state=42, fit_intercept=True)
     for i, ch in enumerate(channels):
-        T = exptime[i].reshape(-1,1)
+        T = exptime[i].reshape(-1, 1)
         fitted = estimator.fit(T, signal[i])  # noqa: F841
         score = estimator.score(T, signal[i])
-        log.info("[%s] %s fitting score is %f. y=%.4f*x%+.4f", ch, estimator.__class__.__name__, score,  estimator.coef_[0], estimator.intercept_)
+        log.info(
+            "[%s] %s fitting score is %f. y=%.4f*x%+.4f",
+            ch,
+            estimator.__class__.__name__,
+            score,
+            estimator.coef_[0],
+            estimator.intercept_,
+        )
         intercept = estimator.intercept_
         slope = estimator.coef_[0]
-        fit_params.append({'score': score, 'slope': slope, 'intercept': intercept})
+        fit_params.append({"score": score, "slope": slope, "intercept": intercept})
     return fit_params
+
 
 # The saturation analysis is made based on a certain SNR thrersold
 # above which the SNR curve enters the saturation regime
@@ -74,10 +83,10 @@ def fit(exptime, signal, channels):
 def saturation_analysis(exptime, signal, snr, channels, threshold):
     good_mask = snr < threshold
     bad_mask = snr >= threshold
-    good_exptime_list=list()
-    good_signal_list=list()
-    sat_exptime_list=list()
-    sat_signal_list=list()
+    good_exptime_list = list()
+    good_signal_list = list()
+    sat_exptime_list = list()
+    sat_signal_list = list()
     for i, ch in enumerate(channels):
         b_msk = bad_mask[i]
         g_msk = good_mask[i]
@@ -94,44 +103,46 @@ def saturation_analysis(exptime, signal, snr, channels, threshold):
 
 
 def plot_fitted(axes, fitted, fitted_x, fitted_y):
-    '''All graphical elements for a fitting line'''
-    slope = fitted['slope']
-    score = fitted['score']
-    intercept = fitted['intercept']
+    """All graphical elements for a fitting line"""
+    slope = fitted["slope"]
+    score = fitted["score"]
+    intercept = fitted["intercept"]
     label = r"$S(t)$ (fitted)"
-    P0 = (0, intercept) 
-    #P1 = ( -intercept/slope, 0)
-    axes.plot(fitted_x, fitted_y, marker='o', linewidth=0, label=r"$S(t)$ (to fit)")
-    axes.axline(P0, slope=slope, linestyle=':', label=label)
-    text = "\n".join((fr"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t{intercept:+0.2f}$"))
-    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-    axes.text(0.5, 0.2, text, transform=axes.transAxes, va='top', bbox=props)
+    P0 = (0, intercept)
+    # P1 = ( -intercept/slope, 0)
+    axes.plot(fitted_x, fitted_y, marker="o", linewidth=0, label=r"$S(t)$ (to fit)")
+    axes.axline(P0, slope=slope, linestyle=":", label=label)
+    text = "\n".join((rf"$r^2 = {score:.3f}$", rf"$S(t) = {slope:0.2f}t{intercept:+0.2f}$"))
+    props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+    axes.text(0.5, 0.2, text, transform=axes.transAxes, va="top", bbox=props)
 
 
 def plot_linearity(axes, i, x, y, xtitle, ytitle, ylabel, channels, **kwargs):
-    #exptime = x[i]
-    #signal = y[i]
-    phys = kwargs.get('phys', False)
-    units = r"$[e^{-}]$" if phys else "[DN]" 
-    good_exptime = kwargs['good_exptime'][i]
-    good_signal = kwargs['good_signal'][i]
-    sat_exptime = kwargs['sat_exptime'][i]
-    sat_signal = kwargs['sat_signal'][i]
-    fitted = kwargs['fitted'][i]
+    # exptime = x[i]
+    # signal = y[i]
+    phys = kwargs.get("phys", False)
+    units = r"$[e^{-}]$" if phys else "[DN]"
+    good_exptime = kwargs["good_exptime"][i]
+    good_signal = kwargs["good_signal"][i]
+    sat_exptime = kwargs["sat_exptime"][i]
+    sat_signal = kwargs["sat_signal"][i]
+    fitted = kwargs["fitted"][i]
     plot_fitted(axes, fitted, good_exptime, good_signal)
-    axes.plot(sat_exptime, sat_signal,  marker='o', linewidth=0, label="saturated")
+    axes.plot(sat_exptime, sat_signal, marker="o", linewidth=0, label="saturated")
     axes.set_xlabel(xtitle)
     axes.set_ylabel(f"{ytitle} {units}")
-    title = f'Channel {channels[i]}'
+    title = f"Channel {channels[i]}"
     axes.set_title(title)
-    axes.grid(True,  which='major', color='silver', linestyle='solid')
-    axes.grid(True,  which='minor', color='silver', linestyle=(0, (1, 10)))
+    axes.grid(True, which="major", color="silver", linestyle="solid")
+    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
     axes.minorticks_on()
     axes.legend()
+
 
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
+
 
 def exptime_from(file_list, n_roi, channels, bias, dark):
     file_list = file_list[::2]
@@ -144,7 +155,8 @@ def exptime_from(file_list, n_roi, channels, bias, dark):
         exptime = image.exptime()
         exptime_list.append(exptime)
         log.info("[%d/%d] %s exptime = %s secs.", i, N, image.name(), exptime)
-    return np.tile(exptime_list, M).reshape(M,-1)
+    return np.tile(exptime_list, M).reshape(M, -1)
+
 
 def linearity(args):
     log.info(" === LINEARITY PLOT === ")
@@ -153,70 +165,155 @@ def linearity(args):
     exptime = exptime_from(file_list, n_roi, channels, args.bias, args.dark)
     read_noise = args.read_noise or 0.0
     signal, total_var, shot_read_var, fpn_var, shot_var = signal_and_noise_variances(
-        file_list = file_list, 
-        n_roi = n_roi, 
-        channels = channels, 
-        bias = args.bias, 
-        dark = args.dark,
-        read_noise = read_noise
+        file_list=file_list,
+        n_roi=n_roi,
+        channels=channels,
+        bias=args.bias,
+        dark=args.dark,
+        read_noise=read_noise,
     )
     total_noise = np.sqrt(total_var)
     snr = signal / total_noise
-    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(exptime, signal, snr, channels, args.snr)
+    good_exptime, good_signal, sat_exptime, sat_signal = saturation_analysis(
+        exptime, signal, snr, channels, args.snr
+    )
     if args.gain and args.physical_units:
         signal = [args.gain * s for s in signal]
         good_signal = [args.gain * s for s in good_signal]
         sat_signal = [args.gain * s for s in sat_signal]
-    title = make_plot_title_from("Linearity plot",metadata, roi)
+    title = make_plot_title_from("Linearity plot", metadata, roi)
     fit_params = fit(good_exptime, good_signal, channels)
     mpl_main_plot_loop(
-        title    = title,
-        channels = channels,
-        plot_func = plot_linearity,
-        xtitle = "Exposure time [s]",
-        ytitle = "Signal",
-        ylabel = "good",
-        x  = exptime,
-        y  = signal,
+        title=title,
+        channels=channels,
+        plot_func=plot_linearity,
+        xtitle="Exposure time [s]",
+        ytitle="Signal",
+        ylabel="good",
+        x=exptime,
+        y=signal,
         # Optional arguments tpo be handled by the plotting function
-        good_exptime = good_exptime,
-        good_signal  = good_signal,
-        sat_exptime  = sat_exptime,
-        sat_signal   = sat_signal,
-        fitted = fit_params,
-        phys = args.physical_units,
+        good_exptime=good_exptime,
+        good_signal=good_signal,
+        sat_exptime=sat_exptime,
+        sat_signal=sat_signal,
+        fitted=fit_params,
+        phys=args.physical_units,
     )
+
 
 # ===================================
 # MAIN ENTRY POINT SPECIFIC ARGUMENTS
 # ===================================
 
+
 def add_args(parser):
-    parser.add_argument('-i', '--input-dir', type=vdir, required=True, help='Input directory with RAW files')
-    parser.add_argument('-f', '--image-filter', type=str, required=True, help='Images filter, glob-style (i.e. flat*, dark*)')
-    parser.add_argument('-x', '--x0', type=vfloat01,  help='Normalized ROI start point, x0 coordinate [0..1]')
-    parser.add_argument('-y', '--y0', type=vfloat01,  help='Normalized ROI start point, y0 coordinate [0..1]')
-    parser.add_argument('-wi', '--width',  type=vfloat01, default=1.0, help='Normalized ROI width [0..1] (default: %(default)s)')
-    parser.add_argument('-he', '--height', type=vfloat01, default=1.0, help='Normalized ROI height [0..1] (default: %(default)s) ')
-    parser.add_argument('-c','--channels', default=('R', 'Gr', 'Gb','B'), nargs='+',
-                    choices=('R', 'Gr', 'Gb', 'G', 'B'),
-                    help='color plane to plot. G is the average of G1 & G2. (default: %(default)s)')
-    parser.add_argument('--every', type=int, metavar='<N>', default=1, help='pick every n `file after sorting')
-    parser.add_argument('-sn', '--snr',  required=True, type=vfloat,  help='Threshold SNR to enter saturation regime. (default: %(default)s)')
-    parser.add_argument('-bi', '--bias',  type=vflopath,  help='Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)')
-    parser.add_argument('-dk', '--dark',  type=vfloat,  help='Dark count rate in DN/sec. (default: %(default)s)')
-    parser.add_argument('-gn','--gain', type=vfloat, metavar='<g>',  help='Gain [e-/DN] (default: %(default)s)')
-    parser.add_argument('-rd','--read-noise', type=vfloat, metavar='<\u03C3>',  help='Read noise [DN] (default: %(default)s)')
-    parser.add_argument('-ph','--physical-units',  action='store_true', help='Display in [-e] physical units instead of [DN]. Requires --gain')
+    parser.add_argument(
+        "-i",
+        "--input-dir",
+        type=vdir,
+        required=True,
+        help="Input directory with RAW files",
+    )
+    parser.add_argument(
+        "-f",
+        "--image-filter",
+        type=str,
+        required=True,
+        help="Images filter, glob-style (i.e. flat*, dark*)",
+    )
+    parser.add_argument(
+        "-x",
+        "--x0",
+        type=vfloat01,
+        help="Normalized ROI start point, x0 coordinate [0..1]",
+    )
+    parser.add_argument(
+        "-y",
+        "--y0",
+        type=vfloat01,
+        help="Normalized ROI start point, y0 coordinate [0..1]",
+    )
+    parser.add_argument(
+        "-wi",
+        "--width",
+        type=vfloat01,
+        default=1.0,
+        help="Normalized ROI width [0..1] (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-he",
+        "--height",
+        type=vfloat01,
+        default=1.0,
+        help="Normalized ROI height [0..1] (default: %(default)s) ",
+    )
+    parser.add_argument(
+        "-c",
+        "--channels",
+        default=("R", "Gr", "Gb", "B"),
+        nargs="+",
+        choices=("R", "Gr", "Gb", "G", "B"),
+        help="color plane to plot. G is the average of G1 & G2. (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--every",
+        type=int,
+        metavar="<N>",
+        default=1,
+        help="pick every n `file after sorting",
+    )
+    parser.add_argument(
+        "-sn",
+        "--snr",
+        required=True,
+        type=vfloat,
+        help="Threshold SNR to enter saturation regime. (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-bi",
+        "--bias",
+        type=vflopath,
+        help="Bias, either a single value for all channels or else a 3D FITS cube file (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-dk",
+        "--dark",
+        type=vfloat,
+        help="Dark count rate in DN/sec. (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-gn",
+        "--gain",
+        type=vfloat,
+        metavar="<g>",
+        help="Gain [e-/DN] (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-rd",
+        "--read-noise",
+        type=vfloat,
+        metavar="<\u03c3>",
+        help="Read noise [DN] (default: %(default)s)",
+    )
+    parser.add_argument(
+        "-ph",
+        "--physical-units",
+        action="store_true",
+        help="Display in [-e] physical units instead of [DN]. Requires --gain",
+    )
+
 
 # ================
 # MAIN ENTRY POINT
 # ================
 
+
 def main():
-    execute(main_func=linearity, 
-        add_args_func=add_args, 
-        name=__name__, 
+    execute(
+        main_func=linearity,
+        add_args_func=add_args,
+        name=__name__,
         version=__version__,
-        description="Plot sensor exposure linearity per channel"
+        description="Plot sensor exposure linearity per channel",
     )
