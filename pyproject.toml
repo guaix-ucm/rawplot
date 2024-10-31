@@ -47,6 +47,7 @@ rawplot-imarith = "rawplot.imarith:main"
 rawplot-spectral = "rawplot.spectral:main"
 rawplot-photodiode = "rawplot.photodiode:main"
 rawplot-filters = "rawplot.filters:main"
+rawplot-spectess = "rawplot.spectess:main"
 
 [build-system]
 requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
