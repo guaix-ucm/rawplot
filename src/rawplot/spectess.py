@@ -61,29 +61,30 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
-def mpl_spectra_plot_loop(title, x, y, xtitle, ytitle, plot_func, ylabel, **kwargs):
-    fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle(title)
-    axes.set_xlabel(xtitle)
-    axes.set_ylabel(ytitle)
-    filters = kwargs.get("filters", None)
-    plot_func(axes, x, y,  **kwargs)
-    if filters is not None:
-        for filt in filters:
-            axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
-    axes.grid(True, which="major", color="silver", linestyle="solid")
-    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.legend()
+def mpl_raw_spectra_plot_loop(wavelength, frequency, photodiode, **kwargs):
+    fig, axes = plt.subplots(nrows=2, ncols=1)
+    fig.suptitle("Raw Spectral Response plot")
+    for row in range(0, 2):
+            ax = axes[row]
+            ax.set_xlabel("Wavelength [nm]")
+            if row == 0:
+                ax.set_title("TESS-W readings")
+                ax.set_ylabel("Signal [Hz]")
+                ax.plot(wavelength, frequency, marker='+', color="blue", linewidth=1, label="TESS-W")
+            else:
+                ax.set_title("Photodiode readings")
+                ax.set_ylabel("Signal [A]")
+                ax.plot(wavelength, photodiode, marker='+', color="green", linewidth=1, label="Photodiode")
+            filters = kwargs.get("filters")
+            if filters is not None:
+                for filt in filters:
+                    ax.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
+            ax.grid(True, which="major", color="silver", linestyle="solid")
+            ax.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
+            ax.minorticks_on()
+            ax.legend()
     plt.show()
 
-
-def plot_raw_spectral(axes, x, y, **kwargs):
-    wavelength = x
-    signal = y
-    color = "blue"
-    marker = "o"
-    axes.plot(wavelength, signal, marker=marker, color=color, linewidth=1, label="TESS-W")
 
 
 def tess_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -106,6 +107,7 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
     current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
     read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
     log.info("Got %d photodiode readings", wavelength.shape[0])
+    log.info(current)
     return wavelength, current, read_noise
 
 
@@ -116,18 +118,13 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
 
 def raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
-    title = "Raw Spectral Response plot"
     wavelength, frequency, freq_std = tess_readings_to_arrays(args.input_file)
-  
-    mpl_spectra_plot_loop(
-        title=title,
-        plot_func=plot_raw_spectral,
-        xtitle="Wavelength [nm]",
-        ytitle="Signal [DN]",
-        ylabel="good",
-        x=wavelength,
-        y=frequency,
+    _, current, read_noise = photodiode_readings_to_arrays(args.photodiode_file)
+    mpl_raw_spectra_plot_loop(
+        wavelength=wavelength,
+        frequency=frequency,
         # Optional arguments to be handled by the plotting function
+        photodiode=current,
         filters=[
             {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
             {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
@@ -165,7 +162,7 @@ def corrected_spectrum(args):
             units=args.units,
             wave_last=args.wavelength_last,
         )
-    mpl_spectra_plot_loop(
+    mpl_raw_spectra_plot_loop(
         title=title,
         channels=channels,
         plot_func=plot_raw_spectral,
@@ -206,6 +203,13 @@ def add_args(parser):
         type=vfile,
         required=True,
         help="Input frequencies CSV file",
+    )
+    parser_raw.add_argument(
+        "-p",
+        "--photodiode-file",
+        type=vfile,
+        required=True,
+        help="CSV file with photdiode readings",
     )
     # ---------------------------------------------------------------------------------------------------------------
     parser_corr.add_argument(
