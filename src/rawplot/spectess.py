@@ -61,20 +61,20 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
-def mpl_raw_spectra_plot_loop(wavelength, frequency, photodiode, **kwargs):
+def mpl_raw_spectra_plot_loop(wavelength, frequency, photodiode, model, **kwargs):
     fig, axes = plt.subplots(nrows=2, ncols=1)
     fig.suptitle("Raw Spectral Response plot")
     for row in range(0, 2):
             ax = axes[row]
             ax.set_xlabel("Wavelength [nm]")
             if row == 0:
-                ax.set_title("TESS-W readings")
+                ax.set_title("Photometer readings")
                 ax.set_ylabel("Signal [Hz]")
                 ax.plot(wavelength, frequency, marker='+', color="blue", linewidth=1, label="TESS-W")
             else:
                 ax.set_title("Photodiode readings")
                 ax.set_ylabel("Signal [A]")
-                ax.plot(wavelength, photodiode, marker='+', color="green", linewidth=1, label="Photodiode")
+                ax.plot(wavelength, photodiode, marker='+', color="green", linewidth=1, label=model)
             filters = kwargs.get("filters")
             if filters is not None:
                 for filt in filters:
@@ -125,6 +125,7 @@ def raw_spectrum(args):
         frequency=frequency,
         # Optional arguments to be handled by the plotting function
         photodiode=current,
+        model=args.model,
         filters=[
             {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
             {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
@@ -210,6 +211,13 @@ def add_args(parser):
         type=vfile,
         required=True,
         help="CSV file with photdiode readings",
+    )
+    parser_raw.add_argument(
+        "-m",
+        "--model",
+        default=OSI_PHOTODIODE,
+        choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+        help="Photodiode model. (default: %(default)s)",
     )
     # ---------------------------------------------------------------------------------------------------------------
     parser_corr.add_argument(
