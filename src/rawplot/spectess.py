@@ -207,7 +207,6 @@ def corrected_spectrum(args):
     qe = np.array(
         [qe[w] for w in wavelength]
     )  # Only use those wavelenghts actually used in the CSV sequence
-    current = current / np.max(current)  # Normalize photodiode current
     signal = qe * frequency / current
     signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
     if args.export:
