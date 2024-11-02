@@ -97,6 +97,8 @@ env-backup bak_dir:
     fi
     echo "Copy {{ local_env }} => {{ bak_dir }}"
     cp {{ local_env }} {{ bak_dir }}
+    cp spectess/photodiode-stars1277.csv  {{ bak_dir }} || exit 1
+    cp spectess/frequencies-stars1277.csv  {{ bak_dir }} || exit 1
 
 [private]
 env-restore bak_dir:
@@ -108,3 +110,5 @@ env-restore bak_dir:
     fi
     echo "Copy {{ bak_dir }}/.env => {{ local_env }}"
     cp {{ bak_dir }}/.env {{ local_env }}
+    cp {{ bak_dir }}/photodiode-stars1277.csv  spectess || exit 1
+    cp {{ bak_dir }}/frequencies-stars1277.csv  spectess || exit 1
