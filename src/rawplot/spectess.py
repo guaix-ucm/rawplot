@@ -10,11 +10,13 @@
 # System wide imports
 # -------------------
 
-
+import csv
 import math
 import logging
-from typing import Tuple
+from typing import Tuple, Any
 from itertools import groupby
+from collections.abc import Iterable
+from argparse import Namespace
 
 # ---------------------
 # Thrid-party libraries
@@ -60,30 +62,32 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
-def export_spectra_to_csv(path, wavelength, signal, units, wave_last=False):
+
+def export_spectra_to_csv(
+    path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
+) -> None:
     wave_exported = wavelength * 10 if units == "angs" else wavelength
-   
-    if not wave_last:
-        header = [
-                f"Wavelength [{units}]",
-            ] + "signal"
-    else:
-        header = "signal" + [f"Wavelength [{units}]"]
+    header = (
+        ["signal", f"Wavelength [{units}]"] if wave_last else [f"Wavelength [{units}]", "signal"]
+    )
     with open(path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
         writer.writerow(header)
         for row in range(wave_exported.shape[0]):
-            data = [signal[lab][row] for lab in range(COLS)]
-            if not wave_last:
-                data = [wave_exported[row]] + data
-            else:
-                data = data + [wave_exported[row]]
+            data = [signal[row]]
+            data = data + [wave_exported[row]] if wave_last else [wave_exported[row]] + data
             writer.writerow(data)
-   
+
 
 def mpl_raw_spectra_plot_loop(
-    wavelength, frequency, freq_stddev, photodiode, read_noise, model, filters
-):
+    wavelength: np.ndarray,
+    frequency: np.ndarray,
+    freq_stddev: np.ndarray,
+    photodiode: np.ndarray,
+    read_noise: np.ndarray,
+    model: str,
+    filters: Iterable[dict[str, Any]],
+) -> None:
     fig, axes = plt.subplots(nrows=2, ncols=1)
     fig.suptitle("Raw Spectral Response plot")
     for row in range(0, 2):
@@ -129,14 +133,14 @@ def mpl_raw_spectra_plot_loop(
 
 
 def mpl_corrected_spectra_plot_loop(
-    wavelength, signal, model, filters
-):
+    wavelength: np.ndarray, signal: np.ndarray, model: str, filters: Iterable[dict[str, Any]]
+) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle("Corrected Spectral Response plot") 
+    fig.suptitle("Corrected Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
     axes.set_title("Normalized Spectral response")
     axes.set_ylabel("Signal")
-    axes.plot(wavelength, signal, marker='+', color="blue", linewidth=1, label="TESS-W")
+    axes.plot(wavelength, signal, marker="+", color="blue", linewidth=1, label="TESS-W")
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -166,7 +170,6 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
     current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
     read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
     log.info("Got %d photodiode readings", wavelength.shape[0])
-    log.info(current)
     return wavelength, current, read_noise
 
 
@@ -174,7 +177,8 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
-def raw_spectrum(args):
+
+def raw_spectrum(args: Namespace):
     log.info(" === RAW SPECTRAL RESPONSE PLOT === ")
     wavelength, frequency, freq_std = tess_readings_to_arrays(args.input_file)
     _, current, read_noise = photodiode_readings_to_arrays(args.photodiode_file)
@@ -193,7 +197,7 @@ def raw_spectrum(args):
     )
 
 
-def corrected_spectrum(args):
+def corrected_spectrum(args: Namespace):
     log.info(" === CORRECTED SPECTRAL RESPONSE PLOT === ")
     responsivity, qe = photodiode_load(args.model, args.resolution)
     log.info(
@@ -212,10 +216,9 @@ def corrected_spectrum(args):
     if args.export:
         log.info("exporting to CSV file(s)")
         export_spectra_to_csv(
-            labels=['Integral'],
+            path="example.csv",
             wavelength=wavelength,
             signal=signal,
-            mode=args.export,
             units=args.units,
             wave_last=args.wavelength_last,
         )
@@ -236,7 +239,7 @@ COMMAND_TABLE = {
 }
 
 
-def spectess(args):
+def spectess(args: Namespace):
     command = args.command
     func = COMMAND_TABLE[command]
     func(args)
@@ -305,8 +308,10 @@ def add_args(parser):
     )
     parser_corr.add_argument(
         "--export",
-        action="store_true",
-        help="Export to CSV file",
+        type=str,
+        metavar="<FILE>",
+        default=None,
+        help="Export corrected, normalized spectrum to CSV file",
     )
     parser_corr.add_argument(
         "-u",
