@@ -87,28 +87,25 @@ check_mnt mnt:
 [private]
 env-backup bak_dir:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -exuo pipefail
     if [[ ! -f  {{ local_env }} ]]; then
         echo "Can't backup: {{ local_env }} doesn't exists"
         exit 1 
     fi
-    if [[ ! -d  {{ bak_dir }} ]]; then
-        mkdir {{ bak_dir }}
-    fi
-    echo "Copy {{ local_env }} => {{ bak_dir }}"
+    mkdir -p {{ bak_dir }} || exit 1
     cp {{ local_env }} {{ bak_dir }}
-    cp spectess/photodiode-stars1277.csv  {{ bak_dir }} || exit 1
-    cp spectess/frequencies-stars1277.csv  {{ bak_dir }} || exit 1
+    cp spectess/*.csv  {{ bak_dir }} || exit 1
+
 
 [private]
 env-restore bak_dir:
     #!/usr/bin/env bash
-    set -euo pipefail
+    set -euxo pipefail
     if [[ ! -f  {{ bak_dir }}/.env ]]; then
         echo "Can't restore: {{ bak_dir }}/.env doesn't exists"
         exit 1 
     fi
-    echo "Copy {{ bak_dir }}/.env => {{ local_env }}"
     cp {{ bak_dir }}/.env {{ local_env }}
-    cp {{ bak_dir }}/photodiode-stars1277.csv  spectess || exit 1
-    cp {{ bak_dir }}/frequencies-stars1277.csv  spectess || exit 1
+    mkdir -p spectess
+    cp {{ bak_dir }}/*.csv  spectess || exit 1
+
