@@ -133,10 +133,14 @@ def mpl_raw_spectra_plot_loop(
 
 
 def mpl_corrected_spectra_plot_loop(
-    wavelength: np.ndarray, signal: np.ndarray, model: str, normalized: bool | None, filters: Iterable[dict[str, Any]]
+    wavelength: np.ndarray,
+    signal: np.ndarray,
+    model: str,
+    normalized: bool | None,
+    filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
-    #fig.suptitle("Corrected Spectral Response plot")
+    # fig.suptitle("Corrected Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
     axes.set_title("Corrected Spectral response")
     units = "Normalized" if normalized else "[Hz/A]"
@@ -236,22 +240,57 @@ def corrected_spectrum(args: Namespace):
         ],  # where filters were changesd
     )
 
+
 def both_spectra(args: Namespace):
-    with open(args.reference,'r') as ref_file:
+    with open(args.reference, "r") as ref_file:
         reader = csv.DictReader(ref_file, delimiter=";")
         ref_lines = [row for row in reader]
-    with open(args.test,'r') as test_file:
+    with open(args.test, "r") as test_file:
         reader = csv.DictReader(test_file, delimiter=";")
         test_lines = [row for row in reader]
-    log.info(ref_lines)
-    log.info(test_lines)
+    if len(test_lines) != len(ref_lines):
+        raise ValueError("Both sensor spectra files have different lengths")
+    wavelength = np.array([int(float(entry["Wavelength [nm]"])) for entry in ref_lines])
+    ref_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in ref_lines])
+    test_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in test_lines])
+    plot_both_spectra(
+        wavelength=wavelength,
+        ref_spectrum=ref_spectrum,
+        test_spectrum=test_spectrum,
+        filters=[
+            {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
+            {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
+        ],  # where filters were changesd
+    )
 
+
+def plot_both_spectra(
+    wavelength: np.ndarray,
+    ref_spectrum: np.ndarray,
+    test_spectrum: np.ndarray,
+    filters: Iterable[dict[str, Any]],
+) -> None:
+    fig, axes = plt.subplots(nrows=1, ncols=1)
+    fig.suptitle("Compared Spectral Response plot")
+    axes.set_xlabel("Wavelength [nm]")
+    axes.set_title("Spectral response")
+    units = "Normalized" if False else "[Hz/A]"
+    axes.set_ylabel(f"Signal {units}")
+    axes.plot(wavelength, ref_spectrum, marker="+", color="blue", linewidth=1, label="REF")
+    axes.plot(wavelength, test_spectrum, marker="+", color="red", linewidth=1, label="TEST")
+    for filt in filters:
+        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
+    axes.grid(True, which="major", color="silver", linestyle="solid")
+    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
 
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
-    "both" : both_spectra,
+    "both": both_spectra,
 }
 
 
@@ -366,6 +405,8 @@ def add_args(parser):
         help="CSV file with test sensor spectrum",
     )
     # --------------------------------------------------------------------------------------------------------------
+
+
 # ================
 # MAIN ENTRY POINT
 # ================
