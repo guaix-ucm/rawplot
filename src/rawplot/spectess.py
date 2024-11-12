@@ -133,13 +133,14 @@ def mpl_raw_spectra_plot_loop(
 
 
 def mpl_corrected_spectra_plot_loop(
-    wavelength: np.ndarray, signal: np.ndarray, model: str, filters: Iterable[dict[str, Any]]
+    wavelength: np.ndarray, signal: np.ndarray, model: str, normalized: bool | None, filters: Iterable[dict[str, Any]]
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle("Corrected Spectral Response plot")
+    #fig.suptitle("Corrected Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
-    axes.set_title("Normalized Spectral response")
-    axes.set_ylabel("Signal")
+    axes.set_title("Corrected Spectral response")
+    units = "Normalized" if normalized else "[Hz/A]"
+    axes.set_ylabel(f"Signal {units}")
     axes.plot(wavelength, signal, marker="+", color="blue", linewidth=1, label="TESS-W")
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
@@ -212,11 +213,13 @@ def corrected_spectrum(args: Namespace):
         [qe[w] for w in wavelength]
     )  # Only use those wavelenghts actually used in the CSV sequence
     signal = qe * frequency / current
-    signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
+    if args.normalize:
+        log.info("normalizing signal")
+        signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun
     if args.export:
-        log.info("exporting to CSV file(s)")
+        log.info("exporting to CSV file %s", args.export)
         export_spectra_to_csv(
-            path="example.csv",
+            path=args.export,
             wavelength=wavelength,
             signal=signal,
             units=args.units,
@@ -226,23 +229,26 @@ def corrected_spectrum(args: Namespace):
         wavelength=wavelength,
         signal=signal,
         model=args.model,
+        normalized=args.normalize,
         filters=[
             {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
             {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
         ],  # where filters were changesd
     )
 
+def both_spectra(args: Namespace):
+    pass
+
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
+    "both_sensors" : both_spectra,
 }
 
 
 def spectess(args: Namespace):
-    command = args.command
-    func = COMMAND_TABLE[command]
-    func(args)
+    COMMAND_TABLE[args.command](args)
 
 
 # ===================================
@@ -252,8 +258,9 @@ def spectess(args: Namespace):
 
 def add_args(parser):
     subparser = parser.add_subparsers(dest="command")
-    parser_raw = subparser.add_parser("raw", help="Raw spectrum")
-    parser_corr = subparser.add_parser("corrected", help="Correced spectrum")
+    parser_raw = subparser.add_parser("raw", help="Plot single sennor raw spectrum")
+    parser_corr = subparser.add_parser("corrected", help="Plot single sensor corrected spectrum")
+    parser_both = subparser.add_parser("both", help="Plot both Reference and Test sensors")
     # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument(
         "-i",
@@ -297,6 +304,12 @@ def add_args(parser):
         default=OSI_PHOTODIODE,
         choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
         help="Photodiode model. (default: %(default)s)",
+    )
+    parser_corr.add_argument(
+        "-nr",
+        "--normalize",
+        action="store_true",
+        help="Normalize spectral response respect to maximum peak",
     )
     parser_corr.add_argument(
         "-r",
@@ -328,8 +341,23 @@ def add_args(parser):
         help="Wavelength is last column in exported file",
     )
     # ---------------------------------------------------------------------------------------------------------------
-
-
+    parser_both.add_argument(
+        "-r",
+        "--reference",
+        type=vfile,
+        metavar="<CSV FILE>",
+        required=True,
+        help="CSV file with reference sensor spectrum",
+    )
+    parser_both.add_argument(
+        "-t",
+        "--test",
+        type=vfile,
+        metavar="<CSV FILE>",
+        required=True,
+        help="CSV file with test sensor spectrum",
+    )
+    # --------------------------------------------------------------------------------------------------------------
 # ================
 # MAIN ENTRY POINT
 # ================
