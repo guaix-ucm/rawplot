@@ -237,13 +237,21 @@ def corrected_spectrum(args: Namespace):
     )
 
 def both_spectra(args: Namespace):
-    pass
+    with open(args.reference,'r') as ref_file:
+        reader = csv.DictReader(ref_file, delimiter=";")
+        ref_lines = [row for row in reader]
+    with open(args.test,'r') as test_file:
+        reader = csv.DictReader(test_file, delimiter=";")
+        test_lines = [row for row in reader]
+    log.info(ref_lines)
+    log.info(test_lines)
+
 
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
-    "both_sensors" : both_spectra,
+    "both" : both_spectra,
 }
 
 
