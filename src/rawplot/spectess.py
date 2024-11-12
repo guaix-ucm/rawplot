@@ -253,10 +253,17 @@ def both_spectra(args: Namespace):
     wavelength = np.array([int(float(entry["Wavelength [nm]"])) for entry in ref_lines])
     ref_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in ref_lines])
     test_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in test_lines])
+    if args.normalize:
+        k_norm = max(np.max(ref_spectrum), np.max(test_spectrum))
+        ref_spectrum = ref_spectrum / k_norm
+        test_spectrum = test_spectrum / k_norm
     plot_both_spectra(
         wavelength=wavelength,
         ref_spectrum=ref_spectrum,
         test_spectrum=test_spectrum,
+        normalized=args.normalize,
+        ref_sensor=args.ref_sensor,
+        test_sensor=args.test_sensor,
         filters=[
             {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
             {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
@@ -267,17 +274,20 @@ def both_spectra(args: Namespace):
 def plot_both_spectra(
     wavelength: np.ndarray,
     ref_spectrum: np.ndarray,
+    ref_sensor: str,
     test_spectrum: np.ndarray,
+    test_sensor: str,
+    normalized: bool | None,
     filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
     fig.suptitle("Compared Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
     axes.set_title("Spectral response")
-    units = "Normalized" if False else "[Hz/A]"
+    units = "Normalized" if normalized else "[Hz/A]"
     axes.set_ylabel(f"Signal {units}")
-    axes.plot(wavelength, ref_spectrum, marker="+", color="blue", linewidth=1, label="REF")
-    axes.plot(wavelength, test_spectrum, marker="+", color="red", linewidth=1, label="TEST")
+    axes.plot(wavelength, ref_spectrum, marker="+", color="blue", linewidth=1, label=ref_sensor)
+    axes.plot(wavelength, test_spectrum, marker="+", color="red", linewidth=1, label=test_sensor)
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -397,12 +407,32 @@ def add_args(parser):
         help="CSV file with reference sensor spectrum",
     )
     parser_both.add_argument(
+        "-rs",
+        "--ref-sensor",
+        type=str,
+        default="TSL237",
+        help="Reference Sensor Model",
+    )
+    parser_both.add_argument(
         "-t",
         "--test",
         type=vfile,
         metavar="<CSV FILE>",
         required=True,
         help="CSV file with test sensor spectrum",
+    )
+    parser_both.add_argument(
+        "-ts",
+        "--test-sensor",
+        type=str,
+        default="Hamamatsu",
+        help="test Sensor Model",
+    )
+    parser_both.add_argument(
+        "-nr",
+        "--normalize",
+        action="store_true",
+        help="Normalize spectral response respect to maximum peak",
     )
     # --------------------------------------------------------------------------------------------------------------
 
