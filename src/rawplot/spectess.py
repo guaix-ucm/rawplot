@@ -35,7 +35,7 @@ from lica.asyncio.photometer import Sensor
 # ------------------------
 
 from ._version import __version__
-from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
+from .photodiode import photodiode_load, Photodiode
 
 # ----------------
 # Module constants
@@ -69,10 +69,6 @@ plt.style.use("rawplot.resources.global")
 # -------------------
 # Auxiliary functions
 # -------------------
-
-
-
-
 
 def mpl_raw_spectra_plot_loop(
     wavelength: np.ndarray,
@@ -151,45 +147,6 @@ def mpl_corrected_spectra_plot_loop(
     axes.legend()
     plt.show()
 
-def mpl_plot_both_spectra_loop(
-    wavelength: np.ndarray,
-    ref_spectrum: np.ndarray,
-    ref_sensor: str,
-    test_spectrum: np.ndarray,
-    test_sensor: str,
-    normalized: bool | None,
-    filters: Iterable[dict[str, Any]],
-) -> None:
-    fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle("Compared Spectral Response plot")
-    axes.set_xlabel("Wavelength [nm]")
-    axes.set_title("Spectral response")
-    units = "Normalized" if normalized else "[Hz/A]"
-    axes.set_ylabel(f"Signal {units}")
-    axes.plot(
-        wavelength,
-        ref_spectrum,
-        marker="+",
-        color="blue",
-        linewidth=1,
-        label=f"TESS-W ({ref_sensor})",
-    )
-    axes.plot(
-        wavelength,
-        test_spectrum,
-        marker="+",
-        color="red",
-        linewidth=1,
-        label=f"TESS-W ({test_sensor})",
-    )
-    for filt in filters:
-        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
-    axes.grid(True, which="major", color="silver", linestyle="solid")
-    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.legend()
-    plt.show()
-
 
 def mpl_compared_spectra_plot_loop(
     wavelength: np.ndarray,
@@ -229,6 +186,7 @@ def mpl_compared_spectra_plot_loop(
     axes.legend()
     plt.show()
 
+
 def export_spectra_to_csv(
     path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
 ) -> None:
@@ -243,6 +201,7 @@ def export_spectra_to_csv(
             data = [signal[row]]
             data = data + [wave_exported[row]] if wave_last else [wave_exported[row]] + data
             writer.writerow(data)
+
 
 def tess_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     response = read_csv(csv_path)
@@ -351,12 +310,25 @@ def both_spectra(args: Namespace):
     )
 
 def both_photodiodes(args: Namespace):
-    pass
+    ref_wavelength, ref_current, ref_read_noise = photodiode_readings_to_arrays(args.reference)
+    tst_wavelength, tst_current, tst_read_noise = photodiode_readings_to_arrays(args.test)
+    mpl_compared_spectra_plot_loop(
+        wavelength=ref_wavelength,
+        ref_signal=ref_current,
+        ref_label = f"Ref. Photod. for {args.ref_sensor}",
+        test_signal=tst_current,
+        test_label = f"Test Photod. for {args.test_sensor}",
+        ylabel = "Signal (normalized)" if args.normalize else "Signal [A]",
+        filters=CUTOFF_FILTERS  # where filters were changed
+    )
+
+
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
     "both": both_spectra,
+    "photod": both_photodiodes,
 }
 
 
@@ -371,9 +343,10 @@ def spectess(args: Namespace):
 
 def add_args(parser):
     subparser = parser.add_subparsers(dest="command")
-    parser_raw = subparser.add_parser("raw", help="Plot single sennor raw spectrum")
+    parser_raw = subparser.add_parser("raw", help="Plot single sensor raw spectrum")
     parser_corr = subparser.add_parser("corrected", help="Plot single sensor corrected spectrum")
     parser_both = subparser.add_parser("both", help="Plot both Reference and Test sensors")
+    parser_photod = subparser.add_parser("photod", help="Plot both Reference and Test photodiode readings")
     # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument(
         "-i",
@@ -392,8 +365,8 @@ def add_args(parser):
     parser_raw.add_argument(
         "-m",
         "--model",
-        default=OSI_PHOTODIODE,
-        choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+        default=Photodiode.OSI.value,
+        choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
     parser_raw.add_argument(
@@ -421,8 +394,8 @@ def add_args(parser):
     parser_corr.add_argument(
         "-m",
         "--model",
-        default=OSI_PHOTODIODE,
-        choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+        default=Photodiode.OSI.value,
+        choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
     parser_corr.add_argument(
@@ -479,7 +452,7 @@ def add_args(parser):
     parser_both.add_argument(
         "-rs",
         "--ref-sensor",
-        choices=[Sensor.TSL237.value, Sensor.S970501DT.value],
+        choices=[s.value for s in Sensor],
         default=Sensor.TSL237.value,
         help="Reference Sensor Model (default %(default)s)",
     )
@@ -505,7 +478,42 @@ def add_args(parser):
         help="Normalize spectral response respect to maximum peak",
     )
     # --------------------------------------------------------------------------------------------------------------
-
+    parser_photod.add_argument(
+        "-r",
+        "--reference",
+        type=vfile,
+        metavar="<CSV FILE>",
+        required=True,
+        help="CSV file with reference photodiode readings",
+    )
+    parser_photod.add_argument(
+        "-t",
+        "--test",
+        type=vfile,
+        metavar="<CSV FILE>",
+        required=True,
+        help="CSV file with test photodiode readings",
+    )
+    parser_photod.add_argument(
+        "-rs",
+        "--ref-sensor",
+        choices=[s.value for s in Sensor],
+        default=Sensor.TSL237.value,
+        help="Reference Sensor Model (default %(default)s)",
+    )
+    parser_photod.add_argument(
+        "-ts",
+        "--test-sensor",
+        choices=[s.value for s in Sensor],
+        default=Sensor.S970501DT.value,
+        help="Test Sensor Model (default %(default)s)",
+    )
+    parser_photod.add_argument(
+        "-nr",
+        "--normalize",
+        action="store_true",
+        help="Normalize spectral response respect to maximum peak",
+    )
 
 # ================
 # MAIN ENTRY POINT

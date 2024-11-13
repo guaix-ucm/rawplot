@@ -11,6 +11,7 @@
 # -------------------
 
 import csv
+import enum
 import logging
 
 from importlib.resources import files
@@ -33,6 +34,11 @@ from ._version import __version__
 # ----------------
 # Module constants
 # ----------------
+
+class Photodiode(enum.Enum):
+    # Photodiode models
+    OSI = "OSI-11-01-004-10D"
+    HAMAMATSU = "Ham-S2281-04"
 
 OSI_PHOTODIODE = "OSI-11-01-004-10D"
 HAMAMATSU_PHOTODIODE = "Ham-S2281-04"
@@ -149,8 +155,8 @@ def add_args(parser):
     parser_plot.add_argument(
         "-m",
         "--model",
-        default=OSI_PHOTODIODE,
-        choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+        default=Photodiode.OSI,
+        choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
     parser_plot.add_argument(
@@ -165,8 +171,8 @@ def add_args(parser):
     parser_expo.add_argument(
         "-m",
         "--model",
-        default=OSI_PHOTODIODE,
-        choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
+        default=Photodiode.OSI,
+        choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
     parser_expo.add_argument(
