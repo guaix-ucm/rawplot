@@ -45,6 +45,9 @@ from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 WAVELENGTH_CSV_HEADER = "wavelength (nm)"
 CURRENT_CSV_HEADER = "current (A)"
 READ_NOISE_CSV_HEADER = "read noise (A)"
+FREQUENCY_CSV_HEADER = "frequency (Hz)"
+SIGNAL_CSV_HEADER = "signal"
+
 CUTOFF_FILTERS = [
     {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
     {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
@@ -63,25 +66,12 @@ log = logging.getLogger(__name__)
 # Load global style sheets
 plt.style.use("rawplot.resources.global")
 
-# ------------------
-# Auxiliary fnctions
-# ------------------
+# -------------------
+# Auxiliary functions
+# -------------------
 
 
-def export_spectra_to_csv(
-    path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
-) -> None:
-    wave_exported = wavelength * 10 if units == "angs" else wavelength
-    header = (
-        ["signal", f"Wavelength [{units}]"] if wave_last else [f"Wavelength [{units}]", "signal"]
-    )
-    with open(path, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile, delimiter=";")
-        writer.writerow(header)
-        for row in range(wave_exported.shape[0]):
-            data = [signal[row]]
-            data = data + [wave_exported[row]] if wave_last else [wave_exported[row]] + data
-            writer.writerow(data)
+
 
 
 def mpl_raw_spectra_plot_loop(
@@ -161,14 +151,106 @@ def mpl_corrected_spectra_plot_loop(
     axes.legend()
     plt.show()
 
+def mpl_plot_both_spectra_loop(
+    wavelength: np.ndarray,
+    ref_spectrum: np.ndarray,
+    ref_sensor: str,
+    test_spectrum: np.ndarray,
+    test_sensor: str,
+    normalized: bool | None,
+    filters: Iterable[dict[str, Any]],
+) -> None:
+    fig, axes = plt.subplots(nrows=1, ncols=1)
+    fig.suptitle("Compared Spectral Response plot")
+    axes.set_xlabel("Wavelength [nm]")
+    axes.set_title("Spectral response")
+    units = "Normalized" if normalized else "[Hz/A]"
+    axes.set_ylabel(f"Signal {units}")
+    axes.plot(
+        wavelength,
+        ref_spectrum,
+        marker="+",
+        color="blue",
+        linewidth=1,
+        label=f"TESS-W ({ref_sensor})",
+    )
+    axes.plot(
+        wavelength,
+        test_spectrum,
+        marker="+",
+        color="red",
+        linewidth=1,
+        label=f"TESS-W ({test_sensor})",
+    )
+    for filt in filters:
+        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
+    axes.grid(True, which="major", color="silver", linestyle="solid")
+    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
+
+
+def mpl_compared_spectra_plot_loop(
+    wavelength: np.ndarray,
+    ref_signal: np.ndarray,
+    ref_label: str,
+    test_signal: np.ndarray,
+    test_label: str,
+    ylabel: str,
+    filters: Iterable[dict[str, Any]],
+) -> None:
+    fig, axes = plt.subplots(nrows=1, ncols=1)
+    fig.suptitle("Compared Spectral Response plot")
+    axes.set_xlabel("Wavelength [nm]")
+    axes.set_title("Spectral response")
+    axes.set_ylabel(ylabel)
+    axes.plot(
+        wavelength,
+        ref_signal,
+        marker="+",
+        color="blue",
+        linewidth=1,
+        label=ref_label,
+    )
+    axes.plot(
+        wavelength,
+        test_signal,
+        marker="+",
+        color="red",
+        linewidth=1,
+        label=test_label,
+    )
+    for filt in filters:
+        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
+    axes.grid(True, which="major", color="silver", linestyle="solid")
+    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
+
+def export_spectra_to_csv(
+    path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
+) -> None:
+    wave_exported = wavelength * 10 if units == "angs" else wavelength
+    header = (
+        ["signal", f"wavelength ({units})"] if wave_last else [f"wavelength ({units})", SIGNAL_CSV_HEADER]
+    )
+    with open(path, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile, delimiter=";")
+        writer.writerow(header)
+        for row in range(wave_exported.shape[0]):
+            data = [signal[row]]
+            data = data + [wave_exported[row]] if wave_last else [wave_exported[row]] + data
+            writer.writerow(data)
 
 def tess_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     response = read_csv(csv_path)
     wavelength = list()
     freq_mean = list()
     freq_std = list()
-    for key, grp in groupby(response, key=lambda x: x["wavelength"]):
-        freqs = [float(x["frequency"]) for x in grp]
+    for key, grp in groupby(response, key=lambda x: x[WAVELENGTH_CSV_HEADER]):
+        freqs = [float(x[FREQUENCY_CSV_HEADER]) for x in grp]
         freq_mean.append(np.mean(np.array(freqs)))
         freq_std.append(np.std(np.array(freqs), ddof=1))
         wavelength.append(float(key))
@@ -188,7 +270,6 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
 # -----------------------
 # AUXILIARY MAIN FUNCTION
 # -----------------------
-
 
 def raw_spectrum(args: Namespace):
     log.info(" === RAW SPECTRAL RESPONSE PLOT === ")
@@ -252,63 +333,25 @@ def both_spectra(args: Namespace):
         test_lines = [row for row in reader]
     if len(test_lines) != len(ref_lines):
         raise ValueError("Both sensor spectra files have different lengths")
-    wavelength = np.array([int(float(entry["Wavelength [nm]"])) for entry in ref_lines])
-    ref_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in ref_lines])
-    test_spectrum = np.array([math.fabs(float(entry["signal"])) for entry in test_lines])
+    wavelength = np.array([int(float(entry[WAVELENGTH_CSV_HEADER])) for entry in ref_lines])
+    ref_spectrum = np.array([math.fabs(float(entry[SIGNAL_CSV_HEADER])) for entry in ref_lines])
+    test_spectrum = np.array([math.fabs(float(entry[SIGNAL_CSV_HEADER])) for entry in test_lines])
     if args.normalize:
         k_norm = max(np.max(ref_spectrum), np.max(test_spectrum))
         ref_spectrum = ref_spectrum / k_norm
         test_spectrum = test_spectrum / k_norm
-    plot_both_spectra(
+    mpl_compared_spectra_plot_loop(
         wavelength=wavelength,
-        ref_spectrum=ref_spectrum,
-        test_spectrum=test_spectrum,
-        normalized=args.normalize,
-        ref_sensor=args.ref_sensor,
-        test_sensor=args.test_sensor,
+        ref_signal=ref_spectrum,
+        ref_label = f"TESS-W ({args.ref_sensor})",
+        test_signal=test_spectrum,
+        test_label = f"TESS-W ({args.test_sensor})",
+        ylabel = "Signal (normalized)" if args.normalize else "Signal [Hz/A]",
         filters=CUTOFF_FILTERS  # where filters were changed
     )
 
-
-def plot_both_spectra(
-    wavelength: np.ndarray,
-    ref_spectrum: np.ndarray,
-    ref_sensor: str,
-    test_spectrum: np.ndarray,
-    test_sensor: str,
-    normalized: bool | None,
-    filters: Iterable[dict[str, Any]],
-) -> None:
-    fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle("Compared Spectral Response plot")
-    axes.set_xlabel("Wavelength [nm]")
-    axes.set_title("Spectral response")
-    units = "Normalized" if normalized else "[Hz/A]"
-    axes.set_ylabel(f"Signal {units}")
-    axes.plot(
-        wavelength,
-        ref_spectrum,
-        marker="+",
-        color="blue",
-        linewidth=1,
-        label=f"TESS-W ({ref_sensor})",
-    )
-    axes.plot(
-        wavelength,
-        test_spectrum,
-        marker="+",
-        color="red",
-        linewidth=1,
-        label=f"TESS-W ({test_sensor})",
-    )
-    for filt in filters:
-        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
-    axes.grid(True, which="major", color="silver", linestyle="solid")
-    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
-    axes.minorticks_on()
-    axes.legend()
-    plt.show()
-
+def both_photodiodes(args: Namespace):
+    pass
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
