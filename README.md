@@ -34,6 +34,7 @@ The available commands list can be found in the `bin` virtual environment sub-fo
 .venv/bin/rawplot-ptc
 .venv/bin/rawplot-snr
 .venv/bin/rawplot-spectral
+.venv/bin/rawplot-spectess
  ```
 
 ## Common options

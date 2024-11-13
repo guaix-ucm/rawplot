@@ -155,7 +155,7 @@ def add_args(parser):
     parser_plot.add_argument(
         "-m",
         "--model",
-        default=Photodiode.OSI,
+        default=Photodiode.OSI.value,
         choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
@@ -171,7 +171,7 @@ def add_args(parser):
     parser_expo.add_argument(
         "-m",
         "--model",
-        default=Photodiode.OSI,
+        default=Photodiode.OSI.value,
         choices=[p.value for p in Photodiode],
         help="Photodiode model. (default: %(default)s)",
     )
