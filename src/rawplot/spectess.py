@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from lica.cli import execute
 from lica.validators import vfile
 from lica.csv import read_csv
+from lica.asyncio.photometer import Sensor
 
 # ------------------------
 # Own modules and packages
@@ -44,6 +45,10 @@ from .photodiode import photodiode_load, OSI_PHOTODIODE, HAMAMATSU_PHOTODIODE
 WAVELENGTH_CSV_HEADER = "wavelength (nm)"
 CURRENT_CSV_HEADER = "current (A)"
 READ_NOISE_CSV_HEADER = "read noise (A)"
+CUTOFF_FILTERS = [
+    {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
+    {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
+]
 
 # -----------------------
 # Module global variables
@@ -86,6 +91,7 @@ def mpl_raw_spectra_plot_loop(
     photodiode: np.ndarray,
     read_noise: np.ndarray,
     model: str,
+    sensor: str,
     filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=2, ncols=1)
@@ -106,7 +112,7 @@ def mpl_raw_spectra_plot_loop(
                 marker="+",
                 color="blue",
                 linewidth=1,
-                label="TESS-W",
+                label=f"TESS-W/{sensor}",
             )
         else:
             ax.set_title("Photodiode readings")
@@ -136,6 +142,7 @@ def mpl_corrected_spectra_plot_loop(
     wavelength: np.ndarray,
     signal: np.ndarray,
     model: str,
+    sensor: str,
     normalized: bool | None,
     filters: Iterable[dict[str, Any]],
 ) -> None:
@@ -145,7 +152,7 @@ def mpl_corrected_spectra_plot_loop(
     axes.set_title("Corrected Spectral response")
     units = "Normalized" if normalized else "[Hz/A]"
     axes.set_ylabel(f"Signal {units}")
-    axes.plot(wavelength, signal, marker="+", color="blue", linewidth=1, label="TESS-W")
+    axes.plot(wavelength, signal, marker="+", color="blue", linewidth=1, label=f"TESS-W ({sensor})")
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -194,11 +201,8 @@ def raw_spectrum(args: Namespace):
         photodiode=current,
         read_noise=read_noise,
         model=args.model,
-        # Optional arguments to be handled by the plotting function
-        filters=[
-            {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
-            {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
-        ],  # where filters were changesd
+        sensor=args.sensor,
+        filters=CUTOFF_FILTERS  # where filters were changed
     )
 
 
@@ -233,11 +237,9 @@ def corrected_spectrum(args: Namespace):
         wavelength=wavelength,
         signal=signal,
         model=args.model,
+        sensor=args.sensor,
         normalized=args.normalize,
-        filters=[
-            {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
-            {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
-        ],  # where filters were changesd
+        filters=CUTOFF_FILTERS  # where filters were changed
     )
 
 
@@ -264,10 +266,7 @@ def both_spectra(args: Namespace):
         normalized=args.normalize,
         ref_sensor=args.ref_sensor,
         test_sensor=args.test_sensor,
-        filters=[
-            {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
-            {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
-        ],  # where filters were changesd
+        filters=CUTOFF_FILTERS  # where filters were changed
     )
 
 
@@ -286,8 +285,22 @@ def plot_both_spectra(
     axes.set_title("Spectral response")
     units = "Normalized" if normalized else "[Hz/A]"
     axes.set_ylabel(f"Signal {units}")
-    axes.plot(wavelength, ref_spectrum, marker="+", color="blue", linewidth=1, label=ref_sensor)
-    axes.plot(wavelength, test_spectrum, marker="+", color="red", linewidth=1, label=test_sensor)
+    axes.plot(
+        wavelength,
+        ref_spectrum,
+        marker="+",
+        color="blue",
+        linewidth=1,
+        label=f"TESS-W ({ref_sensor})",
+    )
+    axes.plot(
+        wavelength,
+        test_spectrum,
+        marker="+",
+        color="red",
+        linewidth=1,
+        label=f"TESS-W ({test_sensor})",
+    )
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -340,6 +353,13 @@ def add_args(parser):
         choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
         help="Photodiode model. (default: %(default)s)",
     )
+    parser_raw.add_argument(
+        "-s",
+        "--sensor",
+        choices=[s.value for s in Sensor],
+        default=Sensor.TSL237.value,
+        help="Reference Sensor Model (default %(default)s)",
+    )
     # ---------------------------------------------------------------------------------------------------------------
     parser_corr.add_argument(
         "-i",
@@ -361,6 +381,13 @@ def add_args(parser):
         default=OSI_PHOTODIODE,
         choices=(HAMAMATSU_PHOTODIODE, OSI_PHOTODIODE),
         help="Photodiode model. (default: %(default)s)",
+    )
+    parser_corr.add_argument(
+        "-s",
+        "--sensor",
+        choices=[s.value for s in Sensor],
+        default=Sensor.TSL237.value,
+        help="Reference Sensor Model (default %(default)s)",
     )
     parser_corr.add_argument(
         "-nr",
@@ -409,9 +436,9 @@ def add_args(parser):
     parser_both.add_argument(
         "-rs",
         "--ref-sensor",
-        type=str,
-        default="TSL237",
-        help="Reference Sensor Model",
+        choices=[Sensor.TSL237.value, Sensor.S970501DT.value],
+        default=Sensor.TSL237.value,
+        help="Reference Sensor Model (default %(default)s)",
     )
     parser_both.add_argument(
         "-t",
@@ -424,9 +451,9 @@ def add_args(parser):
     parser_both.add_argument(
         "-ts",
         "--test-sensor",
-        type=str,
-        default="Hamamatsu",
-        help="test Sensor Model",
+        choices=[s.value for s in Sensor],
+        default=Sensor.S970501DT.value,
+        help="Test Sensor Model (default %(default)s)",
     )
     parser_both.add_argument(
         "-nr",
