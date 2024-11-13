@@ -187,12 +187,45 @@ def mpl_compared_spectra_plot_loop(
     plt.show()
 
 
+def mpl_photodiodes_diff_plot_loop(
+    wavelength: np.ndarray,
+    signal: np.ndarray,
+    rdnoise: np.ndarray,
+    filters: Iterable[dict[str, Any]],
+) -> None:
+    fig, axes = plt.subplots(nrows=1, ncols=1)
+    # fig.suptitle("Corrected Spectral Response plot")
+    axes.set_xlabel("Wavelength [nm]")
+    axes.set_title("Photodiode readings comparison")
+    axes.set_ylabel("Current difference [A]")
+    axes.errorbar(
+        wavelength,
+        signal,
+        yerr=rdnoise,
+        uplims=True,
+        lolims=True,
+        marker="+",
+        color="blue",
+        linewidth=1,
+        label="diff with bar errors",
+    )
+    for filt in filters:
+        axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
+    axes.grid(True, which="major", color="silver", linestyle="solid")
+    axes.grid(True, which="minor", color="silver", linestyle=(0, (1, 10)))
+    axes.minorticks_on()
+    axes.legend()
+    plt.show()
+
+
 def export_spectra_to_csv(
     path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
 ) -> None:
     wave_exported = wavelength * 10 if units == "angs" else wavelength
     header = (
-        ["signal", f"wavelength ({units})"] if wave_last else [f"wavelength ({units})", SIGNAL_CSV_HEADER]
+        ["signal", f"wavelength ({units})"]
+        if wave_last
+        else [f"wavelength ({units})", SIGNAL_CSV_HEADER]
     )
     with open(path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
@@ -230,6 +263,7 @@ def photodiode_readings_to_arrays(csv_path: str) -> Tuple[np.ndarray, np.ndarray
 # AUXILIARY MAIN FUNCTION
 # -----------------------
 
+
 def raw_spectrum(args: Namespace):
     log.info(" === RAW SPECTRAL RESPONSE PLOT === ")
     wavelength, frequency, freq_std = tess_readings_to_arrays(args.input_file)
@@ -242,7 +276,7 @@ def raw_spectrum(args: Namespace):
         read_noise=read_noise,
         model=args.model,
         sensor=args.sensor,
-        filters=CUTOFF_FILTERS  # where filters were changed
+        filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
 
@@ -279,7 +313,7 @@ def corrected_spectrum(args: Namespace):
         model=args.model,
         sensor=args.sensor,
         normalized=args.normalize,
-        filters=CUTOFF_FILTERS  # where filters were changed
+        filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
 
@@ -302,33 +336,30 @@ def both_spectra(args: Namespace):
     mpl_compared_spectra_plot_loop(
         wavelength=wavelength,
         ref_signal=ref_spectrum,
-        ref_label = f"TESS-W ({args.ref_sensor})",
+        ref_label=f"TESS-W ({args.ref_sensor})",
         test_signal=test_spectrum,
-        test_label = f"TESS-W ({args.test_sensor})",
-        ylabel = "Signal (normalized)" if args.normalize else "Signal [Hz/A]",
-        filters=CUTOFF_FILTERS  # where filters were changed
+        test_label=f"TESS-W ({args.test_sensor})",
+        ylabel="Signal (normalized)" if args.normalize else "Signal [Hz/A]",
+        filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
-def both_photodiodes(args: Namespace):
+
+def photodiodes(args: Namespace):
     ref_wavelength, ref_current, ref_read_noise = photodiode_readings_to_arrays(args.reference)
     tst_wavelength, tst_current, tst_read_noise = photodiode_readings_to_arrays(args.test)
-    mpl_compared_spectra_plot_loop(
+    mpl_photodiodes_diff_plot_loop(
         wavelength=ref_wavelength,
-        ref_signal=ref_current,
-        ref_label = f"Ref. Photod. for {args.ref_sensor}",
-        test_signal=tst_current,
-        test_label = f"Test Photod. for {args.test_sensor}",
-        ylabel = "Signal (normalized)" if args.normalize else "Signal [A]",
-        filters=CUTOFF_FILTERS  # where filters were changed
+        signal=ref_current - tst_current,
+        rdnoise=np.sqrt(np.square(ref_read_noise) + np.square(tst_read_noise)),
+        filters=CUTOFF_FILTERS,  # where filters were changed
     )
-
 
 
 COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
     "both": both_spectra,
-    "photod": both_photodiodes,
+    "photodiode": photodiodes,
 }
 
 
@@ -346,7 +377,9 @@ def add_args(parser):
     parser_raw = subparser.add_parser("raw", help="Plot single sensor raw spectrum")
     parser_corr = subparser.add_parser("corrected", help="Plot single sensor corrected spectrum")
     parser_both = subparser.add_parser("both", help="Plot both Reference and Test sensors")
-    parser_photod = subparser.add_parser("photod", help="Plot both Reference and Test photodiode readings")
+    parser_photod = subparser.add_parser(
+        "photodiode", help="Plot Reference and Test photodiode reading differences"
+    )
     # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument(
         "-i",
@@ -494,26 +527,7 @@ def add_args(parser):
         required=True,
         help="CSV file with test photodiode readings",
     )
-    parser_photod.add_argument(
-        "-rs",
-        "--ref-sensor",
-        choices=[s.value for s in Sensor],
-        default=Sensor.TSL237.value,
-        help="Reference Sensor Model (default %(default)s)",
-    )
-    parser_photod.add_argument(
-        "-ts",
-        "--test-sensor",
-        choices=[s.value for s in Sensor],
-        default=Sensor.S970501DT.value,
-        help="Test Sensor Model (default %(default)s)",
-    )
-    parser_photod.add_argument(
-        "-nr",
-        "--normalize",
-        action="store_true",
-        help="Normalize spectral response respect to maximum peak",
-    )
+
 
 # ================
 # MAIN ENTRY POINT
