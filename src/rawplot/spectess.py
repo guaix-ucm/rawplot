@@ -138,7 +138,7 @@ def mpl_corrected_spectra_plot_loop(
     axes.set_title("Corrected Spectral response")
     units = "Normalized" if normalized else "[Hz/A]"
     axes.set_ylabel(f"Signal {units}")
-    axes.plot(wavelength, signal, marker="+", color="blue", linewidth=1, label=f"TESS-W ({sensor})")
+    axes.plot(wavelength, signal, marker="+", linewidth=1, color="blue", label=f"TESS-W ({sensor})")
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -191,23 +191,34 @@ def mpl_photodiodes_diff_plot_loop(
     wavelength: np.ndarray,
     signal: np.ndarray,
     rdnoise: np.ndarray,
+    relative: bool,
     filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
     # fig.suptitle("Corrected Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
     axes.set_title("Photodiode readings comparison")
-    axes.set_ylabel("Current difference [A]")
-    axes.errorbar(
-        wavelength,
-        signal,
-        yerr=rdnoise,
-        uplims=True,
-        lolims=True,
-        marker="+",
-        color="blue",
-        linewidth=1,
-        label="diff with bar errors",
+    if not relative:
+        axes.set_ylabel("Current difference [A]")
+        axes.errorbar(
+            wavelength,
+            signal,
+            yerr=rdnoise,
+            color="blue",
+            uplims=True,
+            lolims=True,
+            marker="+",
+            linewidth=1,
+        )
+    else:
+        axes.set_ylabel("Current difference [%]")
+        signal = signal * 100
+        axes.plot(
+            wavelength,
+            signal,
+            color="blue",
+            marker="+",
+            linewidth=1,
     )
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
@@ -347,10 +358,13 @@ def both_spectra(args: Namespace):
 def photodiodes(args: Namespace):
     ref_wavelength, ref_current, ref_read_noise = photodiode_readings_to_arrays(args.reference)
     tst_wavelength, tst_current, tst_read_noise = photodiode_readings_to_arrays(args.test)
+    error_signal = ref_current - tst_current
+    rel_error_signal = error_signal / ref_current
     mpl_photodiodes_diff_plot_loop(
         wavelength=ref_wavelength,
-        signal=ref_current - tst_current,
+        signal=rel_error_signal if args.relative else error_signal,
         rdnoise=np.sqrt(np.square(ref_read_noise) + np.square(tst_read_noise)),
+        relative=args.relative,
         filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
@@ -359,7 +373,7 @@ COMMAND_TABLE = {
     "raw": raw_spectrum,
     "corrected": corrected_spectrum,
     "both": both_spectra,
-    "photodiode": photodiodes,
+    "photodiodes": photodiodes,
 }
 
 
@@ -378,7 +392,7 @@ def add_args(parser):
     parser_corr = subparser.add_parser("corrected", help="Plot single sensor corrected spectrum")
     parser_both = subparser.add_parser("both", help="Plot both Reference and Test sensors")
     parser_photod = subparser.add_parser(
-        "photodiode", help="Plot Reference and Test photodiode reading differences"
+        "photodiodes", help="Plot Reference and Test photodiode reading differences"
     )
     # ---------------------------------------------------------------------------------------------------------------
     parser_raw.add_argument(
@@ -526,6 +540,12 @@ def add_args(parser):
         metavar="<CSV FILE>",
         required=True,
         help="CSV file with test photodiode readings",
+    )
+    parser_photod.add_argument(
+        "-re",
+        "--relative",
+        action="store_true",
+        help="Plot relative instead of absolute error",
     )
 
 
