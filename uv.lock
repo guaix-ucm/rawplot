@@ -290,15 +290,15 @@ wheels = [
 
 [[package]]
 name = "lica"
-version = "1.0.2"
+version = "1.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-decouple" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/aa/72/67c13f9865e83586d46f728fa9362270d9db5e50d9df39a6c728d58a684f/lica-1.0.2.tar.gz", hash = "sha256:d9ea78b3d1675f7754d8e532037e7dd6378e3b7362bf4d45b70b64b568652f39", size = 51144 }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/5f/d92275d5bbda59d011c6a29d85bc8ca199ab302e23bd3c6d04bf693621c2/lica-1.0.3.tar.gz", hash = "sha256:9185416ead15c3307bb338486c49054b37ea9d479da32fc4bbd158cf2fd7b2b5", size = 51285 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/fc/cd021fb1ce04d8b27295782833f55dd696bf853ce40555dce3ca58d09845/lica-1.0.2-py3-none-any.whl", hash = "sha256:3ccd4ab23a00b30f9bf9b7fbc20b78c1f9b2baf4d7fe5630696ba5b435b248a9", size = 34677 },
+    { url = "https://files.pythonhosted.org/packages/6d/ac/1290d51358edbec5a5df444397fd8cf12122b33f7602190b90ea421f9415/lica-1.0.3-py3-none-any.whl", hash = "sha256:cbb8ef1eeff8bde1d4478229f0ab707c805abfc5a29eda9c56a325fe17bc1100", size = 34843 },
 ]
 
 [package.optional-dependencies]
@@ -661,7 +661,7 @@ wheels = [
 
 [[package]]
 name = "rawplot"
-version = "0.9.9.dev13+gf64822b.d20241113"
+version = "0.9.9.dev22+ge4c173f"
 source = { editable = "." }
 dependencies = [
     { name = "astropy" },
