@@ -46,7 +46,8 @@ WAVELENGTH_CSV_HEADER = "wavelength (nm)"
 CURRENT_CSV_HEADER = "current (A)"
 READ_NOISE_CSV_HEADER = "read noise (A)"
 FREQUENCY_CSV_HEADER = "frequency (Hz)"
-SIGNAL_CSV_HEADER = "signal"
+QE_CSV_HEADER = "quantum efficiency"
+RESP_CSV_HEADER = "responsivity"
 
 CUTOFF_FILTERS = [
     {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
@@ -69,6 +70,7 @@ plt.style.use("rawplot.resources.global")
 # -------------------
 # Auxiliary functions
 # -------------------
+
 
 def mpl_raw_spectra_plot_loop(
     wavelength: np.ndarray,
@@ -129,14 +131,16 @@ def mpl_corrected_spectra_plot_loop(
     signal: np.ndarray,
     model: str,
     sensor: str,
-    normalized: bool | None,
+    responsivity: bool,
+    normalized: bool,
     filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
     # fig.suptitle("Corrected Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
-    axes.set_title("Corrected Spectral response")
-    units = "Normalized" if normalized else "[Hz/A]"
+    axes_title= "Responsivity" if responsivity else "Quantum Efficiency"
+    axes.set_title(axes_title)
+    units = "(normalized)" if normalized else ""   
     axes.set_ylabel(f"Signal {units}")
     axes.plot(wavelength, signal, marker="+", linewidth=1, color="blue", label=f"TESS-W ({sensor})")
     for filt in filters:
@@ -155,12 +159,12 @@ def mpl_compared_spectra_plot_loop(
     test_signal: np.ndarray,
     test_label: str,
     ylabel: str,
+    title: str,
     filters: Iterable[dict[str, Any]],
 ) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle("Compared Spectral Response plot")
     axes.set_xlabel("Wavelength [nm]")
-    axes.set_title("Spectral response")
+    axes.set_title(title)
     axes.set_ylabel(ylabel)
     axes.plot(
         wavelength,
@@ -219,7 +223,7 @@ def mpl_photodiodes_diff_plot_loop(
             color="blue",
             marker="+",
             linewidth=1,
-    )
+        )
     for filt in filters:
         axes.axvline(filt["wave"], linestyle=filt["style"], label=filt["label"])
     axes.grid(True, which="major", color="silver", linestyle="solid")
@@ -230,13 +234,19 @@ def mpl_photodiodes_diff_plot_loop(
 
 
 def export_spectra_to_csv(
-    path: str, wavelength: np.ndarray, signal: np.ndarray, units: str, wave_last: bool = False
+    path: str,
+    wavelength: np.ndarray,
+    signal: np.ndarray,
+    responsivity: bool,
+    units: str,
+    wave_last: bool = False,
 ) -> None:
     wave_exported = wavelength * 10 if units == "angs" else wavelength
+    signal_csv_header = RESP_CSV_HEADER if responsivity else QE_CSV_HEADER
     header = (
-        ["signal", f"wavelength ({units})"]
+        [signal_csv_header, f"wavelength ({units})"]
         if wave_last
-        else [f"wavelength ({units})", SIGNAL_CSV_HEADER]
+        else [f"wavelength ({units})", signal_csv_header]
     )
     with open(path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=";")
@@ -302,10 +312,13 @@ def corrected_spectrum(args: Namespace):
     )
     wavelength, frequency, freq_std = tess_readings_to_arrays(args.input_file)
     _, current, read_noise = photodiode_readings_to_arrays(args.photodiode_file)
-    qe = np.array(
-        [qe[w] for w in wavelength]
-    )  # Only use those wavelenghts actually used in the CSV sequence
-    signal = qe * frequency / current
+    if args.responsivity:
+        correction = np.array(
+            [responsivity[w] for w in wavelength]
+        )  # Only use those wavelenghts actually used in the CSV sequence
+    else:
+        correction = np.array([qe[w] for w in wavelength])  #
+    signal = correction * frequency / current
     if args.normalize:
         log.info("normalizing signal")
         signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun
@@ -317,6 +330,7 @@ def corrected_spectrum(args: Namespace):
             signal=signal,
             units=args.units,
             wave_last=args.wavelength_last,
+            responsivity=args.responsivity,
         )
     mpl_corrected_spectra_plot_loop(
         wavelength=wavelength,
@@ -324,6 +338,7 @@ def corrected_spectrum(args: Namespace):
         model=args.model,
         sensor=args.sensor,
         normalized=args.normalize,
+        responsivity=args.responsivity,
         filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
@@ -338,19 +353,26 @@ def both_spectra(args: Namespace):
     if len(test_lines) != len(ref_lines):
         raise ValueError("Both sensor spectra files have different lengths")
     wavelength = np.array([int(float(entry[WAVELENGTH_CSV_HEADER])) for entry in ref_lines])
-    ref_spectrum = np.array([math.fabs(float(entry[SIGNAL_CSV_HEADER])) for entry in ref_lines])
-    test_spectrum = np.array([math.fabs(float(entry[SIGNAL_CSV_HEADER])) for entry in test_lines])
+    responsivity = False
+    try:
+        ref_signal = np.array([math.fabs(float(entry[QE_CSV_HEADER])) for entry in ref_lines])
+        test_signal = np.array([math.fabs(float(entry[QE_CSV_HEADER])) for entry in test_lines])
+    except KeyError:
+        ref_signal = np.array([math.fabs(float(entry[RESP_CSV_HEADER])) for entry in ref_lines])
+        test_signal = np.array([math.fabs(float(entry[RESP_CSV_HEADER])) for entry in test_lines])
+        responsivity = True
     if args.normalize:
-        k_norm = max(np.max(ref_spectrum), np.max(test_spectrum))
-        ref_spectrum = ref_spectrum / k_norm
-        test_spectrum = test_spectrum / k_norm
+        k_norm = max(np.max(ref_signal), np.max(test_signal))
+        ref_signal = ref_signal / k_norm
+        test_signal = test_signal / k_norm
     mpl_compared_spectra_plot_loop(
         wavelength=wavelength,
-        ref_signal=ref_spectrum,
+        ref_signal=ref_signal,
         ref_label=f"TESS-W ({args.ref_sensor})",
-        test_signal=test_spectrum,
+        test_signal=test_signal,
         test_label=f"TESS-W ({args.test_sensor})",
-        ylabel="Signal (normalized)" if args.normalize else "Signal [Hz/A]",
+        ylabel="Signal (normalized)" if args.normalize else "Signal",
+        title="Compared Responsivity" if responsivity else "Compared Quantum Efficiency",
         filters=CUTOFF_FILTERS,  # where filters were changed
     )
 
@@ -457,6 +479,11 @@ def add_args(parser):
         "--normalize",
         action="store_true",
         help="Normalize spectral response respect to maximum peak",
+    )
+    parser_corr.add_argument(
+        "--responsivity",
+        action="store_true",
+        help="Plot & export responsivity instead of QE",
     )
     parser_corr.add_argument(
         "-r",
