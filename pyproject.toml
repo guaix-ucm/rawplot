@@ -48,6 +48,8 @@ rawplot-spectral = "rawplot.spectral:main"
 rawplot-photodiode = "rawplot.photodiode:main"
 rawplot-filters = "rawplot.filters:main"
 rawplot-spectess = "rawplot.spectess:main"
+rawplot-tas = "rawplot.tas:main"
+
 
 [build-system]
 requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
