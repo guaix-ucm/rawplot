@@ -100,23 +100,24 @@ def mpl_tas_plot_loop(
 
 def map_fields(line: list[str]) -> dict[str, Any]:
     result = dict()
-    result["tstamp"] = datetime.datetime.strptime(line[0] + " " + line[1], "%Y-%m-%d %H:%M:%S")
-    result["temp_sky"] = float(line[2])
-    result["temp_box"] = float(line[3])
-    result["magnitude"] = float(line[4])
-    result["frequency"] = float(line[5])
-    result["altitude"] = float(line[6])
-    result["azimuth"] = float(line[7])
-    result["latitude"] = vsexa(line[8])
-    result["longitude"] = vsexa(line[9])
-    result["msnm"] = float(line[10])
+    result["sequence"] = int(line[0])
+    result["timestamp"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
+    result["temp_sky"] = float(line[3])
+    result["temp_box"] = float(line[4])
+    result["magnitude"] = float(line[5])
+    result["frequency"] = float(line[6])
+    result["altitude"] = float(line[7])
+    result["azimuth"] = float(line[8])
+    result["latitude"] = vsexa(line[9])
+    result["longitude"] = vsexa(line[10])
+    result["msnm"] = float(line[11])
     return result
 
 
-def read_tas_file(path: str) -> Any:
+def read_tas_file(path: str) -> Tuple[dict[str, Any]]:
     with open(path, "r") as csvfile:
-        lines = [line[1:] for line in csv.reader(csvfile, delimiter="\t")][1:]
-    return list(map(map_fields, lines))
+        lines = [line for line in csv.reader(csvfile, delimiter="\t")][1:]
+    return tuple(map(map_fields, lines))
 
 
 # -----------------------
