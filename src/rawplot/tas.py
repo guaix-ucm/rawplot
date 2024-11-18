@@ -28,6 +28,11 @@ import matplotlib.colors as mcolors
 from lica.cli import execute
 from lica.validators import vfile, vsexa
 
+import astropy.time
+import astropy.units as u
+from astropy.timeseries import TimeSeries
+
+
 # ------------------------
 # Own modules and packages
 # ------------------------
@@ -97,7 +102,7 @@ def map_fields(line: list[str]) -> dict[str, Any]:
     """Each line of TAS CSV is converted to a dictionary with proper data types"""
     result = dict()
     result["sequence"] = int(line[0])  # scanned point sequence number
-    result["timestamp"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
+    result["time"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
     result["temp_sky"] = float(line[3])  # degrees Celsius
     result["temp_box"] = float(line[4])  # degrees Celsius
     result["magnitude"] = float(line[5])  # mag/arcsec^2
@@ -110,24 +115,65 @@ def map_fields(line: list[str]) -> dict[str, Any]:
     return result
 
 
-def read_tas_file(path: str) -> Tuple[dict[str, Any]]:
+def map_fields2(line: list[str]) -> dict[str, Any]:
+    """Each line of TAS CSV is converted to a dictionary with proper data types"""
+    result = dict()
+    result["sequence"] = int(line[0])  # scanned point sequence number
+    # result["time"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
+    result["time"] = astropy.time.Time(line[1] + "T" + line[2])
+    return result
+
+
+# Must convert Local Time to UTC from Long, Latitude
+def tas_metadata(rows: Tuple[dict[str, Any]]) -> dict[str, Any]:
+    """Calculate common metadata for the whole dataset"""
+    metadata = dict()
+    N = len(rows)
+    metadata["mid_timestamp"] = rows[N // 2]["time"]  # Timestamp at mid exposure.
+    metadata["mean_height"] = np.mean(np.array([item["height"] for item in rows]))
+    metadata["mean_longitude"] = np.mean(np.array([item["longitude"] for item in rows]))
+    metadata["mean_latitude"] = np.mean(np.array([item["latitude"] for item in rows]))
+    metadata["mean_temp_box"] = np.mean(np.array([item["temp_box"] for item in rows]))
+    metadata["mean_temp_sky"] = np.mean(np.array([item["temp_sky"] for item in rows]))
+    metadata["timezone"] = "Etc/UTC"
+    return metadata
+
+
+def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
     with open(path, "r") as csvfile:
         lines = [line for line in csv.reader(csvfile, delimiter="\t")][1:]
-    temp_data = tuple(map(map_fields, lines))
-    data = dict()
-    metadata = dict()
-    data["sequence"] = np.array([item["sequence"] for item in temp_data])
-    data["zenith"] = np.array([90 - item["altitude"] for item in temp_data])
-    data["azimuth"] = np.array([item["azimuth"] for item in temp_data])
-    data["frequency"] = np.array([item["frequency"] for item in temp_data])
-    data["magnitude"] = np.array([item["magnitude"] for item in temp_data])
-    data["temp_sky"] = np.array([item["temp_sky"] for item in temp_data])
-    metadata["timestamp"] = temp_data[len(temp_data)//2] # Timestamp at mid exposure.
-    metadata["height"] = np.mean(np.array([item["height"] for item in temp_data]))
-    metadata["longitude"] = np.mean(np.array([item["longitude"] for item in temp_data]))
-    metadata["latitude"] = np.mean(np.array([item["latitude"] for item in temp_data]))
-    metadata["temp_box"] = np.mean(np.array([item["temp_box"] for item in temp_data]))
-    return data, metadata
+    rows = tuple(map(map_fields, lines))
+    metadata = tas_metadata(rows)
+    table = TimeSeries(
+        rows=rows,
+        names=(
+            "time",
+            "sequence",
+            "altitude",
+            "azimuth",
+            "frequency",
+            "magnitude",
+            "temp_sky",
+            "temp_box",
+            "longitude",
+            "latitude",
+            "height",
+        ),
+        units=(
+            None,
+            None,
+            u.deg,
+            u.deg,
+            u.Hz,
+            u.mag() / u.arcsec**2,
+            u.deg_C,
+            u.deg_C,
+            u.deg,
+            u.deg,
+            u.m,
+        ),
+    )
+    return table, metadata
 
 
 # -----------------------
@@ -137,7 +183,11 @@ def read_tas_file(path: str) -> Tuple[dict[str, Any]]:
 
 def tas(args: Namespace):
     data, metadata = read_tas_file(args.input_file)
-    log.info(data)
+    # zenith_grid = np.arange(0, np.max(data["zenith"]) + 1)  # grid values in zenith direction
+    # azimuth_grid = np.arange(0, 360 + 1)  # grid values in azimuth direction
+
+    log.info(data.info)
+    log.info(metadata)
 
 
 # ===================================
