@@ -112,7 +112,7 @@ def get_timezone(line: list[str]) -> str:
 
 
 def map_fields2(timezone: datetime.tzinfo, line: list[str]) -> dict[str, Any]:
-    """Each line of TAS CSV is converted to a dictionary with proper data types"""
+    """Each line of TAS CSV is converted to a dictionary with proper basic Python data types"""
     result = dict()
     result["sequence"] = int(line[0])  # scanned point sequence number
     result["time"] = datetime.datetime.strptime(
@@ -129,7 +129,7 @@ def map_fields2(timezone: datetime.tzinfo, line: list[str]) -> dict[str, Any]:
     result["height"] = float(line[11])  # meters above sea level
     return result
 
-# Must convert Local Time to UTC from Long, Latitude
+
 def tas_metadata(rows: Tuple[dict[str, Any]]) -> dict[str, Any]:
     """Calculate common metadata for the whole dataset"""
     metadata = dict()
@@ -142,6 +142,7 @@ def tas_metadata(rows: Tuple[dict[str, Any]]) -> dict[str, Any]:
     metadata["mean_temp_sky"] = np.mean(np.array([item["temp_sky"] for item in rows]))
     return metadata
 
+
 def to_astropy(row):
     """Use specialized Astropy Types for some columns"""
     row["longitude"] = astropy.coordinates.Longitude(row["longitude"] * u.deg)
@@ -151,10 +152,11 @@ def to_astropy(row):
     row["time"] = astropy.time.Time(row["time"])
     return row
 
+
 def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
     with open(path, "r") as csvfile:
         lines = [line for line in csv.reader(csvfile, delimiter="\t")][1:]
-    timezone = get_timezone(lines[0]) # get the timezone from the first line
+    timezone = get_timezone(lines[0])  # get the timezone from the first line
     tzinfo = pytz.timezone(timezone)
     map_fields = functools.partial(map_fields2, tzinfo)
     # Low level decoding to Python standard datatups
@@ -187,8 +189,8 @@ def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
             u.mag() / u.arcsec**2,
             u.deg_C,
             u.deg_C,
-            u.deg, # Not really needed, Longitude already carries the unit
-            u.deg, # Not really needed, Latitude already carries the unit
+            u.deg,  # Not really needed, Longitude already carries the unit
+            u.deg,  # Not really needed, Latitude already carries the unit
             u.m,
         ),
     )
