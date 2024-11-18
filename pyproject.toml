@@ -28,6 +28,8 @@ dependencies = [
     "scikit-learn",
     "astropy",
     "lica[raw]",
+    "timezonefinder",
+    "pytz",
 ]
 
 

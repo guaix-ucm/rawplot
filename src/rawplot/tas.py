@@ -14,8 +14,10 @@ import csv
 import datetime
 
 import logging
+import functools
 from typing import Tuple, Any
 from argparse import Namespace
+
 
 # ---------------------
 # Thrid-party libraries
@@ -29,9 +31,13 @@ from lica.cli import execute
 from lica.validators import vfile, vsexa
 
 import astropy.time
+import astropy.coordinates
+import astropy.timeseries
 import astropy.units as u
 from astropy.timeseries import TimeSeries
 
+import pytz
+from timezonefinder import TimezoneFinder
 
 # ------------------------
 # Own modules and packages
@@ -98,31 +104,30 @@ def mpl_tas_plot_loop(
     plt.show()
 
 
-def map_fields(line: list[str]) -> dict[str, Any]:
+def get_timezone(line: list[str]) -> str:
+    """Returns the time zone string from a line of TAS readings"""
+    latitude = vsexa(line[9])  # decimal degrees
+    longitude = vsexa(line[10])  # decimal degrees
+    return TimezoneFinder().timezone_at(lng=longitude, lat=latitude)
+
+
+def map_fields2(timezone: datetime.tzinfo, line: list[str]) -> dict[str, Any]:
     """Each line of TAS CSV is converted to a dictionary with proper data types"""
     result = dict()
     result["sequence"] = int(line[0])  # scanned point sequence number
-    result["time"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
+    result["time"] = datetime.datetime.strptime(
+        line[1] + "T" + line[2], "%Y-%m-%dT%H:%M:%S"
+    ).replace(tzinfo=timezone)
     result["temp_sky"] = float(line[3])  # degrees Celsius
     result["temp_box"] = float(line[4])  # degrees Celsius
     result["magnitude"] = float(line[5])  # mag/arcsec^2
     result["frequency"] = float(line[6])  # Hz
-    result["altitude"] = float(line[7])  # decimal degrees
+    result["zenith"] = 90 - float(line[7])  # decimal degrees
     result["azimuth"] = float(line[8])  # decimal degrees
     result["latitude"] = vsexa(line[9])  # decimal degrees
     result["longitude"] = vsexa(line[10])  # decimal degrees
     result["height"] = float(line[11])  # meters above sea level
     return result
-
-
-def map_fields2(line: list[str]) -> dict[str, Any]:
-    """Each line of TAS CSV is converted to a dictionary with proper data types"""
-    result = dict()
-    result["sequence"] = int(line[0])  # scanned point sequence number
-    # result["time"] = datetime.datetime.strptime(line[1] + " " + line[2], "%Y-%m-%d %H:%M:%S")
-    result["time"] = astropy.time.Time(line[1] + "T" + line[2])
-    return result
-
 
 # Must convert Local Time to UTC from Long, Latitude
 def tas_metadata(rows: Tuple[dict[str, Any]]) -> dict[str, Any]:
@@ -135,21 +140,35 @@ def tas_metadata(rows: Tuple[dict[str, Any]]) -> dict[str, Any]:
     metadata["mean_latitude"] = np.mean(np.array([item["latitude"] for item in rows]))
     metadata["mean_temp_box"] = np.mean(np.array([item["temp_box"] for item in rows]))
     metadata["mean_temp_sky"] = np.mean(np.array([item["temp_sky"] for item in rows]))
-    metadata["timezone"] = "Etc/UTC"
     return metadata
 
+def to_astropy(row):
+    """Use specialized Astropy Types for some columns"""
+    row["longitude"] = astropy.coordinates.Longitude(row["longitude"] * u.deg)
+    row["latitude"] = astropy.coordinates.Latitude(row["latitude"] * u.deg)
+    row["azimuth"] = astropy.coordinates.Angle(row["azimuth"] * u.deg)
+    row["zenith"] = astropy.coordinates.Angle(row["zenith"] * u.deg)
+    row["time"] = astropy.time.Time(row["time"])
+    return row
 
 def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
     with open(path, "r") as csvfile:
         lines = [line for line in csv.reader(csvfile, delimiter="\t")][1:]
+    timezone = get_timezone(lines[0]) # get the timezone from the first line
+    tzinfo = pytz.timezone(timezone)
+    map_fields = functools.partial(map_fields2, tzinfo)
+    # Low level decoding to Python standard datatups
     rows = tuple(map(map_fields, lines))
     metadata = tas_metadata(rows)
-    table = TimeSeries(
+    metadata["timezone"] = timezone
+    # Convert to Astropy Types to get extra benefits
+    rows = tuple(map(to_astropy, rows))
+    table = astropy.timeseries.TimeSeries(
         rows=rows,
         names=(
             "time",
             "sequence",
-            "altitude",
+            "zenith",
             "azimuth",
             "frequency",
             "magnitude",
@@ -168,8 +187,8 @@ def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
             u.mag() / u.arcsec**2,
             u.deg_C,
             u.deg_C,
-            u.deg,
-            u.deg,
+            u.deg, # Not really needed, Longitude already carries the unit
+            u.deg, # Not really needed, Latitude already carries the unit
             u.m,
         ),
     )
