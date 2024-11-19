@@ -91,7 +91,8 @@ def mpl_tas_plot_loop(
     axes.set_theta_direction(-1)
     axes.set_xticklabels(["N", "NE", "E", "SE", "S", "SW", "W", "NW"], fontdict={"fontsize": 16})
     axes.tick_params(pad=1.2)
-    axes.set_ylim(0, max(zenith) + 0.0)
+    max_y = np.max(zenith) / (1 *u.deg) # make dimesionless, plain Python scalar
+    axes.set_ylim(0, max_y + 0.0)
     axes.set_title(title)
     cmap = mycolormap()
     cax = axes.scatter(
@@ -99,6 +100,8 @@ def mpl_tas_plot_loop(
     )
 
     # Colorbar
+    m_step_1 = 0.2
+    lev_f_ticks = np.arange(min_mag, max_mag + m_step_1 + 0.1, m_step_1 * 2)
     cb = fig.colorbar(cax, orientation="horizontal", fraction=0.048, ticks=lev_f_ticks, pad=0.08)
     cb.set_label("Sky Brightness [mag/arcsec$^2$]", fontsize=17)
     cb.ax.tick_params(labelsize=12)
@@ -211,6 +214,15 @@ def tas(args: Namespace):
 
     log.info(data.info)
     log.info(metadata)
+
+    mpl_tas_plot_loop(
+        azimuth=data["azimuth"],
+        zenith=data["zenith"],
+        magnitude=data["magnitude"],
+        title="My Polar Plot",
+        min_mag=17,
+        max_mag=22,
+    )
 
 
 # ===================================
