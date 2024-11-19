@@ -12,6 +12,7 @@
 
 import csv
 import datetime
+import pathlib
 
 import logging
 import functools
@@ -163,6 +164,7 @@ def read_tas_file(path: str) -> Tuple[TimeSeries, dict[str, Any]]:
     rows = tuple(map(map_fields, lines))
     metadata = tas_metadata(rows)
     metadata["timezone"] = timezone
+    metadata["file"] = str(pathlib.Path(path).resolve())
     # Convert to Astropy Types to get extra benefits
     rows = tuple(map(to_astropy, rows))
     table = astropy.timeseries.TimeSeries(
