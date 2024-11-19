@@ -108,6 +108,7 @@ env-restore bak_dir:
     fi
     cp {{ bak_dir }}/.env {{ local_env }}
     mkdir -p spectess
+    mkdir -p tas
     cp {{ bak_dir }}/*.csv  spectess || exit 1
-    cp {{ bak_dir }}/tas/*.txt  spectess || exit 1
+    cp {{ bak_dir }}/tas/*.txt  tas || exit 1
 
