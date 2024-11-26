@@ -30,6 +30,7 @@ dependencies = [
     "lica[raw]",
     "timezonefinder",
     "pytz",
+    "scypy",
 ]
 
 
