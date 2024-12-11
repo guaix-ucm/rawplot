@@ -161,6 +161,7 @@ cython_debug/
 
 # Additional stuff
 *.csv
+*.ecsv
 *.db
 *.txt
 *.jpg

@@ -27,7 +27,7 @@ dependencies = [
     "PyQt5",
     "scikit-learn",
     "astropy",
-    "lica[raw]",
+    "lica[raw,lica]",
 ]
 
 
@@ -46,8 +46,7 @@ rawplot-ptc = "rawplot.ptc:main"
 rawplot-imarith = "rawplot.imarith:main"
 rawplot-spectral = "rawplot.spectral:main"
 rawplot-photodiode = "rawplot.photodiode:main"
-rawplot-filters = "rawplot.filters:main"
-rawplot-spectess = "rawplot.spectess:main"
+
 
 [build-system]
 requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
@@ -75,4 +74,4 @@ namespaces = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"rawplot.resources" = ["*.csv", "*.mplstyle"]
+"rawplot.resources" = ["*.mplstyle"]
