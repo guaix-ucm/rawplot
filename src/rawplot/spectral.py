@@ -273,38 +273,34 @@ def photodiode_spectrum(path: str, model: str, option: PhDOption, resolution: in
         photodiode=model if option == PhDOption.NORM else None,
     )
 
-
-# ===================================
-# Command Line Interface Entry Points
-# ===================================
-
-
-def cli_raw_spectrum(args):
-    log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
-    file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    raw_spectrum(file_list, roi, n_roi, channels, metadata, args.every, args.bias, args.dark)
-
-
-def cli_corrected_spectrum(args):
-    log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
-    responsivity, qe = photodiode_load(args.model, args.resolution)
-    log.info(
-        "Read %s reference responsivity values at %d nm resolution from %s",
-        len(responsivity),
-        args.resolution,
-        args.model,
-    )
-    file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    wavelength, current, read_noise = photodiode_readings_to_arrays(args.csv_file)
-    qe = np.array(
-        [qe[w] for w in wavelength]
-    )  # Only use those wavelenghts actually used in the CSV sequence
+def corrected_spectrum(
+    file_list: Iterable[str],
+    roi: Roi,
+    n_roi: NormRoi,
+    channels: Sequence[str],
+    metadata:  Dict[str, Any],
+    photod_path: str, 
+    model: str,
+    resolution: int,
+    every: int = 1,
+    bias: BiasType = None,
+    dark: DarkType = None,
+    export: bool = False
+) -> None:
+    readings = read_manual_csv(photod_path)
+    reference = lica.photodiode.load(model=model, resolution=resolution)
+    # This quirk is because the reference photodiode data actaully goes until 1049 and not 1050 nm
+    file_list = file_list[:-1]
+    assert len(file_list) == len(readings)  == len(reference)
     title = make_plot_title_from("Corrected Spectral Response plot", metadata, roi)
+    qe = reference[COL.QE]
+    wavelength = reference[COL.WAVE]
+    current = readings[TBCOL.CURRENT]
     wavelength = np.tile(wavelength, len(channels)).reshape(len(channels), -1)
-    exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
+    exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
     signal = qe * signal / current
     signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
-    if args.export:
+    if export:
         log.info("exporting to CSV file(s)")
         export_spectra_to_csv(
             labels=channels,
@@ -325,6 +321,36 @@ def cli_corrected_spectrum(args):
         y=signal,
         # Optional arguments to be handled by the plotting function
     )
+    
+
+# ===================================
+# Command Line Interface Entry Points
+# ===================================
+
+
+def cli_raw_spectrum(args):
+    log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    raw_spectrum(file_list, roi, n_roi, channels, metadata,  )
+
+
+def cli_corrected_spectrum(args):
+    log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
+    file_list, roi, n_roi, channels, metadata = common_list_info(args)
+    corrected_spectrum(
+        file_list = file_list,
+        roi = roi,
+        n_roi = n_roi,
+        channels = channels,
+        metadata = metadata,
+        photod_path = args.photodiode_file, 
+        model = args.model,
+        resolution = args.resolution,
+        every = args.every,
+        bias = args.bias,
+        dark = args.dark,
+        export = args.export
+    )
 
 
 def cli_photodiode_spectrum(args):
@@ -337,9 +363,6 @@ def cli_photodiode_spectrum(args):
         option = PhDOption.SNR
     photodiode_spectrum(args.photodiode_file, args.model, option, args.resolution)
 
-
-def cli_spectral(args):
-    args.func(args)
 
 
 def prs_aux_files() -> ArgumentParser:
@@ -446,6 +469,10 @@ def prs_photod() -> ArgumentParser:
     return parser
 
 
+def cli_main(args):
+    args.func(args)
+
+
 def add_args(parser):
     subparser = parser.add_subparsers(dest="command")
 
@@ -515,7 +542,7 @@ def add_args(parser):
 
 def main():
     execute(
-        main_func=cli_spectral,
+        main_func=cli_main,
         add_args_func=add_args,
         name=__name__,
         version=__version__,
