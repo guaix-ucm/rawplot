@@ -23,7 +23,6 @@ The available commands list can be found in the `bin` virtual environment sub-fo
 
  ```bash
  ls -1 .venv/bin/raw*
- venv/bin/rawplot-filters
 .venv/bin/rawplot-hv
 .venv/bin/rawplot-image
 .venv/bin/rawplot-imarith
@@ -34,7 +33,6 @@ The available commands list can be found in the `bin` virtual environment sub-fo
 .venv/bin/rawplot-ptc
 .venv/bin/rawplot-snr
 .venv/bin/rawplot-spectral
-.venv/bin/rawplot-spectess
  ```
 
 ## Common options
