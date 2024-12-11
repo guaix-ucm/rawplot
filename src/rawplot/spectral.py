@@ -10,10 +10,11 @@
 # System wide imports
 # -------------------
 
-from enum import IntEnum
-import math
+import re
 import logging
 from argparse import ArgumentParser
+from enum import IntEnum
+from typing import Union, Dict, Any, Sequence, Iterable
 
 # ---------------------
 # Thrid-party libraries
@@ -29,8 +30,9 @@ from astropy.table import Table
 from lica import StrEnum
 from lica.cli import execute
 from lica.validators import vdir, vfile, vfloat, vfloat01, vflopath
+from lica.raw.loader.roi import Roi, NormRoi
 from lica.raw.analyzer.image import ImageStatistics
-from lica.csv import read_csv
+
 import lica.photodiode
 from lica.photodiode import PhotodiodeModel, COL, BENCH
 
@@ -44,6 +46,9 @@ from .util.common import common_list_info, make_plot_title_from, export_spectra_
 # -----------------
 # Additiona classes
 # -----------------
+
+BiasType = Union[float, str]
+DarkType = Union[float, str]
 
 
 class TBCOL(StrEnum):
@@ -65,6 +70,8 @@ class PhDOption(IntEnum):
 # ----------------
 # Module constants
 # ----------------
+
+WAVELENGTH_REG_EXP = re.compile(r"(\w+)_(\d+)nm_g(\d+)_(\d+)_(\d+)_(\w+).jpg")
 
 MONOCROMATOR_FILTERS_LABELS = (
     {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
@@ -181,19 +188,58 @@ def signal_from(file_list, n_roi, channels, bias, dark, every=2):
         log.info("[%d/%d] \u03bc signal for image %s = %s", i, N, analyzer.name(), signal)
     return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1)
 
-
-def photodiode_readings_to_arrays(csv_path):
-    response = read_csv(csv_path)
-    wavelength = np.array([int(entry[WAVELENGTH_CSV_HEADER]) for entry in response])
-    current = np.array([math.fabs(float(entry[CURRENT_CSV_HEADER])) for entry in response])
-    read_noise = np.array([float(entry[READ_NOISE_CSV_HEADER]) for entry in response])
-    log.info("Got %d photodiode readings", wavelength.shape[0])
-    return wavelength, current, read_noise
-
+def get_used_wavelengths(file_list: Iterable[str], channels: Sequence[str]):
+    M = len(channels)
+    data = list()
+    for file in file_list:
+        matchobj = WAVELENGTH_REG_EXP.search(file)
+        if matchobj:
+            item = {
+                key: matchobj.group(i)
+                for i, key in enumerate(
+                    ("tag", "wave", "gain", "seq", "exptime", "filter"), start=1
+                )
+            }
+            item["wave"] = int(item["wave"])
+            item["gain"] = int(item["gain"])
+            item["seq"] = int(item["seq"])
+            item["exptime"] = int(item["exptime"])
+            data.append(item)
+    log.info("Matched %d files", len(data))
+    result = np.array([item["wave"] for item in data])
+    result = np.tile(result, M).reshape(M, len(data))
+    log.info("Wavelength array shape is %s", result.shape)
+    return result
 
 # ---------------------
 # Exported, non-CLI API
 # ---------------------
+
+def raw_spectrum(
+    file_list: Iterable[str],
+    roi: Roi,
+    n_roi: NormRoi,
+    channels = Sequence[str],
+    metadata = Dict[str, Any],
+    every: int = 1,
+    bias: BiasType = None,
+    dark: DarkType = None,
+):
+    title = make_plot_title_from("Draft Spectral Response plot", metadata, roi)
+    wavelength = get_used_wavelengths(file_list, channels)
+    exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
+    mpl_spectra_plot_loop(
+        title=title,
+        channels=channels,
+        plot_func=plot_raw_spectral,
+        xtitle="Wavelength [nm]",
+        ytitle="Signal [DN]",
+        ylabel="good",
+        x=wavelength,
+        y=signal,
+        # Optional arguments to be handled by the plotting function
+        filters=MONOCROMATOR_FILTERS_LABELS,  # where filters were changesd
+    )
 
 
 def photodiode_spectrum(path: str, model: str, option: PhDOption, resolution: int) -> None:
@@ -236,24 +282,7 @@ def photodiode_spectrum(path: str, model: str, option: PhDOption, resolution: in
 def cli_raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    title = make_plot_title_from("Draft Spectral Response plot", metadata, roi)
-    wavelength = get_used_wavelengths(file_list, channels)
-    exptime, signal = signal_from(file_list, n_roi, channels, args.bias, args.dark, args.every)
-    mpl_spectra_plot_loop(
-        title=title,
-        channels=channels,
-        plot_func=plot_raw_spectral,
-        xtitle="Wavelength [nm]",
-        ytitle="Signal [DN]",
-        ylabel="good",
-        x=wavelength,
-        y=signal,
-        # Optional arguments to be handled by the plotting function
-        filters=[
-            {"label": r"$BG38 \Rightarrow OG570$", "wave": 570, "style": "--"},
-            {"label": r"$OG570\Rightarrow RG830$", "wave": 860, "style": "-."},
-        ],  # where filters were changesd
-    )
+    raw_spectrum(file_list, roi, n_roi, channels, metadata, args.every, args.bias, args.dark)
 
 
 def cli_corrected_spectrum(args):
