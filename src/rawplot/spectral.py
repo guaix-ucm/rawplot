@@ -321,8 +321,10 @@ def corrected_spectrum(
     log.info("AREA RATIO = %s / %s = %s", reference.meta['Photosensitive area'], (pixel_area * (u.um ** 2)), area_ratio)
     detector_qe = photod_qe * area_ratio * (detector_current / photod_current)
     if normalize:
-        detector_qe = detector_qe / np.max(detector_qe)  # Normalize signal to its absolute maxímun for all channels
+        normalization_factor = np.max(detector_qe)
+        detector_qe = detector_qe / normalization_factor  # Normalize QE to its absolute maxímun for all channels
     if export_path:
+        log.info("exporting to ECSV file(s)")
         columns = [wavelength[0],]
         columns.extend(np.unstack(detector_qe))
         table = QTable(
@@ -334,7 +336,9 @@ def corrected_spectrum(
         table.meta["Diode Photosensitive area"] = reference.meta['Photosensitive area']
         table.meta["Dectector pixel area"] = pixel_area * (u.um ** 2)
         table.meta["Integration time"] = metadata["exposure"] * u.s
-        log.info("exporting to ECSV file(s)")
+        if normalize:
+            table.meta["Normalized"] = True
+            table.meta["Normalization Factor"] = normalization_factor
         table.write(export_path, delimiter=",", overwrite=True)
     mpl_spectra_plot_loop(
         title=title,
