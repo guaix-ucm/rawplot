@@ -97,7 +97,7 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 
 # Define electron as a unit of charge
-e = u.def_unit('e-', 1 * const.e)
+e_ = u.def_unit('e-', 1 * const.e)
 
 
 def qe_names(channels: Sequence[str]) -> Sequence[str]:
@@ -315,11 +315,11 @@ def corrected_spectrum(
     photod_current = readings[TBCOL.CURRENT]
     wavelength = np.tile(wavelength, len(channels)).reshape(len(channels), -1)
     exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
-    gain = gain * (e / u.adu)
-    ccd_current = (((signal * u.adu * gain)) / (metadata["exposure"] * u.s)).decompose()
+    gain = gain * (e_ / u.adu)
+    detector_current = (((signal * u.adu * gain)) / (metadata["exposure"] * u.s)).decompose()
     area_ratio = (reference.meta['Photosensitive area'] / (pixel_area * (u.um ** 2))).decompose()
     log.info("AREA RATIO = %s / %s = %s", reference.meta['Photosensitive area'], (pixel_area * (u.um ** 2)), area_ratio)
-    detector_qe = photod_qe * area_ratio * (ccd_current / photod_current)
+    detector_qe = photod_qe * area_ratio * (detector_current / photod_current)
     if normalize:
         detector_qe = detector_qe / np.max(detector_qe)  # Normalize signal to its absolute maxímun for all channels
     if export_path:
