@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 import astropy.io.ascii
 import astropy.units as u
 from astropy.table import Table, QTable
+from astropy.constants import astropyconst20 as const
 
 from lica import StrEnum
 from lica.cli import execute
@@ -294,6 +295,8 @@ def corrected_spectrum(
     every: int = 1,
     bias: BiasType = None,
     dark: DarkType = None,
+    normalize: bool = False,
+    gain: float = 1.0,
     export_path: str = None,
 ) -> None:
     readings = read_manual_csv(photod_path)
@@ -307,8 +310,11 @@ def corrected_spectrum(
     current = readings[TBCOL.CURRENT]
     wavelength = np.tile(wavelength, len(channels)).reshape(len(channels), -1)
     exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
+    signal = ((signal * gain) * const.e) / (metadata["exposure"] * u.s)
     signal = qe * signal / current
-    signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
+    log.info(metadata)
+    if normalize:
+        signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
     if export_path:
         columns = [wavelength[0],]
         columns.extend(np.unstack(signal))
@@ -324,7 +330,7 @@ def corrected_spectrum(
         channels=channels,
         plot_func=plot_raw_spectral,
         xtitle="Wavelength [nm]",
-        ytitle="Signal (normalized)",
+        ytitle="QE (normalized)" if normalize else "QE",
         ylabel="good",
         x=wavelength,
         y=signal,
@@ -364,6 +370,8 @@ def cli_corrected_spectrum(args):
         every=args.every,
         bias=args.bias,
         dark=args.dark,
+        normalize=args.normalize,
+        gain=args.gain,
         export_path=args.export,
     )
 
@@ -513,6 +521,20 @@ def add_args(parser):
         metavar="<FILE>",
         help="Export to ECSV file",
     )
+    parser_corr.add_argument(
+        "-n",
+        "--normalize",
+        action="store_true",
+        help="Normalize spectrum with respect to its maximum",
+    )
+    parser_corr.add_argument(
+        "-g",
+        "--gain",
+        type=float,
+        default = 1.0,
+        help="Camera gain [e-/DN] (defaults to %(default)f)",
+    )
+
 
     # ---------------------------------------------------------------------------------------------------------------
     dioex1 = parser_diode.add_mutually_exclusive_group(required=True)
