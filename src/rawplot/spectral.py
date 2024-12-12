@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 
 import astropy.io.ascii
 import astropy.units as u
-from astropy.table import Table, QTable
+from astropy.table import Table
 from astropy.constants import astropyconst20 as const
 
 from lica import StrEnum
@@ -327,7 +327,7 @@ def corrected_spectrum(
         log.info("exporting to ECSV file(s)")
         columns = [wavelength[0],]
         columns.extend(np.unstack(detector_qe))
-        table = QTable(
+        table = Table(
             data = columns,
             names = [COL.WAVE,] + qe_names(channels),
             units = [u.nm] + qe_units(channels)
