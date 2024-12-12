@@ -96,6 +96,10 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
+# Define electron as a unit of charge
+e = u.def_unit('e-', 1 * const.e)
+
+
 def qe_names(channels: Sequence[str]) -> Sequence[str]:
     return list(map(lambda x: "QE " + x, channels))
 
@@ -297,6 +301,7 @@ def corrected_spectrum(
     dark: DarkType = None,
     normalize: bool = False,
     gain: float = 1.0,
+    pixel_area: float = 1.0,
     export_path: str = None,
 ) -> None:
     readings = read_manual_csv(photod_path)
@@ -305,24 +310,30 @@ def corrected_spectrum(
     file_list = file_list[:-1]
     assert len(file_list) == len(readings) == len(reference)
     title = make_plot_title_from("Corrected Spectral Response plot", metadata, roi)
-    qe = reference[COL.QE]
+    photod_qe = reference[COL.QE]
     wavelength = reference[COL.WAVE]
-    current = readings[TBCOL.CURRENT]
+    photod_current = readings[TBCOL.CURRENT]
     wavelength = np.tile(wavelength, len(channels)).reshape(len(channels), -1)
     exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
-    signal = ((signal * gain) * const.e) / (metadata["exposure"] * u.s)
-    signal = qe * signal / current
-    log.info(metadata)
+    gain = gain * (e / u.adu)
+    ccd_current = (((signal * u.adu * gain)) / (metadata["exposure"] * u.s)).decompose()
+    area_ratio = (reference.meta['Photosensitive area'] / (pixel_area * (u.um ** 2))).decompose()
+    log.info("AREA RATIO = %s / %s = %s", reference.meta['Photosensitive area'], (pixel_area * (u.um ** 2)), area_ratio)
+    detector_qe = photod_qe * area_ratio * (ccd_current / photod_current)
     if normalize:
-        signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
+        detector_qe = detector_qe / np.max(detector_qe)  # Normalize signal to its absolute maxímun for all channels
     if export_path:
         columns = [wavelength[0],]
-        columns.extend(np.unstack(signal))
+        columns.extend(np.unstack(detector_qe))
         table = QTable(
             data = columns,
             names = [COL.WAVE,] + qe_names(channels),
             units = [u.nm] + qe_units(channels)
         )
+        table.meta["Detector Gain"] = gain
+        table.meta["Diode Photosensitive area"] = reference.meta['Photosensitive area']
+        table.meta["Dectector pixel area"] = pixel_area * (u.um ** 2)
+        table.meta["Integration time"] = metadata["exposure"] * u.s
         log.info("exporting to ECSV file(s)")
         table.write(export_path, delimiter=",", overwrite=True)
     mpl_spectra_plot_loop(
@@ -333,7 +344,7 @@ def corrected_spectrum(
         ytitle="QE (normalized)" if normalize else "QE",
         ylabel="good",
         x=wavelength,
-        y=signal,
+        y=detector_qe,
         # Optional arguments to be handled by the plotting function
     )
 
@@ -372,6 +383,7 @@ def cli_corrected_spectrum(args):
         dark=args.dark,
         normalize=args.normalize,
         gain=args.gain,
+        pixel_area=args.pixel_area,
         export_path=args.export,
     )
 
@@ -533,6 +545,13 @@ def add_args(parser):
         type=float,
         default = 1.0,
         help="Camera gain [e-/DN] (defaults to %(default)f)",
+    )
+    parser_corr.add_argument(
+        "-pa",
+        "--pixel-area",
+        type=float,
+        default = 1.0,
+        help="Pixel area in \u03BCm^2 (defaults to %(default)f)",
     )
 
 
