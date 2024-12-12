@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 
 import astropy.io.ascii
 import astropy.units as u
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 from lica import StrEnum
 from lica.cli import execute
@@ -34,14 +34,14 @@ from lica.raw.loader.roi import Roi, NormRoi
 from lica.raw.analyzer.image import ImageStatistics
 
 import lica.photodiode
-from lica.photodiode import PhotodiodeModel, COL, BENCH
+from lica.photodiode import PhotodiodeModel, COL
 
 # ------------------------
 # Own modules and packages
 # ------------------------
 
 from ._version import __version__
-from .util.common import common_list_info, make_plot_title_from, export_spectra_to_csv
+from .util.common import common_list_info, make_plot_title_from
 
 # -----------------
 # Additiona classes
@@ -95,6 +95,11 @@ plt.style.use("rawplot.resources.global")
 # Auxiliary fnctions
 # ------------------
 
+def qe_names(channels: Sequence[str]) -> Sequence[str]:
+    return list(map(lambda x: "QE " + x, channels))
+
+def qe_units(channels: Sequence[str]) -> Sequence[Any]:
+    return list(map(lambda x: u.dimensionless_unscaled, channels))
 
 def read_manual_csv(path: str) -> Table:
     """Load CSV files produced by manually copying LICA TestBench.exe into a CSV file"""
@@ -188,6 +193,7 @@ def signal_from(file_list, n_roi, channels, bias, dark, every=2):
         log.info("[%d/%d] \u03bc signal for image %s = %s", i, N, analyzer.name(), signal)
     return np.stack(exptime_list, axis=-1), np.stack(signal_list, axis=-1)
 
+
 def get_used_wavelengths(file_list: Iterable[str], channels: Sequence[str]):
     M = len(channels)
     data = list()
@@ -211,16 +217,18 @@ def get_used_wavelengths(file_list: Iterable[str], channels: Sequence[str]):
     log.info("Wavelength array shape is %s", result.shape)
     return result
 
+
 # ---------------------
 # Exported, non-CLI API
 # ---------------------
+
 
 def raw_spectrum(
     file_list: Iterable[str],
     roi: Roi,
     n_roi: NormRoi,
-    channels = Sequence[str],
-    metadata = Dict[str, Any],
+    channels=Sequence[str],
+    metadata=Dict[str, Any],
     every: int = 1,
     bias: BiasType = None,
     dark: DarkType = None,
@@ -273,25 +281,26 @@ def photodiode_spectrum(path: str, model: str, option: PhDOption, resolution: in
         photodiode=model if option == PhDOption.NORM else None,
     )
 
+
 def corrected_spectrum(
     file_list: Iterable[str],
     roi: Roi,
     n_roi: NormRoi,
     channels: Sequence[str],
-    metadata:  Dict[str, Any],
-    photod_path: str, 
+    metadata: Dict[str, Any],
+    photod_path: str,
     model: str,
     resolution: int,
     every: int = 1,
     bias: BiasType = None,
     dark: DarkType = None,
-    export: bool = False
+    export_path: str = None,
 ) -> None:
     readings = read_manual_csv(photod_path)
     reference = lica.photodiode.load(model=model, resolution=resolution)
     # This quirk is because the reference photodiode data actaully goes until 1049 and not 1050 nm
     file_list = file_list[:-1]
-    assert len(file_list) == len(readings)  == len(reference)
+    assert len(file_list) == len(readings) == len(reference)
     title = make_plot_title_from("Corrected Spectral Response plot", metadata, roi)
     qe = reference[COL.QE]
     wavelength = reference[COL.WAVE]
@@ -300,16 +309,16 @@ def corrected_spectrum(
     exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
     signal = qe * signal / current
     signal = signal / np.max(signal)  # Normalize signal to its absolute maxímun for all channels
-    if export:
-        log.info("exporting to CSV file(s)")
-        export_spectra_to_csv(
-            labels=channels,
-            wavelength=wavelength[0],
-            signal=signal,
-            mode=args.export,
-            units=args.units,
-            wave_last=args.wavelength_last,
+    if export_path:
+        columns = [wavelength[0],]
+        columns.extend(np.unstack(signal))
+        table = QTable(
+            data = columns,
+            names = [COL.WAVE,] + qe_names(channels),
+            units = [u.nm] + qe_units(channels)
         )
+        log.info("exporting to ECSV file(s)")
+        table.write(export_path, delimiter=",", overwrite=True)
     mpl_spectra_plot_loop(
         title=title,
         channels=channels,
@@ -321,7 +330,7 @@ def corrected_spectrum(
         y=signal,
         # Optional arguments to be handled by the plotting function
     )
-    
+
 
 # ===================================
 # Command Line Interface Entry Points
@@ -331,25 +340,31 @@ def corrected_spectrum(
 def cli_raw_spectrum(args):
     log.info(" === DRAFT SPECTRAL RESPONSE PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
-    raw_spectrum(file_list, roi, n_roi, channels, metadata,  )
+    raw_spectrum(
+        file_list,
+        roi,
+        n_roi,
+        channels,
+        metadata,
+    )
 
 
 def cli_corrected_spectrum(args):
     log.info(" === COMPLETE SPECTRAL RESPONSE PLOT === ")
     file_list, roi, n_roi, channels, metadata = common_list_info(args)
     corrected_spectrum(
-        file_list = file_list,
-        roi = roi,
-        n_roi = n_roi,
-        channels = channels,
-        metadata = metadata,
-        photod_path = args.photodiode_file, 
-        model = args.model,
-        resolution = args.resolution,
-        every = args.every,
-        bias = args.bias,
-        dark = args.dark,
-        export = args.export
+        file_list=file_list,
+        roi=roi,
+        n_roi=n_roi,
+        channels=channels,
+        metadata=metadata,
+        photod_path=args.photodiode_file,
+        model=args.model,
+        resolution=args.resolution,
+        every=args.every,
+        bias=args.bias,
+        dark=args.dark,
+        export_path=args.export,
     )
 
 
@@ -362,7 +377,6 @@ def cli_photodiode_spectrum(args):
     else:
         option = PhDOption.SNR
     photodiode_spectrum(args.photodiode_file, args.model, option, args.resolution)
-
 
 
 def prs_aux_files() -> ArgumentParser:
@@ -496,23 +510,10 @@ def add_args(parser):
     parser_corr.add_argument(
         "--export",
         type=str,
-        choices=("combined", "individual"),
-        help="Export to CSV file(s)",
+        metavar="<FILE>",
+        help="Export to ECSV file",
     )
-    parser_corr.add_argument(
-        "-u",
-        "--units",
-        type=str,
-        choices=("nm", "angs"),
-        default="nm",
-        help="Exported wavelength units. (default: %(default)s)",
-    )
-    parser_corr.add_argument(
-        "-wl",
-        "--wavelength-last",
-        action="store_true",
-        help="Wavelength is last column in exported file",
-    )
+
     # ---------------------------------------------------------------------------------------------------------------
     dioex1 = parser_diode.add_mutually_exclusive_group(required=True)
     dioex1.add_argument(

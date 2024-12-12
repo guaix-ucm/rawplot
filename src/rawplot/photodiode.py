@@ -10,7 +10,6 @@
 # System wide imports
 # -------------------
 
-import os
 from argparse import Namespace, ArgumentParser
 import logging
 from typing import Tuple
@@ -26,7 +25,6 @@ import astropy.units as u
 
 import lica
 from lica.cli import execute
-from lica.validators import vfile
 from lica.photodiode import PhotodiodeModel, COL, BENCH
 
 
@@ -56,7 +54,6 @@ plt.style.use("rawplot.resources.global")
 # ------------------
 # Auxiliary fnctions
 # ------------------
-
 
 def vbench(x: str) -> float:
     x = float(x)
