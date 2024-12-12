@@ -316,7 +316,7 @@ def corrected_spectrum(
     wavelength = np.tile(wavelength, len(channels)).reshape(len(channels), -1)
     exptime, signal = signal_from(file_list, n_roi, channels, bias, dark, every)
     gain = gain * (e_ / u.adu)
-    detector_current = (((signal * u.adu * gain)) / (metadata["exposure"] * u.s)).decompose()
+    detector_current = (((signal * u.adu * gain)) / (exptime * u.s)).decompose()
     area_ratio = (reference.meta['Photosensitive area'] / (pixel_area * (u.um ** 2))).decompose()
     log.info("AREA RATIO = %s / %s = %s", reference.meta['Photosensitive area'], (pixel_area * (u.um ** 2)), area_ratio)
     detector_qe = photod_qe * area_ratio * (detector_current / photod_current)
